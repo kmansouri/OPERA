@@ -3,8 +3,13 @@ OPERA is a free and open source/open data  suite of QSAR models providing predic
 
 
 References:
+
 Mansouri, K. et al. SAR and QSAR in Env. Res. (2016). https://doi.org/10.1080/1062936X.2016.1253611
+
 Mansouri K. et al. J Cheminform (2018) https://doi.org/10.1186/s13321-018-0263-1.
+
 The CompTox Chemistry Dashboard (https://comptox.epa.gov/dashboard)
+
 Williams A. J. et al. J Cheminform (2017) https://doi.org/10.1186/s13321-017-0247-6
+
 JRC QSAR Model Database https://qsardb.jrc.ec.europa.eu/qmrf/endpoint
