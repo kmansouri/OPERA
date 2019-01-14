@@ -1,5 +1,5 @@
 # OPERA
-OPERA is a free and open source/open data  suite of QSAR models providing predictions and additional information including applicability domain and accuracy assessment, as described in the publication: “OPERA models for predicting physicochemical properties and environmental fate endpoints” (https://doi.org/10.1186/s13321-018-0263-1). All models were built on curated data and standardized  chemical structures as described in the publication “An automated curation procedure for addressing chemical errors and inconsistencies in public datasets used in QSAR modelling (https://doi.org/10.1080/1062936X.2016.1253611).
+OPERA is a free and open-source/open-data  suite of QSAR models providing predictions and additional information including applicability domain and accuracy assessment, as described in the publication: “OPERA models for predicting physicochemical properties and environmental fate endpoints” (https://doi.org/10.1186/s13321-018-0263-1). All models were built on curated data and standardized  chemical structures as described in the publication “An automated curation procedure for addressing chemical errors and inconsistencies in public datasets used in QSAR modelling (https://doi.org/10.1080/1062936X.2016.1253611).
 
 
 References:
