@@ -39,6 +39,8 @@ Versions:
     - CoMPARA: Collaborative Modeling Project for Androgen Receptor Activity. Binding, Agonist and Antagonist Androgen Receptor activity (https://doi.org/10.13140/RG.2.2.19612.80009, https://doi.org/10.13140/RG.2.2.21850.03520)
 
     - CATMoS: Collaborative Acute Toxicity Modeling Suite. Very-Toxic, Non-Toxic, EPA categories, GHS categories, LD50 (Log mg/kg) (https://doi.org/10.1016/j.comtox.2018.08.002)
+    
+    - OPERA v1.5 models
 
 
     *  OPERA v1.5:
