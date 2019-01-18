@@ -42,8 +42,7 @@ Versions:
            *  OPERA v1.5:
 
    + Molecular descriptors: 
-PaDEL (2.21) (http://www.yapcwsoft.com/dd/padeldescriptor/)
-Yap CW (2011). PaDEL-Descriptor: An open source software to calculate molecular descriptors and fingerprints. Journal of Computational Chemistry. 32 (7): 1466-1474
+- PaDEL (2.21) (https://doi.org/10.1002/jcc.21707 )
 
    + Models:
 - OH (LogOH) in cm3/molecule-sec: The OH rate constant for the atmospheric, gas-phase reaction between photochemically produced hydroxyl radicals and organic chemicals.
