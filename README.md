@@ -19,60 +19,60 @@ References:
 Versions:
 ---------
 
-           *  OPERA v2.0:
+   *  OPERA v2.0:
 
-   + Molecular descriptors: 
+          + Molecular descriptors: 
    
-          - PaDEL (2.21) (https://doi.org/10.1002/jcc.21707 )
-          - CDK (2.0) (https://doi.org/10.1186/s13321-017-0220-4)
+    - PaDEL (2.21) (https://doi.org/10.1002/jcc.21707 )
+    - CDK (2.0) (https://doi.org/10.1186/s13321-017-0220-4)
  
-   + Models:
+          + Models:
    
- -  Structural Properties: MolWeight, nbAtoms, nbHeavyAtoms, nbC, nbO, nbN, nbAromAtom, nbRing, nbHeteroRing, Sp3Sp2HybRatio, nbRotBd, nbHBdAcc, ndHBdDon, nbLipinskiFailures, TopoPolSurfAir, MolarRefract, CombDipolPolarizability.
+    - Structural Properties: MolWeight, nbAtoms, nbHeavyAtoms, nbC, nbO, nbN, nbAromAtom, nbRing, nbHeteroRing, Sp3Sp2HybRatio, nbRotBd, nbHBdAcc, ndHBdDon, nbLipinskiFailures, TopoPolSurfAir, MolarRefract, CombDipolPolarizability.
 
- -  pKa: acid dissociation constant
+    - pKa: acid dissociation constant
 
- -  LogD: Octanol-water distribution constant. LogD is equivalent to logP for non-ionisable compounds.
+    - LogD: Octanol-water distribution constant. LogD is equivalent to logP for non-ionisable compounds.
 
- -  CERAPP: Collaborative Estrogen Receptor Activity Prediction Project. Binding, Agonist and Antagonist Estrogen Receptor activity (https://ehp.niehs.nih.gov/15-10267/)
+    - CERAPP: Collaborative Estrogen Receptor Activity Prediction Project. Binding, Agonist and Antagonist Estrogen Receptor activity (https://ehp.niehs.nih.gov/15-10267/)
 
- -  CoMPARA: Collaborative Modeling Project for Androgen Receptor Activity. Binding, Agonist and Antagonist Androgen Receptor activity (https://doi.org/10.13140/RG.2.2.19612.80009, https://doi.org/10.13140/RG.2.2.21850.03520)
+    - CoMPARA: Collaborative Modeling Project for Androgen Receptor Activity. Binding, Agonist and Antagonist Androgen Receptor activity (https://doi.org/10.13140/RG.2.2.19612.80009, https://doi.org/10.13140/RG.2.2.21850.03520)
 
- -  CATMoS: Collaborative Acute Toxicity Modeling Suite. Very-Toxic, Non-Toxic, EPA categories, GHS categories, LD50 (Log mg/kg) (https://doi.org/10.1016/j.comtox.2018.08.002)
+    - CATMoS: Collaborative Acute Toxicity Modeling Suite. Very-Toxic, Non-Toxic, EPA categories, GHS categories, LD50 (Log mg/kg) (https://doi.org/10.1016/j.comtox.2018.08.002)
 
 
-           *  OPERA v1.5:
+   *  OPERA v1.5:
 
-   + Molecular descriptors: 
+          + Molecular descriptors: 
    
-- PaDEL (2.21) (https://doi.org/10.1002/jcc.21707 )
+    - PaDEL (2.21) (https://doi.org/10.1002/jcc.21707 )
 
-   + Models:
+          + Models:
    
-- OH (LogOH) in cm3/molecule-sec: The OH rate constant for the atmospheric, gas-phase reaction between photochemically produced hydroxyl radicals and organic chemicals.
+    - OH (LogOH) in cm3/molecule-sec: The OH rate constant for the atmospheric, gas-phase reaction between photochemically produced hydroxyl radicals and organic chemicals.
 
-- BCF (Log): Fish bioconcentration factor
+    - BCF (Log): Fish bioconcentration factor
 
-- Biodeg (LogHalfLife) in days: biodegradation half-life for compounds containing only carbon and hydrogen (i.e. hydrocarbons). 
+    - Biodeg (LogHalfLife) in days: biodegradation half-life for compounds containing only carbon and hydrogen (i.e. hydrocarbons). 
 
-- Ready_biodeg (classification: 0/1): Ready biodegradability of organic chemicals. 
+    - Ready_biodeg (classification: 0/1): Ready biodegradability of organic chemicals. 
 
-- BP in deg C: Boiling Point at 760 mm Hg
+    - BP in deg C: Boiling Point at 760 mm Hg
 
-- HL (LogHL) in atm-m3/mole: The Henry’s Law constant (air/water partition coefficient) at 25C
+    - HL (LogHL) in atm-m3/mole: The Henry’s Law constant (air/water partition coefficient) at 25C
 
-- Km (Log KmHL) half-lives in days: The whole body primary biotransformation rate constant for organic chemicals in fish. 
+    - Km (Log KmHL) half-lives in days: The whole body primary biotransformation rate constant for organic chemicals in fish. 
 
-- KOA (Log): The octanol/air partition coefficient.
+    - KOA (Log): The octanol/air partition coefficient.
 
-- LogP (Log): Octanol-water partition coefficient, log KOW, of chemicals.
+    - LogP (Log): Octanol-water partition coefficient, log KOW, of chemicals.
 
-- MP in deg C: Melting Point
+    - MP in deg C: Melting Point
 
-- Koc (Log) in L/Kg: the soil adsorption coefficient of organic compounds.  The ratio of the amount of chemical adsorbed per unit weight of organic carbon in the soil or sediment to the concentration of the chemical in solution at equilibrium.
+    - Koc (Log) in L/Kg: the soil adsorption coefficient of organic compounds.  The ratio of the amount of chemical adsorbed per unit weight of organic carbon in the soil or sediment to the concentration of the chemical in solution at equilibrium.
 
-- VP (Log) in mmHg: Vapor Pressure experimental values between 15 and 30 deg C (majority at 25-20C)
+    - VP (Log) in mmHg: Vapor Pressure experimental values between 15 and 30 deg C (majority at 25-20C)
 
-- WS (Log) in Molar moles/L: Water solubility at 25C. 
+    - WS (Log) in Molar moles/L: Water solubility at 25C. 
 
-- RT in minutes: HPLC retention time.
+    - RT in minutes: HPLC retention time.
