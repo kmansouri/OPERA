@@ -22,10 +22,12 @@ Versions:
            *  OPERA v2.0:
 
    + Molecular descriptors: 
+   
 - PaDEL (2.21) (https://doi.org/10.1002/jcc.21707 )
 - CDK (2.0) (https://doi.org/10.1186/s13321-017-0220-4)
  
    + Models:
+   
  -  Structural Properties: MolWeight, nbAtoms, nbHeavyAtoms, nbC, nbO, nbN, nbAromAtom, nbRing, nbHeteroRing, Sp3Sp2HybRatio, nbRotBd, nbHBdAcc, ndHBdDon, nbLipinskiFailures, TopoPolSurfAir, MolarRefract, CombDipolPolarizability.
 
  -  pKa: acid dissociation constant
@@ -42,9 +44,11 @@ Versions:
            *  OPERA v1.5:
 
    + Molecular descriptors: 
+   
 - PaDEL (2.21) (https://doi.org/10.1002/jcc.21707 )
 
    + Models:
+   
 - OH (LogOH) in cm3/molecule-sec: The OH rate constant for the atmospheric, gas-phase reaction between photochemically produced hydroxyl radicals and organic chemicals.
 
 - BCF (Log): Fish bioconcentration factor
