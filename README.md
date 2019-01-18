@@ -19,12 +19,13 @@ References:
 Versions:
 ---------
 
-   *  OPERA v2.0:
+    *  OPERA v2.0:
 
           + Molecular descriptors:  
     - PaDEL (2.21) (https://doi.org/10.1002/jcc.21707 )
     - CDK (2.0) (https://doi.org/10.1186/s13321-017-0220-4)
  
+
           + Models:
    
     - Structural Properties: MolWeight, nbAtoms, nbHeavyAtoms, nbC, nbO, nbN, nbAromAtom, nbRing, nbHeteroRing, Sp3Sp2HybRatio, nbRotBd, nbHBdAcc, ndHBdDon, nbLipinskiFailures, TopoPolSurfAir, MolarRefract, CombDipolPolarizability.
@@ -40,7 +41,7 @@ Versions:
     - CATMoS: Collaborative Acute Toxicity Modeling Suite. Very-Toxic, Non-Toxic, EPA categories, GHS categories, LD50 (Log mg/kg) (https://doi.org/10.1016/j.comtox.2018.08.002)
 
 
-   *  OPERA v1.5:
+    *  OPERA v1.5:
 
           + Molecular descriptors: 
    
