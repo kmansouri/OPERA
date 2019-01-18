@@ -23,8 +23,8 @@ Versions:
 
    + Molecular descriptors: 
    
-- PaDEL (2.21) (https://doi.org/10.1002/jcc.21707 )
-- CDK (2.0) (https://doi.org/10.1186/s13321-017-0220-4)
+          - PaDEL (2.21) (https://doi.org/10.1002/jcc.21707 )
+          - CDK (2.0) (https://doi.org/10.1186/s13321-017-0220-4)
  
    + Models:
    
