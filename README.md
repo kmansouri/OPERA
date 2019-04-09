@@ -26,7 +26,7 @@ Models:
     - CDK (2.0) (https://doi.org/10.1186/s13321-017-0220-4)
  
 
-          + New models (after v2.0):
+          + New models (since v2.0):
    
 
     - FuB: Plasma fraction unbound (human)
