@@ -19,7 +19,7 @@ References:
 Models:
 ---------
 
-    *  latest version OPERA v2.2:
+    *  Latest version OPERA v2.2:
 
           + Molecular descriptors:  
     - PaDEL (2.21) (https://doi.org/10.1002/jcc.21707 )
