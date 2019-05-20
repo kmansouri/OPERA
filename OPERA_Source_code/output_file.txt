@@ -1,0 +1,6 @@
+By default, the output file(s) will contain the predictions, applicability domain and accuracy assessment.
+The output file extension could be: 
+
+    .csv: comma "," delimited csv file with headers. One molecule/row. Provided or generic ID in first column.
+	
+    .txt: Text file with multiple rows/structure. Can be used as a prediction report.
