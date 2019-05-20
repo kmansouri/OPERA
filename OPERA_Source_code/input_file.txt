@@ -1,0 +1,9 @@
+The input file could be: 
+
+    .smi: SMILES tab delimited text file with or without molecule(s) ID. No headers & no empty lines.
+	
+    .sdf: SDF file in v2000 format. Single or multiple structures.
+	
+    .mol: Molfile with a single structure in v2000 MOL format.
+	
+    .txt: Text file with molecule identifiers (CASRN, DTXSID, DTXCID, or InChIkey). One ID/row. No headers & no empty lines.
