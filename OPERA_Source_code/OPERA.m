@@ -1,13 +1,13 @@
 function res=OPERA(varargin)
 
 Version='2.3';
-SubVersion='2.3-beta1';
+SubVersion='2.3-beta2';
 %%
 %
 %        _______________________________________________________________________
 %       |                                                                       |
 %       |   OPERA models for physchem, environmental fate and tox properties.   |
-%       |                 Version 2.3 (May 2019)                                |
+%       |                 Version 2.3 (June 2019)                                |
 %       |_______________________________________________________________________|
 %
 %
@@ -58,6 +58,7 @@ SubVersion='2.3-beta1';
 %Developed by:
 %Kamel Mansouri
 %mansourikamel@gmail.com
+%kamel.mansouri@nih.gov
 %
 %
 %For more information about the models and the data:
@@ -152,6 +153,8 @@ else
     InputDesc={};
     InputDescFP={};
     InputDescCDK={};
+    StructureFile={};
+    FileSalt={};
     tox=0;
     pc=0;
     ef=0;
@@ -425,11 +428,14 @@ else
     
     
     %if structure==1 && (InputDescPadel==0||(fp==1 && inputFP==0))
-    
-    if ispc
-        installdir=fullfile('C:','Program Files','OPERA','application');
+    if ~isdeployed
+        installdir=pwd;
     else
-        installdir=fullfile('usr','local','bin','OPERA','application');
+        if ispc
+            installdir=fullfile('C:','Program Files','OPERA','application');
+        else
+            installdir=fullfile('usr','local','bin','OPERA','application');
+        end
     end
     if ~exist(fullfile(installdir,'padel-full-1.00.jar'),'file')
         
@@ -535,7 +541,7 @@ else
                 if ispc
                     [~, numStruct] = system(['FINDSTR /R /N "^.*$$$$" ', strcat('"',char(StructureFile),'"') ,' | FIND /C ":"']);%win
                 else
-                    [~, numStruct] = system(['grep -F "$" ', strcat('"',char(StructureFile),'"'), ' | wc -l']); %linux
+                    [~, numStruct] = system(['grep -F "\$\$\$\$" ', strcat('"',char(StructureFile),'"'), ' | wc -l']); %linux
                 end
                 
             elseif strcmpi(StructureFile(length(StructureFile)-3:end),'.mol')
@@ -564,28 +570,26 @@ else
                 StructureFile=strcat(StructureFile(1:length(StructureFile)-3),'smi');
                 fileID = fopen(StructureFile, 'w');
                 f=0;
+                La=zeros(length(strings));
+                Lb=zeros(length(strings));
                 for i=1:length(strings)
-                    [La,Lb] = ismember(strings{i},train.DSSToxQSARr{:,2});
-                    if La
+
+                    if regexp(strings{i},'[0-9]+-[0-9]+-[0-9]')
+                        [La(i),Lb(i)] = ismember(strings{i},train.DSSToxQSARr{:,2});
+                    elseif regexp(strings{i},'DTXSID[0-9]+')
+                        [La(i),Lb(i)] = ismember(strings{i},train.DSSToxQSARr{:,3});
+                    elseif regexp(strings{i},'DTXCID[0-9]+')
+                        [La(i),Lb(i)] = ismember(strings{i},train.DSSToxQSARr{:,4});
+                    elseif regexp(strings{i},'[A-Z]+-[A-Z]+-[A-Z]')
+                         [La(i),Lb(i)] = ismember(strings{i},train.DSSToxQSARr{:,5});
+                    end
+                    if La(i)
                         f=f+1;
-                        fprintf(fileID,'%s\t%s\n',train.DSSToxQSARr{Lb,1},strings{i});
-                    else
-                        [La,Lb] = ismember(strings{i},train.DSSToxQSARr{:,3});
-                        if La
-                            f=f+1;
-                            fprintf(fileID,'%s\t%s\n',train.DSSToxQSARr{Lb,1},strings{i});
-                        else
-                            [La,Lb] = ismember(strings{i},train.DSSToxQSARr{:,4});
-                            if La
-                                f=f+1;
-                                fprintf(fileID,'%s\t%s\n',train.DSSToxQSARr{Lb,1},strings{i});
-                            else
-                                [La,Lb] = ismember(strings{i},train.DSSToxQSARr{:,5});
-                                if La
-                                    f=f+1;
-                                    fprintf(fileID,'%s\t%s\n',train.DSSToxQSARr{Lb,1},strings{i});
-                                end
-                            end
+                        fprintf(fileID,'%s\t%s\n',train.DSSToxQSARr{Lb(i),1},strings{i});
+                        if ismember('mp',lower(prop)) && isempty(FileSalt)
+                            salt=1;
+                            %SaltInfo(f,1)=train.DSSToxQSARr.SaltInfo(Lb(i));
+                            SaltIndex(f,1)=train.DSSToxQSARr.SaltInfo(Lb(i));
                         end
                     end
                 end
@@ -593,7 +597,20 @@ else
                 if verbose >0
                     fprintf(1,'Found structures based on provided IDs: %d.\n',f);
                 end
+                if f==0
+                    error('Check IDs in the input file.');
+                end
                 numStruct=num2str(f);
+%                 if ismember('mp',lower(prop))
+%                     salt=1;
+%                     FileSalt=strcat(StructureFile(1:length(StructureFile)-4),'_SaltInfo','.csv');
+%                     SaltFile.Name=strings(find(La))';
+%                     SaltFile.SaltInfo=SaltInfo;
+%                     SaltFile=struct2table(SaltFile);
+%                     writetable(SaltFile,FileSalt,'Delimiter',',');
+%                     clear('SaltInfo','SaltFile');
+%                 end
+                
             end
         end
         %========== Molecular Descriptors ==========
@@ -608,7 +625,9 @@ else
             InputDesc=strcat(StructureFile(1:length(StructureFile)-4),'_PadelDesc.csv');
             if verbose >0
                 fprintf(1,'Loaded structures: %d.\n',str2double(numStruct));
-                
+                if numStruct==0
+                    error('Check the input file.');
+                end
                 fprintf(1,'PaDEL calculating 2D descriptors...\n');
                 if verbose ==1
                     [statusDesc,cmdoutDesc] =system (['java -Djava.awt.headless=true -jar ' strcat('"',fullfile(installdir,'padel-full-1.00.jar'),'"')...
@@ -914,7 +933,7 @@ else
         end
         
         %Start SaltInfo
-        if salt==1
+        if salt==1 && ~isempty(FileSalt)
             if verbose> 0
                 disp('Reading file with salt information.');
             end
@@ -937,7 +956,7 @@ else
                     disp(['The number of molecules with salt information:', num2str(length(find(SaltIndex)))]);
                 end
             else
-                error('The number of compounds must be the same in both files.')
+                error('The number of saltIDs and structures must match.')
                 %fprintf(2,'Number of compounds must be the same in both files. \n');
                 %return
             end
@@ -1090,7 +1109,7 @@ else
         res.LogP_pred(:,1)=pred.y_pred_weighted;
         AD=classical_leverage(train.LogP.model.set.train,Xtest,'auto');
         res.AD_LogP=abs(AD.inorout-1)';
-        res.AD_LogP(round(pred.D,3)==0)=1;
+        res.AD_LogP(round(pred.dc(:,1),3)==0)=1;
         
         %             res.AD_index1=1./(1+median(pred.dc,2));
         %             if isnan(res.AD_index1)
@@ -1115,17 +1134,18 @@ else
         
         
         for i=1:size(Xtest(:,1))
-            if exp
-                if ~contains(MoleculeNames(i),'AUTOGEN_')
+            Li=0;
+            if exp && ~contains(MoleculeNames(i),'AUTOGEN_')
+                if regexp(MoleculeNames{i},'[0-9]+-[0-9]+-[0-9]')
                     [Li,Lo] = ismember(MoleculeNames(i),train.LogP.CAS);
-                    if Li
-                        res.LogP_exp(i,1)=train.LogP.model.set.y(Lo);
-                    else
-                        [Li,Lo] = ismember(MoleculeNames{i},train.LogP.DTXSID);
-                        if Li
-                            res.LogP_exp(i)=train.LogP.model.set.y(Lo);
-                        end
+                elseif regexp(MoleculeNames{i},'DTXSID[0-9]+')
+                    [Li,Lo] = ismember(MoleculeNames{i},train.LogP.DTXSID);
+                end
+                if Li
+                    if Lo>size(train.LogP.DTXSID,1)
+                        Lo=mod(Lo,size(train.LogP.DTXSID,1));
                     end
+                    res.LogP_exp(i)=train.LogP.model.set.y(Lo);
                 end
             end
             
@@ -1256,21 +1276,7 @@ else
     if find(Lia)
         %case 'mp'
         
-        
-        
         Desc=train.MP.Desc;
-        
-        
-        if verbose>0
-            disp('Predicting MP values (Deg. C)...');
-            if verbose>1
-                disp(['Weighted kNN model with ', num2str(length(Desc)),'descriptors']);
-            end
-            if salt==1
-                disp('Salt information will be considered in the predictions');
-            end
-            
-        end
         
         if strcmpi(ext,'.txt') && sep==0
             fprintf(output,'\n\n\t\t\t\t\t Predicting MP values... \n\n			============================================================== \n\n');
@@ -1288,19 +1294,59 @@ else
         %             end
         Xtest=Xin(:,train.MP.Desc_i);
         
-        AD=classical_leverage(train.MP.model.set.train,Xtest,'auto');
+        AD=classical_leverage(train.MP.model.set.train(:,1:end-1),Xtest,'auto');
         
-        if salt ==1
-            Xtest=[Xtest SaltIndex];
-            Desc=[Desc,'SaltIndex'];
-            pred = nnrpred(Xtest,train.MP.model_s.set.train,train.MP.model_s.set.y,train.MP.model_s.set.K,train.MP.model_s.set.dist_type,train.MP.model_s.set.param.pret_type);
-            pred.D=diag(pred.D);
-            %AD=classical_leverage(train.MP.model_s.set.train,Xtest,'auto');
-        else
-            pred = nnrpred(Xtest,train.MP.model.set.train,train.MP.model.set.y,train.MP.model.set.K,train.MP.model.set.dist_type,train.MP.model.set.param.pret_type);
-            pred.D=diag(pred.D);
+%         if salt ==1
+%             Xtest=[Xtest SaltIndex];
+%             Desc=[Desc,'SaltIndex'];
+%             %pred = nnrpred(Xtest,train.MP.model_s.set.train,train.MP.model_s.set.y,train.MP.model_s.set.K,train.MP.model_s.set.dist_type,train.MP.model_s.set.param.pret_type);
+%             %pred.D=diag(pred.D);
+%             %AD=classical_leverage(train.MP.model_s.set.train,Xtest,'auto');
+%         else
+        if salt ==0
+            SaltIndex=zeros(size(Xtest,1),1);
+            %pred = nnrpred(Xtest,train.MP.model.set.train,train.MP.model.set.y,train.MP.model.set.K,train.MP.model.set.dist_type,train.MP.model.set.param.pret_type);
+            %pred.D=diag(pred.D);
             %AD=classical_leverage(train.MP.model.set.train,Xtest,'auto');
+
+            La=zeros(length(MoleculeNames));
+            Lb=zeros(length(MoleculeNames));
+            for i=1:length(MoleculeNames)
+                if ~contains(MoleculeNames(i),'AUTOGEN_')
+                    if regexp(MoleculeNames{i},'[0-9]+-[0-9]+-[0-9]')
+                        [La(i),Lb(i)] = ismember(MoleculeNames{i},train.DSSToxQSARr{:,2});
+                    elseif regexp(MoleculeNames{i},'DTXSID[0-9]+')
+                        [La(i),Lb(i)] = ismember(MoleculeNames{i},train.DSSToxQSARr{:,3});
+                    elseif regexp(MoleculeNames{i},'DTXCID[0-9]+')
+                        [La(i),Lb(i)] = ismember(MoleculeNames{i},train.DSSToxQSARr{:,4});
+                    elseif regexp(MoleculeNames{i},'[A-Z]+-[A-Z]+-[A-Z]')
+                        [La(i),Lb(i)] = ismember(MoleculeNames{i},train.DSSToxQSARr{:,5});
+                    end
+                    if La(i)
+                        salt=1;
+                        SaltIndex(i,1)=train.DSSToxQSARr.SaltInfo(Lb(i));
+                    end
+                end
+            end
         end
+        
+        if verbose>0
+            disp('Predicting MP values (Deg. C)...');
+            if verbose>1
+                disp(['Weighted kNN model with ', num2str(length(Desc)),'descriptors']);
+            end
+            if salt==1 && ~isempty(FileSalt)
+                disp('The provided salt information will be considered in the predictions');
+            elseif salt==1 && isempty(FileSalt)
+                disp('Salt information, retrieved from structure IDs, will be considered in the predictions');
+            end
+            
+        end
+        
+        Xtest=[Xtest SaltIndex];
+        Desc=[Desc,'SaltIndex'];
+        pred = nnrpred(Xtest,train.MP.model.set.train,train.MP.model.set.y,train.MP.model.set.K,train.MP.model.set.dist_type,train.MP.model.set.param.pret_type);
+        pred.D=diag(pred.D);
         
         res.MoleculeID=MoleculeNames;
         if exp
@@ -1309,7 +1355,7 @@ else
         res.MP_pred(:,1)=pred.y_pred_weighted;
         %AD=classical_leverage(train.MP.model.set.train,Xtest,'auto');
         res.AD_MP=abs(AD.inorout-1)';
-        res.AD_MP(round(pred.D,3)==0)=1;
+        res.AD_MP(round(pred.dc(:,1),3)==0)=1;
         
         %            res.AD_index1=1./(1+median(pred.dc,2));
         %             if isnan(res.AD_index)
@@ -1329,17 +1375,18 @@ else
         MP_pred_neighbor=zeros(size(Xtest,1),5);
         
         for i=1:size(Xtest(:,1))
-            if exp
-                if ~contains(MoleculeNames(i),'AUTOGEN_')
+            Li=0;
+            if exp && ~contains(MoleculeNames(i),'AUTOGEN_')
+                if regexp(MoleculeNames{i},'[0-9]+-[0-9]+-[0-9]')
                     [Li,Lo] = ismember(MoleculeNames(i),train.MP.CAS);
-                    if Li
-                        res.MP_exp(i,1)=train.MP.model_s.set.y(Lo);
-                    else
-                        [Li,Lo] = ismember(MoleculeNames{i},train.MP.DTXSID);
-                        if Li
-                            res.MP_exp(i)=train.MP.model_s.set.y(Lo);
-                        end
+                elseif regexp(MoleculeNames{i},'DTXSID[0-9]+')
+                    [Li,Lo] = ismember(MoleculeNames{i},train.MP.DTXSID);
+                end
+                if Li
+                    if Lo>size(train.MP.DTXSID,1)
+                        Lo=mod(Lo,size(train.MP.DTXSID,1));
                     end
+                    res.MP_exp(i)=train.MP.model.set.y(Lo);
                 end
             end
             MP_CAS_neighbor(i,:)=train.MP.CAS(pred.neighbors(i,:));
@@ -1347,8 +1394,8 @@ else
             MP_DTXSID_neighbor(i,:)=train.MP.DTXSID(pred.neighbors(i,:));
             MP_DSSTOXMPID_neighbor(i,:)=train.MP.DSSTOXMPID(pred.neighbors(i,:));
             if salt ==1
-                MP_Exp_neighbor(i,:)=train.MP.model_s.set.y(pred.neighbors(i,:));
-                MP_pred_neighbor(i,:)=train.MP.model_s.yc_weighted(pred.neighbors(i,:));
+                MP_Exp_neighbor(i,:)=train.MP.model.set.y(pred.neighbors(i,:));
+                MP_pred_neighbor(i,:)=train.MP.model.yc_weighted(pred.neighbors(i,:));
             else
                 MP_Exp_neighbor(i,:)=train.MP.model.set.y(pred.neighbors(i,:));
                 MP_pred_neighbor(i,:)=train.MP.model.yc_weighted(pred.neighbors(i,:));
@@ -1501,7 +1548,7 @@ else
         res.BP_pred(:,1)=pred.y_pred_weighted;
         AD=classical_leverage(train.BP.model.set.train,Xtest,'auto');
         res.AD_BP=abs(AD.inorout-1)';
-        res.AD_BP(round(pred.D,3)==0)=1;
+        res.AD_BP(round(pred.dc(:,1),3)==0)=1;
         
         
         %             res.AD_index_BP=1./(1+nanmedian(pred.dc,2));
@@ -1522,17 +1569,18 @@ else
         BP_pred_neighbor=zeros(size(Xtest,1),5);
         
         for i=1:size(Xtest(:,1))
-            if exp
-                if ~contains(MoleculeNames(i),'AUTOGEN_')
+            Li=0;
+            if exp && ~contains(MoleculeNames(i),'AUTOGEN_')
+                if regexp(MoleculeNames{i},'[0-9]+-[0-9]+-[0-9]')
                     [Li,Lo] = ismember(MoleculeNames(i),train.BP.CAS);
-                    if Li
-                        res.BP_exp(i,1)=train.BP.model.set.y(Lo);
-                    else
-                        [Li,Lo] = ismember(MoleculeNames{i},train.BP.DTXSID);
-                        if Li
-                            res.BP_exp(i)=train.BP.model.set.y(Lo);
-                        end
+                elseif regexp(MoleculeNames{i},'DTXSID[0-9]+')
+                    [Li,Lo] = ismember(MoleculeNames{i},train.BP.DTXSID);
+                end
+                if Li
+                    if Lo>size(train.BP.DTXSID,1)
+                        Lo=mod(Lo,size(train.BP.DTXSID,1));
                     end
+                    res.BP_exp(i)=train.BP.model.set.y(Lo);
                 end
             end
             BP_CAS_neighbor(i,:)=train.BP.CAS(pred.neighbors(i,:));
@@ -1690,7 +1738,7 @@ else
         res.LogVP_pred(:,1)=pred.y_pred_weighted;
         AD=classical_leverage(train.VP.model.set.train,Xtest,'auto');
         res.AD_VP=abs(AD.inorout-1)';
-        res.AD_VP(round(pred.D,3)==0)=1;
+        res.AD_VP(round(pred.dc(:,1),3)==0)=1;
         
         
         %res.AD_index=1./(1+nanmedian(pred.dc,2));
@@ -1711,17 +1759,18 @@ else
         LogVP_pred_neighbor=zeros(size(Xtest,1),5);
         
         for i=1:size(Xtest(:,1))
-            if exp
-                if ~contains(MoleculeNames(i),'AUTOGEN_')
+            Li=0;
+            if exp && ~contains(MoleculeNames(i),'AUTOGEN_')
+                if regexp(MoleculeNames{i},'[0-9]+-[0-9]+-[0-9]')
                     [Li,Lo] = ismember(MoleculeNames(i),train.VP.CAS);
-                    if Li
-                        res.LogVP_exp(i,1)=train.VP.model.set.y(Lo);
-                    else
-                        [Li,Lo] = ismember(MoleculeNames{i},train.VP.DTXSID);
-                        if Li
-                            res.LogVP_exp(i)=train.VP.model.set.y(Lo);
-                        end
+                elseif regexp(MoleculeNames{i},'DTXSID[0-9]+')
+                    [Li,Lo] = ismember(MoleculeNames{i},train.VP.DTXSID);
+                end
+                if Li
+                    if Lo>size(train.VP.DTXSID,1)
+                        Lo=mod(Lo,size(train.VP.DTXSID,1));
                     end
+                    res.LogVP_exp(i)=train.VP.model.set.y(Lo);
                 end
             end
             LogVP_CAS_neighbor(i,:)=train.VP.CAS(pred.neighbors(i,:));
@@ -1878,7 +1927,7 @@ else
         res.LogWS_pred(:,1)=pred.y_pred_weighted;
         AD=classical_leverage(train.WS.model.set.train,Xtest,'auto');
         res.AD_WS=abs(AD.inorout-1)';
-        res.AD_WS(round(pred.D,3)==0)=1;
+        res.AD_WS(round(pred.dc(:,1),3)==0)=1;
         
         
         %res.AD_index=1./(1+nanmedian(pred.dc,2));
@@ -1899,17 +1948,18 @@ else
         LogWS_pred_neighbor=zeros(size(Xtest,1),5);
         
         for i=1:size(Xtest(:,1))
-            if exp
-                if ~contains(MoleculeNames(i),'AUTOGEN_')
+            Li=0;
+            if exp && ~contains(MoleculeNames(i),'AUTOGEN_')
+                if regexp(MoleculeNames{i},'[0-9]+-[0-9]+-[0-9]')
                     [Li,Lo] = ismember(MoleculeNames(i),train.WS.CAS);
-                    if Li
-                        res.LogWS_exp(i,1)=train.WS.model.set.y(Lo);
-                    else
-                        [Li,Lo] = ismember(MoleculeNames{i},train.WS.DTXSID);
-                        if Li
-                            res.LogWS_exp(i)=train.WS.model.set.y(Lo);
-                        end
+                elseif regexp(MoleculeNames{i},'DTXSID[0-9]+')
+                    [Li,Lo] = ismember(MoleculeNames{i},train.WS.DTXSID);
+                end
+                if Li
+                    if Lo>size(train.WS.DTXSID,1)
+                        Lo=mod(Lo,size(train.WS.DTXSID,1));
                     end
+                    res.LogWS_exp(i)=train.WS.model.set.y(Lo);
                 end
             end
             LogWS_CAS_neighbor(i,:)=train.WS.CAS(pred.neighbors(i,:));
@@ -2067,7 +2117,7 @@ else
         res.LogHL_pred(:,1)=pred.y_pred_weighted;
         AD=classical_leverage(train.HL.model.set.train,Xtest,'auto');
         res.AD_HL=abs(AD.inorout-1)';
-        res.AD_HL(round(pred.D,3)==0)=1;
+        res.AD_HL(round(pred.dc(:,1),3)==0)=1;
         
         
         %res.AD_index=1./(1+nanmedian(pred.dc,2));
@@ -2089,17 +2139,18 @@ else
         LogHL_pred_neighbor=zeros(size(Xtest,1),5);
         
         for i=1:size(Xtest(:,1))
-            if exp
-                if ~contains(MoleculeNames(i),'AUTOGEN_')
+            Li=0;
+            if exp && ~contains(MoleculeNames(i),'AUTOGEN_')
+                if regexp(MoleculeNames{i},'[0-9]+-[0-9]+-[0-9]')
                     [Li,Lo] = ismember(MoleculeNames(i),train.HL.CAS);
-                    if Li
-                        res.LogHL_exp(i,1)=train.LogP.model.set.y(Lo);
-                    else
-                        [Li,Lo] = ismember(MoleculeNames{i},train.HL.DTXSID);
-                        if Li
-                            res.LogHL_exp(i)=train.HL.model.set.y(Lo);
-                        end
+                elseif regexp(MoleculeNames{i},'DTXSID[0-9]+')
+                    [Li,Lo] = ismember(MoleculeNames{i},train.HL.DTXSID);
+                end
+                if Li
+                    if Lo>size(train.HL.DTXSID,1)
+                        Lo=mod(Lo,size(train.HL.DTXSID,1));
                     end
+                    res.LogHL_exp(i)=train.HL.model.set.y(Lo);
                 end
             end
             HL_CAS_neighbor(i,:)=train.HL.CAS(pred.neighbors(i,:));
@@ -2260,7 +2311,7 @@ else
         res.RT_pred(:,1)=predpls.yc;
         AD=classical_leverage(train.RT.model.set.train,Xtest,'auto');
         res.AD_RT=abs(AD.inorout-1)';
-        res.AD_RT(round(pred.D,3)==0)=1;
+        res.AD_RT(round(pred.dc(:,1),3)==0)=1;
         
         
         %res.AD_index=1./(1+nanmedian(pred.dc,2));
@@ -2279,17 +2330,18 @@ else
         RT_pred_neighbor=zeros(size(Xtest,1),5);
         
         for i=1:size(Xtest(:,1))
-            if exp
-                if ~contains(MoleculeNames(i),'AUTOGEN_')
+            Li=0;
+            if exp && ~contains(MoleculeNames(i),'AUTOGEN_')
+                if regexp(MoleculeNames{i},'[0-9]+-[0-9]+-[0-9]')
                     [Li,Lo] = ismember(MoleculeNames(i),train.RT.CAS);
-                    if Li
-                        res.RT_exp(i,1)=train.RT.model.set.y(Lo);
-                    else
-                        [Li,Lo] = ismember(MoleculeNames{i},train.RT.DTXSID);
-                        if Li
-                            res.RT_exp(i)=train.RT.model.set.y(Lo);
-                        end
+                elseif regexp(MoleculeNames{i},'DTXSID[0-9]+')
+                    [Li,Lo] = ismember(MoleculeNames{i},train.RT.DTXSID);
+                end
+                if Li
+                    if Lo>size(train.RT.DTXSID,1)
+                        Lo=mod(Lo,size(train.RT.DTXSID,1));
                     end
+                    res.RT_exp(i)=train.RT.model.set.y(Lo);
                 end
             end
             RT_CAS_neighbor(i,:)=train.RT.CAS(pred.neighbors(i,:));
@@ -2443,7 +2495,7 @@ else
         res.LogKOA_pred(:,1)=pred.y_pred_weighted;
         AD=classical_leverage(train.KOA.model.set.train,Xtest,'auto');
         res.AD_KOA=abs(AD.inorout-1)';
-        res.AD_KOA(round(pred.D,3)==0)=1;
+        res.AD_KOA(round(pred.dc(:,1),3)==0)=1;
         
         
         %res.AD_index=1./(1+nanmedian(pred.dc,2));
@@ -2464,17 +2516,18 @@ else
         LogKOA_pred_neighbor=zeros(size(Xtest,1),5);
         
         for i=1:size(Xtest(:,1))
-            if exp
-                if ~contains(MoleculeNames(i),'AUTOGEN_')
+            Li=0;
+            if exp && ~contains(MoleculeNames(i),'AUTOGEN_')
+                if regexp(MoleculeNames{i},'[0-9]+-[0-9]+-[0-9]')
                     [Li,Lo] = ismember(MoleculeNames(i),train.KOA.CAS);
-                    if Li
-                        res.LogKOA_exp(i,1)=train.KOA.model.set.y(Lo);
-                    else
-                        [Li,Lo] = ismember(MoleculeNames{i},train.KOA.DTXSID);
-                        if Li
-                            res.LogKOA_exp(i)=train.KOA.model.set.y(Lo);
-                        end
+                elseif regexp(MoleculeNames{i},'DTXSID[0-9]+')
+                    [Li,Lo] = ismember(MoleculeNames{i},train.KOA.DTXSID);
+                end
+                if Li
+                    if Lo>size(train.KOA.DTXSID,1)
+                        Lo=mod(Lo,size(train.KOA.DTXSID,1));
                     end
+                    res.LogKOA_exp(i)=train.KOA.model.set.y(Lo);
                 end
             end
             KOA_CAS_neighbor(i,:)=train.KOA.CAS(pred.neighbors(i,:));
@@ -2624,6 +2677,10 @@ else
         %AD_b = nnrpred(Xtest_b,train.pka_b.model.set.train,train.pka_b.model.set.y,train.pka_b.model.set.K,train.pka_b.model.set.dist_type,train.pka_b.model.set.param.pret_type);
         
         res.MoleculeID=MoleculeNames;
+        if exp
+            res.pKa_a_exp=NaN(size(Xtest,1),1);
+            res.pKa_b_exp=NaN(size(Xtest,1),1);
+        end
         res.ionization=zeros(size(Xtest,1),1);
         pKa_ac_ba_amp=pred.class_pred;
         res.pKa_a_pred=pKa_a;
@@ -2631,7 +2688,7 @@ else
         
         AD=classical_leverage(train.pKa.model.set.train,Xtest,'auto');
         res.AD_pKa=abs(AD.inorout-1)';
-        res.AD_pKa(round(pred.D,3)==0)=1;
+        res.AD_pKa(round(pred.dc(:,1),3)==0)=1;
         
         
         res.AD_index_pKa=zeros(size(Xtest,1),1);
@@ -2646,6 +2703,18 @@ else
         
         
         for i=1:size(Xtest(:,1))
+            Li=0;
+            if exp && ~contains(MoleculeNames(i),'AUTOGEN_')
+                if regexp(MoleculeNames{i},'[0-9]+-[0-9]+-[0-9]')
+                    [Li,Lo] = ismember(MoleculeNames(i),train.pKa.CAS);
+                elseif regexp(MoleculeNames{i},'DTXSID[0-9]+')
+                    [Li,Lo] = ismember(MoleculeNames{i},train.pKa.DTXSID);
+                end
+                if Li
+                    res.pKa_a_exp(i,1)=train.pKa.model.set.y_exp(Lo,1);
+                    res.pKa_b_exp(i,1)=train.pKa.model.set.y_exp(Lo,2);
+                end
+            end
             if sum(Xin(i,13:14))-sum(Xin(i,731:732))==0
                 pKa_ac_ba_amp(i)=NaN;
                 res.ionization(i)=0;
@@ -2698,9 +2767,9 @@ else
             if strcmpi(ext,'.txt') && sep==1 && Lia(1)
                 %res.Xtest=Xtest;
                 fprintf(output(Locb(1)),'\t Molecule %s:\n', MoleculeNames{i});
-%                 if exp
-%                     fprintf(output(Locb(1)),'BP experimental= %.3f\n', res.BP_exp(i));
-%                 end
+                if exp
+                    fprintf(output(Locb(1)),'pKa acidic and basic experimental= %.3f, %.3f\n', res.pKa_a_exp(i),res.pKa_b_exp(i));
+                end
                 fprintf(output(Locb(1)),'pKa acidic and basic predicted= %.3f, %.3f\n', res.pKa_a_pred(i),res.pKa_b_pred(i));
                 if res.AD_pKa(i)==1
                     fprintf(output(Locb(1)),'AD: inside\n');
@@ -2721,6 +2790,9 @@ else
                 
                 %res.Xtest=Xtest;
                 fprintf(output,'\t Molecule %s:\n', MoleculeNames{i});
+                if exp
+                    fprintf(output,'pKa acidic and basic experimental= %.3f, %.3f\n', res.pKa_a_exp(i),res.pKa_b_exp(i));
+                end
                 fprintf(output,'pKa acidic and basic predicted= %.3f, %.3f\n', res.pKa_a_pred(i),res.pKa_b_pred(i));
                 if res.AD_pKa(i)==1
                     fprintf(output,'AD: inside\n');
@@ -2954,7 +3026,7 @@ else
         res.LogOH_pred(:,1)=pred.y_pred_weighted;
         AD=classical_leverage(train.AOH.model.set.train,Xtest,'auto');
         res.AD_AOH=abs(AD.inorout-1)';
-        res.AD_AOH(round(pred.D,3)==0)=1;
+        res.AD_AOH(round(pred.dc(:,1),3)==0)=1;
         
         
         %res.AD_index=1./(1+nanmedian(pred.dc,2));
@@ -2976,17 +3048,18 @@ else
         LogOH_pred_neighbor=zeros(size(Xtest,1),5);
         
         for i=1:size(Xtest(:,1))
-            if exp
-                if ~contains(MoleculeNames(i),'AUTOGEN_')
+            Li=0;
+            if exp && ~contains(MoleculeNames(i),'AUTOGEN_')
+                if regexp(MoleculeNames{i},'[0-9]+-[0-9]+-[0-9]')
                     [Li,Lo] = ismember(MoleculeNames(i),train.AOH.CAS);
-                    if Li
-                        res.LogOH_exp(i,1)=train.AOH.model.set.y(Lo);
-                    else
-                        [Li,Lo] = ismember(MoleculeNames{i},train.AOH.DTXSID);
-                        if Li
-                            res.LogOH_exp(i)=train.AOH.model.set.y(Lo);
-                        end
+                elseif regexp(MoleculeNames{i},'DTXSID[0-9]+')
+                    [Li,Lo] = ismember(MoleculeNames{i},train.AOH.DTXSID);
+                end
+                if Li
+                    if Lo>size(train.AOH.DTXSID,1)
+                        Lo=mod(Lo,size(train.AOH.DTXSID,1));
                     end
+                    res.LogOH_exp(i)=train.AOH.model.set.y(Lo);
                 end
             end
             AOH_CAS_neighbor(i,:)=train.AOH.CAS(pred.neighbors(i,:));
@@ -3146,7 +3219,7 @@ else
         res.LogBCF_pred(:,1)=pred.y_pred_weighted;
         AD=classical_leverage(train.BCF.model.set.train,Xtest,'auto');
         res.AD_BCF=abs(AD.inorout-1)';
-        res.AD_BCF(round(pred.D,3)==0)=1;
+        res.AD_BCF(round(pred.dc(:,1),3)==0)=1;
         
         
         %res.AD_index=1./(1+nanmedian(pred.dc,2));
@@ -3168,17 +3241,18 @@ else
         LogBCF_pred_neighbor=zeros(size(Xtest,1),5);
         
         for i=1:size(Xtest(:,1))
-            if exp
-                if ~contains(MoleculeNames(i),'AUTOGEN_')
+            Li=0;
+            if exp && ~contains(MoleculeNames(i),'AUTOGEN_')
+                if regexp(MoleculeNames{i},'[0-9]+-[0-9]+-[0-9]')
                     [Li,Lo] = ismember(MoleculeNames(i),train.BCF.CAS);
-                    if Li
-                        res.LogBCF_exp(i,1)=train.BCF.model.set.y(Lo);
-                    else
-                        [Li,Lo] = ismember(MoleculeNames{i},train.BCF.DTXSID);
-                        if Li
-                            res.LogBCF_exp(i)=train.BCF.model.set.y(Lo);
-                        end
+                elseif regexp(MoleculeNames{i},'DTXSID[0-9]+')
+                    [Li,Lo] = ismember(MoleculeNames{i},train.BCF.DTXSID);
+                end
+                if Li
+                    if Lo>size(train.BCF.DTXSID,1)
+                        Lo=mod(Lo,size(train.BCF.DTXSID,1));
                     end
+                    res.LogBCF_exp(i)=train.BCF.model.set.y(Lo);
                 end
             end
             LogBCF_CAS_neighbor(i,:)=train.BCF.CAS(pred.neighbors(i,:));
@@ -3338,7 +3412,7 @@ else
         res.BioDeg_LogHalfLife_pred(:,1)=pred.y_pred_weighted;
         AD=classical_leverage(train.Biodeg.model.set.train,Xtest,'auto');
         res.AD_BioDeg=abs(AD.inorout-1)';
-        res.AD_BioDeg(round(pred.D,3)==0)=1;
+        res.AD_BioDeg(round(pred.dc(:,1),3)==0)=1;
         
         
         %             res.dc=pred.dc;
@@ -3360,17 +3434,18 @@ else
         BioDeg_LogHalfLife_pred_neighbor=zeros(size(Xtest,1),5);
         
         for i=1:size(Xtest(:,1))
-            if exp
-                if ~contains(MoleculeNames(i),'AUTOGEN_')
+            Li=0;
+            if exp && ~contains(MoleculeNames(i),'AUTOGEN_')
+                if regexp(MoleculeNames{i},'[0-9]+-[0-9]+-[0-9]')
                     [Li,Lo] = ismember(MoleculeNames(i),train.Biodeg.CAS);
-                    if Li
-                        res.BioDeg_exp(i,1)=train.Biodeg.model.set.y(Lo);
-                    else
-                        [Li,Lo] = ismember(MoleculeNames{i},train.Biodeg.DTXSID);
-                        if Li
-                            res.BioDeg_exp(i)=train.Biodeg.model.set.y(Lo);
-                        end
+                elseif regexp(MoleculeNames{i},'DTXSID[0-9]+')
+                    [Li,Lo] = ismember(MoleculeNames{i},train.Biodeg.DTXSID);
+                end
+                if Li
+                    if Lo>size(train.Biodeg.DTXSID,1)
+                        Lo=mod(Lo,size(train.Biodeg.DTXSID,1));
                     end
+                    res.BioDeg_exp(i)=train.Biodeg.model.set.y(Lo);
                 end
             end
             BioDeg_CAS_neighbor(i,:)=train.Biodeg.CAS(pred.neighbors(i,:));
@@ -3526,7 +3601,7 @@ else
         res.ReadyBiodeg_pred(:,1)=pred.class_pred-1;
         AD=classical_leverage(train.RBioDeg.model.set.train,Xtest,'auto');
         res.AD_ReadyBiodeg=abs(AD.inorout-1)';
-        res.AD_ReadyBiodeg(round(pred.D,3)==0)=1;
+        res.AD_ReadyBiodeg(round(pred.dc(:,1),3)==0)=1;
         %
         
         
@@ -3554,17 +3629,18 @@ else
         
         
         for i=1:size(Xtest(:,1))
-            if exp
-                if ~contains(MoleculeNames(i),'AUTOGEN_')
+            Li=0;
+            if exp && ~contains(MoleculeNames(i),'AUTOGEN_')
+                if regexp(MoleculeNames{i},'[0-9]+-[0-9]+-[0-9]')
                     [Li,Lo] = ismember(MoleculeNames(i),train.RBioDeg.CAS);
-                    if Li
-                        res.ReadyBiodeg_exp(i,1)=train.RBioDeg.model.set.class(Lo);
-                    else
-                        [Li,Lo] = ismember(MoleculeNames{i},train.RBioDeg.DTXSID);
-                        if Li
-                            res.ReadyBiodeg_exp(i)=train.RBioDeg.model.set.class(Lo);
-                        end
+                elseif regexp(MoleculeNames{i},'DTXSID[0-9]+')
+                    [Li,Lo] = ismember(MoleculeNames{i},train.RBioDeg.DTXSID);
+                end
+                if Li
+                    if Lo>size(train.RBioDeg.DTXSID,1)
+                        Lo=mod(Lo,size(train.RBioDeg.DTXSID,1));
                     end
+                    res.ReadyBiodeg_exp(i)=train.RBioDeg.model.set.class(Lo);
                 end
             end
             ReadyBiodeg_CAS_neighbor(i,:)=train.RBioDeg.CAS(pred.neighbors(i,:));
@@ -3727,7 +3803,7 @@ else
         res.LogKM_pred(:,1)=pred.y_pred_weighted;
         AD=classical_leverage(train.KM.model.set.train,Xtest,'auto');
         res.AD_KM=abs(AD.inorout-1)';
-        res.AD_KM(round(pred.D,3)==0)=1;
+        res.AD_KM(round(pred.dc(:,1),3)==0)=1;
         
         
         %res.AD_index=1./(1+nanmedian(pred.dc,2));
@@ -3749,17 +3825,18 @@ else
         
         
         for i=1:size(Xtest(:,1))
-            if exp
-                if ~contains(MoleculeNames(i),'AUTOGEN_')
+            Li=0;
+            if exp && ~contains(MoleculeNames(i),'AUTOGEN_')
+                if regexp(MoleculeNames{i},'[0-9]+-[0-9]+-[0-9]')
                     [Li,Lo] = ismember(MoleculeNames(i),train.KM.CAS);
-                    if Li
-                        res.LogKM_exp(i,1)=train.KM.model.set.y(Lo);
-                    else
-                        [Li,Lo] = ismember(MoleculeNames{i},train.KM.DTXSID);
-                        if Li
-                            res.LogKM_exp(i)=train.KM.model.set.y(Lo);
-                        end
+                elseif regexp(MoleculeNames{i},'DTXSID[0-9]+')
+                    [Li,Lo] = ismember(MoleculeNames{i},train.KM.DTXSID);
+                end
+                if Li
+                    if Lo>size(train.KM.DTXSID,1)
+                        Lo=mod(Lo,size(train.KM.DTXSID,1));
                     end
+                    res.LogKM_exp(i)=train.KM.model.set.y(Lo);
                 end
             end
             KM_CAS_neighbor(i,:)=train.KM.CAS(pred.neighbors(i,:));
@@ -3913,7 +3990,7 @@ else
         res.LogKoc_pred(:,1)=pred.y_pred_weighted;
         AD=classical_leverage(train.KOC.model.set.train,Xtest,'auto');
         res.AD_LogKoc=abs(AD.inorout-1)';
-        res.AD_LogKoc(round(pred.D,3)==0)=1;
+        res.AD_LogKoc(round(pred.dc(:,1),3)==0)=1;
         
         
         
@@ -3938,17 +4015,18 @@ else
         
         
         for i=1:size(Xtest(:,1))
-            if exp
-                if ~contains(MoleculeNames(i),'AUTOGEN_')
+            Li=0;
+            if exp && ~contains(MoleculeNames(i),'AUTOGEN_')
+                if regexp(MoleculeNames{i},'[0-9]+-[0-9]+-[0-9]')
                     [Li,Lo] = ismember(MoleculeNames(i),train.KOC.CAS);
-                    if Li
-                        res.LogKoc_exp(i,1)=train.KOC.model.set.y(Lo);
-                    else
-                        [Li,Lo] = ismember(MoleculeNames{i},train.KOC.DTXSID);
-                        if Li
-                            res.LogKoc_exp(i)=train.KOC.model.set.y(Lo);
-                        end
+                elseif regexp(MoleculeNames{i},'DTXSID[0-9]+')
+                    [Li,Lo] = ismember(MoleculeNames{i},train.KOC.DTXSID);
+                end
+                if Li
+                    if Lo>size(train.KOC.DTXSID,1)
+                        Lo=mod(Lo,size(train.KOC.DTXSID,1));
                     end
+                    res.LogKoc_exp(i)=train.KOC.model.set.y(Lo);
                 end
             end
             Koc_CAS_neighbor(i,:)=train.KOC.CAS(pred.neighbors(i,:));
@@ -4065,7 +4143,11 @@ else
     end
     
     % ADME
+    if verbose> 0 && (adme||all)
+        fprintf(1,'---------- ADME Endpoints ----------\n');
+    end
     
+    %--------------------------------------------    
     %Predict FUB values
     %case {'fub','fu'}
     [Lia,Locb] =ismember({'fu','fub'},lower(prop));
@@ -4113,7 +4195,7 @@ else
         res.FUB_pred(:,1)=pred.y_pred_weighted;
         AD=classical_leverage(train.FUB.model.set.train,Xtest,'auto');
         res.AD_FUB=abs(AD.inorout-1)';
-        res.AD_FUB(round(pred.D,3)==0)=1;
+        res.AD_FUB(round(pred.dc(:,1),3)==0)=1;
         
         res.AD_index_FUB=zeros(size(Xtest,1),1);
         res.Conf_index_FUB=zeros(size(Xtest,1),1);
@@ -4126,17 +4208,15 @@ else
         FUB_pred_neighbor=zeros(size(Xtest,1),5);
         
         for i=1:size(Xtest(:,1))
-            if exp
-                if ~contains(MoleculeNames(i),'AUTOGEN_')
+            Li=0;
+            if exp && ~contains(MoleculeNames(i),'AUTOGEN_')
+                if regexp(MoleculeNames{i},'[0-9]+-[0-9]+-[0-9]')
                     [Li,Lo] = ismember(MoleculeNames(i),train.FUB.CAS);
-                    if Li
-                        res.FUB_exp(i,1)=train.FUB.model.set.y(Lo);
-                    else
-                        [Li,Lo] = ismember(MoleculeNames{i},train.FUB.DTXSID);
-                        if Li
-                            res.FUB_exp(i)=train.FUB.model.set.y(Lo);
-                        end
-                    end
+                elseif regexp(MoleculeNames{i},'DTXSID[0-9]+')
+                    [Li,Lo] = ismember(MoleculeNames{i},train.FUB.DTXSID);
+                end
+                if Li
+                    res.FUB_exp(i)=train.FUB.model.set.y(Lo);
                 end
             end
             FUB_CAS_neighbor(i,:)=train.FUB.CAS(pred.neighbors(i,:));
@@ -4298,7 +4378,7 @@ else
         res.Clint_pred(:,1)=pred.y_pred_weighted;
         AD=classical_leverage(train.Clint.model.set.train,Xtest,'auto');
         res.AD_Clint=abs(AD.inorout-1)';
-        res.AD_Clint(round(pred.D,3)==0)=1;
+        res.AD_Clint(round(pred.dc(:,1),3)==0)=1;
         
         res.AD_index_Clint=zeros(size(Xtest,1),1);
         res.Conf_index_Clint=zeros(size(Xtest,1),1);
@@ -4311,17 +4391,15 @@ else
         Clint_pred_neighbor=zeros(size(Xtest,1),5);
         
         for i=1:size(Xtest(:,1))
-            if exp
-                if ~contains(MoleculeNames(i),'AUTOGEN_')
+            Li=0;
+            if exp && ~contains(MoleculeNames(i),'AUTOGEN_')
+                if regexp(MoleculeNames{i},'[0-9]+-[0-9]+-[0-9]')
                     [Li,Lo] = ismember(MoleculeNames(i),train.Clint.CAS);
-                    if Li
-                        res.Clint_exp(i,1)=train.Clint.model.set.y(Lo);
-                    else
-                        [Li,Lo] = ismember(MoleculeNames{i},train.Clint.DTXSID);
-                        if Li
-                            res.Clint_exp(i)=train.Clint.model.set.y(Lo);
-                        end
-                    end
+                elseif regexp(MoleculeNames{i},'DTXSID[0-9]+')
+                    [Li,Lo] = ismember(MoleculeNames{i},train.Clint.DTXSID);
+                end
+                if Li
+                    res.Clint_exp(i)=train.Clint.model.set.y(Lo);
                 end
             end
             Clint_CAS_neighbor(i,:)=train.Clint.CAS(pred.neighbors(i,:));
@@ -4532,35 +4610,36 @@ else
         
         
         for i=1:size(Xtest(:,1))
-            if exp
-                if ~contains(MoleculeNames(i),'AUTOGEN_')
-                    [Li,Lo] = ismember(MoleculeNames(i),train.CERAPP.model_AG.CAS);
-                    if Li
-                        res.CERAPP_Ago_exp(i,1)=train.CERAPP.model_AG.set.class_Exp(Lo);
-                    else
-                        [Li,Lo] = ismember(MoleculeNames{i},train.CERAPP.model_AG.DTXSID);
-                        if Li
-                            res.CERAPP_Ago_exp(i)=train.CERAPP.model_AG.set.class_Exp(Lo);
-                        end
+            Li_ag=0;
+            Li_an=0;
+            Li_bd=0;
+            if exp && ~contains(MoleculeNames(i),'AUTOGEN_')
+                if regexp(MoleculeNames{i},'[0-9]+-[0-9]+-[0-9]')
+                    [Li_ag,Lo_ag] = ismember(MoleculeNames(i),train.CERAPP.model_AG.CAS);
+                    [Li_an,Lo_an] = ismember(MoleculeNames(i),train.CERAPP.model_AN.CAS);
+                    [Li_bd,Lo_bd] = ismember(MoleculeNames(i),train.CERAPP.model_BD.CAS);
+                elseif regexp(MoleculeNames{i},'DTXSID[0-9]+')
+                    [Li_ag,Lo_ag] = ismember(MoleculeNames{i},train.CERAPP.model_AG.DTXSID);
+                    [Li_an,Lo_an] = ismember(MoleculeNames{i},train.CERAPP.model_AN.DTXSID);
+                    [Li_bd,Lo_bd] = ismember(MoleculeNames{i},train.CERAPP.model_BD.DTXSID);
+                end
+                if Li_ag
+                    if Lo_ag>size(train.CERAPP.model_AG.DTXSID,1)
+                        Lo_ag=mod(Lo_ag,size(train.CERAPP.model_AG.DTXSID,1));
                     end
-                    [Li,Lo] = ismember(MoleculeNames(i),train.CERAPP.model_AN.CAS);
-                    if Li
-                        res.CERAPP_Anta_exp(i,1)=train.CERAPP.model_AN.set.class_Exp(Lo);
-                    else
-                        [Li,Lo] = ismember(MoleculeNames{i},train.CERAPP.model_AN.DTXSID);
-                        if Li
-                            res.CERAPP_Anta_exp(i)=train.CERAPP.model_AN.set.class_Exp(Lo);
-                        end
+                    res.CERAPP_Ago_exp(i)=train.CERAPP.model_AG.set.class_Exp(Lo_ag);
+                end
+                if Li_an
+                    if Lo_an>size(train.CERAPP.model_AN.DTXSID,1)
+                        Lo_an=mod(Lo_an,size(train.CERAPP.model_AN.DTXSID,1));
                     end
-                    [Li,Lo] = ismember(MoleculeNames(i),train.CERAPP.model_BD.CAS);
-                    if Li
-                        res.CERAPP_Bind_exp(i,1)=train.CERAPP.model_BD.set.class_Exp(Lo);
-                    else
-                        [Li,Lo] = ismember(MoleculeNames{i},train.CERAPP.model_BD.DTXSID);
-                        if Li
-                            res.CERAPP_Bind_exp(i)=train.CERAPP.model_BD.set.class_Exp(Lo);
-                        end
+                    res.CERAPP_Anta_exp(i,1)=train.CERAPP.model_AN.set.class_Exp(Lo_an);
+                end
+                if Li_bd
+                    if Lo_bd>size(train.CERAPP.model_BD.DTXSID,1)
+                        Lo_bd=mod(Lo_bd,size(train.CERAPP.model_BD.DTXSID,1));
                     end
+                    res.CERAPP_Bind_exp(i,1)=train.CERAPP.model_BD.set.class_Exp(Lo_bd);
                 end
             end
             res.Conf_index_CERAPP_Ago(i,1)=train.CERAPP.model_AG.conc_AG(predAG.neighbors(i,:),1)'*predAG.w(i,:)';
@@ -4756,35 +4835,36 @@ else
         res.Conf_index_CoMPARA_Bind=zeros(size(XtestBD,1),1);
         
         for i=1:size(Xtest(:,1))
-            if exp
-                if ~contains(MoleculeNames(i),'AUTOGEN_')
-                    [Li,Lo] = ismember(MoleculeNames(i),train.CoMPARA.model_AG.CAS);
-                    if Li
-                        res.CoMPARA_Ago_exp(i)=train.CoMPARA.model_AG.set.class_Exp(Lo);
-                    else
-                        [Li,Lo] = ismember(MoleculeNames{i},train.CoMPARA.model_AG.DTXSID);
-                        if Li
-                            res.CoMPARA_Ago_exp(i)=train.CoMPARA.model_AG.set.class_Exp(Lo);
-                        end
+            Li_ag=0;
+            Li_an=0;
+            Li_bd=0;
+            if exp && ~contains(MoleculeNames(i),'AUTOGEN_')
+                if regexp(MoleculeNames{i},'[0-9]+-[0-9]+-[0-9]')
+                    [Li_ag,Lo_ag] = ismember(MoleculeNames(i),train.CoMPARA.model_AG.CAS);
+                    [Li_an,Lo_an] = ismember(MoleculeNames(i),train.CoMPARA.model_AN.CAS);
+                    [Li_bd,Lo_bd] = ismember(MoleculeNames(i),train.CoMPARA.model_BD.CAS);
+                elseif regexp(MoleculeNames{i},'DTXSID[0-9]+')
+                    [Li_ag,Lo_ag] = ismember(MoleculeNames{i},train.CoMPARA.model_AG.DTXSID);
+                    [Li_an,Lo_an] = ismember(MoleculeNames{i},train.CoMPARA.model_AN.DTXSID);
+                    [Li_bd,Lo_bd] = ismember(MoleculeNames{i},train.CoMPARA.model_BD.DTXSID);
+                end
+                if Li_ag
+                    if Lo_ag>size(train.CoMPARA.model_AG.DTXSID,1)
+                        Lo_ag=mod(Lo_ag,size(train.CoMPARA.model_AG.DTXSID,1));
                     end
-                    [Li,Lo] = ismember(MoleculeNames(i),train.CoMPARA.model_AN.CAS);
-                    if Li
-                        res.CoMPARA_Anta_exp(i)=train.CoMPARA.model_AN.set.class_Exp(Lo);
-                    else
-                        [Li,Lo] = ismember(MoleculeNames{i},train.CoMPARA.model_AN.DTXSID);
-                        if Li
-                            res.CoMPARA_Anta_exp(i)=train.CoMPARA.model_AN.set.class_Exp(Lo);
-                        end
+                    res.CoMPARA_Ago_exp(i)=train.CoMPARA.model_AG.set.class_Exp(Lo_ag);
+                end
+                if Li_an
+                    if Lo_an>size(train.CoMPARA.model_AN.DTXSID,1)
+                        Lo_an=mod(Lo_an,size(train.CoMPARA.model_AN.DTXSID,1));
                     end
-                    [Li,Lo] = ismember(MoleculeNames(i),train.CoMPARA.model_BD.CAS);
-                    if Li
-                        res.CoMPARA_Bind_exp(i)=train.CoMPARA.model_BD.set.class_Exp(Lo);
-                    else
-                        [Li,Lo] = ismember(MoleculeNames{i},train.CoMPARA.model_BD.DTXSID);
-                        if Li
-                            res.CoMPARA_Bind_exp(i)=train.CoMPARA.model_BD.set.class_Exp(Lo);
-                        end
+                    res.CoMPARA_Anta_exp(i,1)=train.CoMPARA.model_AN.set.class_Exp(Lo_an);
+                end
+                if Li_bd
+                    if Lo_bd>size(train.CoMPARA.model_BD.DTXSID,1)
+                        Lo_bd=mod(Lo_bd,size(train.CoMPARA.model_BD.DTXSID,1));
                     end
+                    res.CoMPARA_Bind_exp(i,1)=train.CoMPARA.model_BD.set.class_Exp(Lo_bd);
                 end
             end
             res.Conf_index_CoMPARA_Ago(i,1)=train.CoMPARA.model_AG.conc_AG(predAG.neighbors(i,:),1)'*predAG.w(i,:)';
@@ -5011,53 +5091,39 @@ else
         
         
         for i=1:size(Xtest(:,1))
-            if exp
-                if ~contains(MoleculeNames(i),'AUTOGEN_')
-                    [Li,Lo] = ismember(MoleculeNames(i),train.CATMoS.model_VT.CAS);
-                    if Li
-                        res.CATMoS_VT_exp(i,1)=train.CATMoS.model_VT.set.class_Exp(Lo);
-                    else
-                        [Li,Lo] = ismember(MoleculeNames{i},train.CATMoS.model_VT.DTXSID);
-                        if Li
-                            res.CATMoS_VT_exp(i)=train.CATMoS.model_VT.set.class_Exp(Lo);
-                        end
-                    end
-                    [Li,Lo] = ismember(MoleculeNames(i),train.CATMoS.model_NT.CAS);
-                    if Li
-                        res.CATMoS_NT_exp(i,1)=train.CATMoS.model_NT.set.class_Exp(Lo);
-                    else
-                        [Li,Lo] = ismember(MoleculeNames{i},train.CATMoS.model_NT.DTXSID);
-                        if Li
-                            res.CATMoS_NT_exp(i)=train.CATMoS.model_NT.set.class_Exp(Lo);
-                        end
-                    end
-                    [Li,Lo] = ismember(MoleculeNames(i),train.CATMoS.model_EPA.CAS);
-                    if Li
-                        res.CATMoS_EPA_exp(i,1)=train.CATMoS.model_EPA.set.class_Exp(Lo);
-                    else
-                        [Li,Lo] = ismember(MoleculeNames{i},train.CATMoS.model_EPA.DTXSID);
-                        if Li
-                            res.CATMoS_EPA_exp(i)=train.CATMoS.model_EPA.set.class_Exp(Lo);
-                        end
-                    end
-                    [Li,Lo] = ismember(MoleculeNames(i),train.CATMoS.model_GHS.CAS);
-                    if Li
-                        res.CATMoS_GHS_exp(i,1)=train.CATMoS.model_GHS.set.class_Exp(Lo);
-                    else
-                        [Li,Lo] = ismember(MoleculeNames{i},train.CATMoS.model_GHS.DTXSID);
-                        if Li
-                            res.CATMoS_GHS_exp(i)=train.CATMoS.model_GHS.set.class_Exp(Lo);
-                        end
-                    end
-                    [Li,Lo] = ismember(MoleculeNames(i),train.CATMoS.model_LD50.CAS);
-                    if Li
-                        res.CATMoS_LD50_exp(i,1)=train.CATMoS.model_LD50.set.y_Exp_n(Lo);
-                    else
-                        [Li,Lo] = ismember(MoleculeNames{i},train.CATMoS.model_LD50.DTXSID);
-                        if Li
-                            res.CATMoS_LD50_exp(i)=train.CATMoS.model_LD50.set.y_Exp_n(Lo);
-                        end
-                    end
+            Li_vt=0;
+            Li_nt=0;
+            Li_epa=0;
+            Li_ghs=0;
+            Li_ld50=0;
+            if exp && ~contains(MoleculeNames(i),'AUTOGEN_')
+                if regexp(MoleculeNames{i},'[0-9]+-[0-9]+-[0-9]')
+                    [Li_vt,Lo_vt] = ismember(MoleculeNames(i),train.CATMoS.model_VT.CAS);
+                    [Li_nt,Lo_nt] = ismember(MoleculeNames(i),train.CATMoS.model_NT.CAS);
+                    [Li_epa,Lo_epa] = ismember(MoleculeNames(i),train.CATMoS.model_EPA.CAS);
+                    [Li_ghs,Lo_ghs] = ismember(MoleculeNames(i),train.CATMoS.model_GHS.CAS);
+                    [Li_ld50,Lo_ld50] = ismember(MoleculeNames(i),train.CATMoS.model_LD50.CAS);
+                elseif regexp(MoleculeNames{i},'DTXSID[0-9]+')
+                    [Li_vt,Lo_vt] = ismember(MoleculeNames{i},train.CATMoS.model_VT.DTXSID);
+                    [Li_nt,Lo_nt] = ismember(MoleculeNames{i},train.CATMoS.model_NT.DTXSID);
+                    [Li_epa,Lo_epa] = ismember(MoleculeNames{i},train.CATMoS.model_EPA.DTXSID);
+                    [Li_ghs,Lo_ghs] = ismember(MoleculeNames{i},train.CATMoS.model_GHS.DTXSID);
+                    [Li_ld50,Lo_ld50] = ismember(MoleculeNames{i},train.CATMoS.model_LD50.DTXSID);
+                end
+                if Li_vt
+                    res.CATMoS_VT_exp(i,1)=train.CATMoS.model_VT.set.class_Exp(Lo_vt);
+                end
+                if Li_nt
+                    res.CATMoS_NT_exp(i)=train.CATMoS.model_NT.set.class_Exp(Lo_nt);
+                end
+                if Li_epa
+                    res.CATMoS_EPA_exp(i)=train.CATMoS.model_EPA.set.class_Exp(Lo_epa);
+                end
+                if Li_ghs
+                    res.CATMoS_GHS_exp(i)=train.CATMoS.model_GHS.set.class_Exp(Lo_ghs);
+                end
+                if Li_ld50
+                    res.CATMoS_LD50_exp(i,1)=train.CATMoS.model_LD50.set.y_Exp_n(Lo_ld50);
                 end
             end
             %res.AD_index_VT(i,1)=1./(1+predVT.dc(i,1)*predVT.w(i,~isnan(predVT.dc(i,1)))');
