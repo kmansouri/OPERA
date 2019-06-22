@@ -3,7 +3,7 @@
        _______________________________________________________________________
       |                                                                       |
       |   OPERA models for physchem, environmental fate and tox properties.   |
-      |                 Version 2.3-beta.1 (May 2019)                         |
+      |                 Version 2.3 (June 2019)                                |
       |_______________________________________________________________________|    
  
  
@@ -18,8 +18,8 @@
  ./run_OPERA.sh /mathworks/home/application/v94 -d Sample_50.csv -o predictions.txt -e logP BCF -v 1
  
  Input: 
-   -s, --SDF, --MOL, --SMI  Structure file containing the molecule(s) to be 
-                            predicted. IDs will be assigned if the file does not contain molecule names.
+   -s, --SDF, --MOL, --SMI  Input file containing structure(s) or ID(s) (CAS, DTXSID, InChIkeys) of the molecule(s) 
+                            to be predicted. Generic IDs will be assigned if the file does not contain molecule names.
                             Molecular descriptors will be calculated using PaDEL software.
    -d, --Descriptors        pre-calculated PaDEL descriptors in csv file. If the first column is not 
                             "Name" as the standard PaDEL output, molecule IDs will be assinged.
