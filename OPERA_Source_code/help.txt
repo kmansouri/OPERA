@@ -3,7 +3,7 @@
        _______________________________________________________________________
       |                                                                       |
       |   OPERA models for physchem, environmental fate and tox properties.   |
-      |                 Version 2.3 (June 2019)                                |
+      |                 Version 2.4 (August 2019)                             |
       |_______________________________________________________________________|    
  
  
@@ -45,7 +45,7 @@
    -logP, -BCF...           List endpoints to be calculated (case insensitive). 'BCF'/'logBCF','BP','logP','MP',
                             'VP'/'logVP','WS', 'AOH', 'BioDeg', 'RB'/'ReadyBiodeg','HL'/'logHL','KM'/'logKM',
                             'KOA','Koc'/'logKoc', 'RT', 'pKa', 'logD', 'CERAPP'/'ER', 'CoMPARA'/'AR', 'CATMoS/AcuteTox', 'Fu/FuB', 'Cl/Clint'.
-							Groups of Endpoints: 'StrP' (Structural properties), 'PC'/'Physchem', 'EnvFate'/'EF', 'Tox' (ER, AR, AcuteTox), 'ADME' (FuB, Clint).
+   -PC, -EF, -Tox, -ADME    Groups of Endpoints: 'StrP' (Structural properties), 'PC'/'Physchem', 'EnvFate'/'EF', 'Tox' (ER, AR, AcuteTox), 'ADME' (FuB, Clint).
    -e, --Endpoint      		List endpoints to be calculated.
    -h, --Help               Display this help file and exit.
    -V, --Version            Version of the application

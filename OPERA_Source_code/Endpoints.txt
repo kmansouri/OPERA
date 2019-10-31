@@ -21,10 +21,10 @@ Environmental fate:
     KM      v1.5     Whole body primary biotransformation rate constant.
     KOC     v1.5     Soil adsorption coefficient of organic compounds.
 
-Toxicology endpoints:
+Toxicity endpoints:
     ER v2.0 Collaborative Estrogen Receptor Activity Prediction Project (CERAPP). Binding, Agonist and Antagonist ER activity
     AR v2.0 Collaborative Modeling Project for Androgen Receptor Activity (CoMPARA). Binding, Agonist and Antagonist AR activity	
-    AcuteTox v2.0 Collaborative Acute Toxicity Modeling Suite (CATMoS). Very-Toxic, Non-Toxic, EPA categories, GHS categories, LD50 (Log mg/kg)
+    AcuteTox v2.4 Collaborative Acute Toxicity Modeling Suite (CATMoS). Very-Toxic, Non-Toxic, EPA categories, GHS categories, LD50 (Log mg/kg)
 
 ADME endpoints:
     FuB     v2.1 Human plasma fraction unbound 
