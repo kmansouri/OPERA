@@ -1,13 +1,13 @@
 function res=OPERA(varargin)
 
-Version='2.3';
-SubVersion='2.3-beta3';
+Version='2.4';
+SubVersion='2.4-beta2';
 %%
 %
 %        _______________________________________________________________________
 %       |                                                                       |
 %       |   OPERA models for physchem, environmental fate and tox properties.   |
-%       |                 Version 2.3 (June 2019)                               |
+%       |                 Version 2.4 (August 2019)                               |
 %       |_______________________________________________________________________|
 %
 %
@@ -128,9 +128,10 @@ if nargin==0
     help=1;
     
 else
-    
+    timerAll=tic;
     FileOut=['OPERA',Version,'_Pred.csv'];
-    verbose=0;InputMatrix=0;
+    verbose=0;
+    InputMatrix=0;
     importedNames=0;
     importedLabels=0;
     input=0;
@@ -276,7 +277,7 @@ else
                     all=0;
                     pc=1;
                 elseif strcmpi('EnvFate',varargin{i})||strcmpi('EF',varargin{i})
-                    prop=[prop, 'LogBCF', 'AOH', 'BioDeg', 'RBioDeg','KM','KOC'];
+                    prop=[prop, 'BCF', 'AOH', 'BioDeg', 'RBioDeg','KM','KOC'];
                     all=0;
                     ef=1;
                 elseif strcmpi('ADME',varargin{i})
@@ -317,7 +318,7 @@ else
                 all=0;
                 pc=1;
             elseif strcmpi('-EnvFate',varargin{i})||strcmpi('-EF',varargin{i})
-                prop=[prop, 'LogBCF', 'AOH', 'BioDeg', 'RBioDeg','KM','KOC'];
+                prop=[prop, 'BCF', 'AOH', 'BioDeg', 'RBioDeg','KM','KOC'];
                 all=0;
                 ef=1;
             elseif strcmpi('-ADME',varargin{i})
@@ -383,14 +384,7 @@ else
     else
         warning('on','MATLAB:table:ModifiedAndSavedVarnames');
     end
-    
-    train=load ('OPERA_models.mat', '-mat');
-    if importedLabels==0
-        Xlabels=train.labels;
-        XlabelsFP=train.labels_fp;
-    end
-    
-    
+
     if  structure ==0
         if input==0
             error('No structure file or a comma delimited file with generated PaDEL descirptors. Usage: OPERA [OPTION]... <Input> <output>... Type -h, --help for more info.')
@@ -407,9 +401,10 @@ else
     
     
     if all==1
-        prop= {'StrP','LogBCF','BP','LogP','MP','VP','WS', 'AOH', 'BioDeg', 'RBioDeg','HL','KM','KOA','KOC','RT','pKa', 'LogD', 'CERAPP', 'FuB','Clint', 'CoMPARA', 'CATMoS'};
+        prop= {'StrP','BCF','BP','LogP','MP','VP','WS', 'AOH', 'BioDeg', 'RBioDeg','HL','KM','KOA','KOC','RT','pKa', 'LogD', 'CERAPP', 'FuB','Clint', 'CoMPARA', 'CATMoS'};
         if verbose >0
             fprintf(1,'\n All properties will be calculated: \nGeneral structural properties, Physchem, Env. fate, ADME and Tox Endpoints (CERAPP, CoMPARA and CATMoS)  \n');
+            fprintf(1,'\n Initializing and loading models...\n');
         end
         fp=1;
         cdk=1;
@@ -417,15 +412,26 @@ else
     else
         if verbose >0
             if size(prop(:),1)>1
-                endpoints=strjoin(prop(1:size(prop(:),1)-1),',  ');
+                endpoints=strjoin(prop(1:size(prop(:),1)-1),', ');
                 fprintf(1,'\n Endpoints to be calculated: \n %s and %s\n',upper(endpoints),upper(prop{end}));
             else
                 fprintf(1,'\n Endpoint to be calculated: %s\n',upper(prop{:}));
             end
-            
+            fprintf(1,'\n Initializing and loading models...\n');
         end
     end
-    
+    data=upper(prop);
+    [a,indLOGD]=ismember('LOGD',data);
+    if a
+        data=[data, 'PKA', 'LOGP'];
+        data(indLOGD)=[];
+    end
+    train=load ('OPERA_models.mat', '-mat','DSSToxQSARr','labels','labels_cdk','labels_fp','labels_in','PadelVarIn','PadelVarOut','reorder_CDK',data{:});
+%     train=load ('OPERA_models.mat', '-mat');
+    if importedLabels==0
+        Xlabels=train.labels;
+        XlabelsFP=train.labels_fp;
+    end
     
     %if structure==1 && (InputDescPadel==0||(fp==1 && inputFP==0))
     if ~isdeployed
@@ -563,7 +569,7 @@ else
                     if ~ischar(tline)
                         break
                     end
-                    strings{indic}=tline;
+                    strings{indic}=strtrim(tline);
                     indic = indic + 1;
                 end
                 fclose(fid);
@@ -779,11 +785,11 @@ else
                 end
                 
                 InputDescCDK=strcat(StructureFile(1:length(StructureFile)-4),'_CDKDesc.csv');
-                fprintf(1,'CDK 2.0 calculating 2D descriptors...\n');
+                if verbose> 0
+                    fprintf(1,'CDK 2.0 calculating 2D descriptors...\n');
+                end
                 [statusDesc,cmdoutDesc] =system (['java -jar ' strcat('"',fullfile(installdir,'CDKDescUI-2.0.jar'),'"') ' -b -t all -o ' strcat('"',InputDescCDK,'"')...
                     ' ' strcat('"',char(StructureFile),'"') ' > ' strcat('"','CDKlogfile.log','"') ' 2> ' strcat('"','CDKerr.log','"')]);
-                fprintf(1,'CDK descriptors calculated for: ');
-                
                 if ispc
                     [~, numlines] = system(['FINDSTR /R /N "^.*" ',InputDescCDK,' | FIND /C ":"']); %win
                 else
@@ -791,6 +797,7 @@ else
                 end
                 numlines=str2double(strrep(numlines,InputDescCDK,''))-1;
                 if verbose>0
+                    fprintf(1,'CDK descriptors calculated for: ');
                     fprintf(1, '%d molecules.\n',numlines);
                     if statusDesc~=0 && ~isempty(cmdoutDesc)
                         disp(cmdoutDesc);
@@ -994,7 +1001,7 @@ else
     
     
     if verbose> 0 && size(prop(:),1)>=1
-        fprintf(1,'\n========== Running The Models ==========\n');
+        fprintf(1,'\n==========   Running The Models   ==========\n');
     end
     
     
@@ -1014,7 +1021,7 @@ else
         %                     end
         %                 end
         %             end
-        Xtest=Xin(:,train.StrP.Desc_i);
+        Xtest=Xin(:,train.STRP.Desc_i);
         
         Desc={'MolWeight','nbAtoms','nbHeavyAtoms','nbC','nbO','nbN','nbAromAtom','nbRing','nbHeteroRing','Sp3Sp2HybRatio','nbRotBd','nbHBdAcc','ndHBdDon','nbLipinskiFailures','TopoPolSurfAir','MolarRefract','CombDipolPolariz'};
         Xtest=array2table(Xtest,'VariableNames',Desc);
@@ -1075,7 +1082,7 @@ else
     [Lia,Locb] =ismember({'logp','logd'},lower(prop));
     if find(Lia)
         
-        Desc=train.LogP.Desc;
+        Desc=train.LOGP.Desc;
         
         if verbose>0
             disp('Predicting LogP values (Log10)...');
@@ -1098,16 +1105,16 @@ else
         %                     end
         %                 end
         %             end
-        Xtest=Xin(:,train.LogP.Desc_i);
+        Xtest=Xin(:,train.LOGP.Desc_i);
         
-        pred = nnrpred(Xtest,train.LogP.model.set.train,train.LogP.model.set.y,train.LogP.model.set.K,train.LogP.model.set.dist_type,train.LogP.model.set.param.pret_type);
+        pred = nnrpred(Xtest,train.LOGP.model.set.train,train.LOGP.model.set.y,train.LOGP.model.set.K,train.LOGP.model.set.dist_type,train.LOGP.model.set.param.pret_type);
         pred.D=diag(pred.D);
         res.MoleculeID=MoleculeNames;
         if exp
             res.LogP_exp=NaN(size(Xtest,1),1);
         end
         res.LogP_pred(:,1)=pred.y_pred_weighted;
-        AD=classical_leverage(train.LogP.model.set.train,Xtest,'auto');
+        AD=classical_leverage(train.LOGP.model.set.train,Xtest,'auto');
         res.AD_LogP=abs(AD.inorout-1)';
         res.AD_LogP(round(pred.dc(:,1),3)==0)=1;
         
@@ -1137,25 +1144,25 @@ else
             Li=0;
             if exp && ~contains(MoleculeNames(i),'AUTOGEN_')
                 if regexp(MoleculeNames{i},'[0-9]+-[0-9]+-[0-9]')
-                    [Li,Lo] = ismember(MoleculeNames(i),train.LogP.CAS);
+                    [Li,Lo] = ismember(MoleculeNames(i),train.LOGP.CAS);
                 elseif regexp(MoleculeNames{i},'DTXSID[0-9]+')
-                    [Li,Lo] = ismember(MoleculeNames{i},train.LogP.DTXSID);
+                    [Li,Lo] = ismember(MoleculeNames{i},train.LOGP.DTXSID);
                 end
                 if Li
-                    if Lo>size(train.LogP.DTXSID,1)
-                        Lo=mod(Lo,size(train.LogP.DTXSID,1));
+                    if Lo>size(train.LOGP.DTXSID,1)
+                        Lo=mod(Lo,size(train.LOGP.DTXSID,1));
                     end
-                    res.LogP_exp(i)=train.LogP.model.set.y(Lo);
+                    res.LogP_exp(i)=train.LOGP.model.set.y(Lo);
                 end
             end
             
             
-            LogP_CAS_neighbor(i,:)=train.LogP.CAS(pred.neighbors(i,:));
-            LogP_InChiKey_neighbor(i,:)=train.LogP.InChiKey(pred.neighbors(i,:));
-            LogP_DTXSID_neighbor(i,:)=train.LogP.DTXSID(pred.neighbors(i,:));
-            LogP_DSSTOXMPID_neighbor(i,:)=train.LogP.DSSTOXMPID(pred.neighbors(i,:));
-            LogP_Exp_neighbor(i,:)=train.LogP.model.set.y(pred.neighbors(i,:));
-            LogP_pred_neighbor(i,:)=train.LogP.model.yc_weighted(pred.neighbors(i,:));
+            LogP_CAS_neighbor(i,:)=train.LOGP.CAS(pred.neighbors(i,:));
+            LogP_InChiKey_neighbor(i,:)=train.LOGP.InChiKey(pred.neighbors(i,:));
+            LogP_DTXSID_neighbor(i,:)=train.LOGP.DTXSID(pred.neighbors(i,:));
+            LogP_DSSTOXMPID_neighbor(i,:)=train.LOGP.DSSTOXMPID(pred.neighbors(i,:));
+            LogP_Exp_neighbor(i,:)=train.LOGP.model.set.y(pred.neighbors(i,:));
+            LogP_pred_neighbor(i,:)=train.LOGP.model.yc_weighted(pred.neighbors(i,:));
             
             res.AD_index_LogP(i,1)=1./(1+pred.dc(i,~isnan(pred.dc(i,:)))*pred.w(i,~isnan(pred.dc(i,:)))');
             
@@ -1214,9 +1221,9 @@ else
                 %exp=strjoin(num2cell(res.LogP_Exp_neighbor(i,1:5)),', ');
                 %CAS=strrep([res.CAS_neighbors(i,1:5)],' ',', ');
                 if neighbors==1 
-                    fprintf(output(Locb(1)),'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.LogP.model.set.K,res.LogP_CAS_neighbor{i,1:5});
-                    fprintf(output(Locb(1)),'Exp of the %i nearest neighbors:%15.3f,%15.3f,%15.3f,%15.3f,%15.3f\n',train.LogP.model.set.K, res.LogP_Exp_neighbor(i,1:5));
-                    fprintf(output(Locb(1)),'Pred of the %i nearest neighbors:%14.3f,%15.3f,%15.3f,%15.3f,%15.3f\n\n',train.LogP.model.set.K, res.LogP_pred_neighbor(i,1:5));
+                    fprintf(output(Locb(1)),'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.LOGP.model.set.K,res.LogP_CAS_neighbor{i,1:5});
+                    fprintf(output(Locb(1)),'Exp of the %i nearest neighbors:%15.3f,%15.3f,%15.3f,%15.3f,%15.3f\n',train.LOGP.model.set.K, res.LogP_Exp_neighbor(i,1:5));
+                    fprintf(output(Locb(1)),'Pred of the %i nearest neighbors:%14.3f,%15.3f,%15.3f,%15.3f,%15.3f\n\n',train.LOGP.model.set.K, res.LogP_pred_neighbor(i,1:5));
                 end
                 
             elseif strcmpi(ext,'.txt') && sep==0 && Lia(1)
@@ -1237,9 +1244,9 @@ else
                 %CAS=strjoin(res.LogP_CAS_neighbor(i,1:5),',\t');
                 %CAS=strrep([res.CAS_neighbors(i,1:5)],' ',', ');
                 if neighbors==1
-                    fprintf(output,'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.LogP.model.set.K, res.LogP_CAS_neighbor{i,1:5});
-                    fprintf(output,'Exp of the %i nearest neighbors:%15.3f,%15.3f,%15.3f,%15.3f,%15.3f\n',train.LogP.model.set.K, res.LogP_Exp_neighbor(i,1:5));
-                    fprintf(output,'Pred of the %i nearest neighbors:%14.3f,%15.3f,%15.3f,%15.3f,%15.3f\n\n',train.LogP.model.set.K, res.LogP_pred_neighbor(i,1:5));
+                    fprintf(output,'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.LOGP.model.set.K, res.LogP_CAS_neighbor{i,1:5});
+                    fprintf(output,'Exp of the %i nearest neighbors:%15.3f,%15.3f,%15.3f,%15.3f,%15.3f\n',train.LOGP.model.set.K, res.LogP_Exp_neighbor(i,1:5));
+                    fprintf(output,'Pred of the %i nearest neighbors:%14.3f,%15.3f,%15.3f,%15.3f,%15.3f\n\n',train.LOGP.model.set.K, res.LogP_pred_neighbor(i,1:5));
                 end
             end
         end
@@ -1348,7 +1355,7 @@ else
             if salt==1 && ~isempty(FileSalt)
                 disp('The provided salt information will be considered in the predictions');
             elseif salt==1 && isempty(FileSalt)
-                disp('Salt information, retrieved from structure IDs, will be considered in the predictions');
+                disp('Salts info. was retrieved using structures IDs for MP predictions');
             end
             
         end
@@ -2690,9 +2697,9 @@ else
     [Lia,Locb] =ismember({'pka','logd'},lower(prop));
     if find(Lia)
         
-        Desc=train.pKa.Desc;
-        %             Desc_a=train.pKa.Desc_a;
-        %             Desc_b=train.pKa.Desc_b;
+        Desc=train.PKA.Desc;
+        %             Desc_a=train.PKA.Desc_a;
+        %             Desc_b=train.PKA.Desc_b;
         
         if verbose>0
             disp('Predicting pKa values (unitless)...');
@@ -2707,17 +2714,17 @@ else
         end
         
         
-        Xtest=Xin(:,train.pKa.Desc_i);
-        Xtest_a=table2array(XinFP(:,train.pKa.Desc_ai));
-        Xtest_b=table2array(XinFP(:,train.pKa.Desc_bi));
+        Xtest=Xin(:,train.PKA.Desc_i);
+        Xtest_a=table2array(XinFP(:,train.PKA.Desc_ai));
+        Xtest_b=table2array(XinFP(:,train.PKA.Desc_bi));
         
         
-        pred = knnpred(Xtest,train.pKa.model.set.train,train.pKa.model.set.class,train.pKa.model.set.K,train.pKa.model.set.dist_type,train.pKa.model.set.param.pret_type);
+        pred = knnpred(Xtest,train.PKA.model.set.train,train.PKA.model.set.class,train.PKA.model.set.K,train.PKA.model.set.dist_type,train.PKA.model.set.param.pret_type);
         pred.D=diag(pred.D);
-        pKa_a(:,1)=svmpredict([1:1:length(Xtest_a(:,1))]',Xtest_a,train.pKa.model_a,'-q');
-        %AD_a = nnrpred(Xtest_a,train.pKa_a.model.set.train,train.pKa_a.model.set.y,train.pka_a.model.set.K,train.pka_a.model.set.dist_type,train.pka_a.model.set.param.pret_type);
+        pKa_a(:,1)=svmpredict([1:1:length(Xtest_a(:,1))]',Xtest_a,train.PKA.model_a,'-q');
+        %AD_a = nnrpred(Xtest_a,train.PKA_a.model.set.train,train.PKA_a.model.set.y,train.pka_a.model.set.K,train.pka_a.model.set.dist_type,train.pka_a.model.set.param.pret_type);
         
-        pKa_b(:,1)=svmpredict([1:1:length(Xtest_b(:,1))]',Xtest_b,train.pKa.model_b,'-q');
+        pKa_b(:,1)=svmpredict([1:1:length(Xtest_b(:,1))]',Xtest_b,train.PKA.model_b,'-q');
         %AD_b = nnrpred(Xtest_b,train.pka_b.model.set.train,train.pka_b.model.set.y,train.pka_b.model.set.K,train.pka_b.model.set.dist_type,train.pka_b.model.set.param.pret_type);
         
         res.MoleculeID=MoleculeNames;
@@ -2730,7 +2737,7 @@ else
         res.pKa_a_pred=pKa_a;
         res.pKa_b_pred=pKa_b;
         
-        AD=classical_leverage(train.pKa.model.set.train,Xtest,'auto');
+        AD=classical_leverage(train.PKA.model.set.train,Xtest,'auto');
         res.AD_pKa=abs(AD.inorout-1)';
         res.AD_pKa(round(pred.dc(:,1),3)==0)=1;
         
@@ -2750,13 +2757,13 @@ else
             Li=0;
             if exp && ~contains(MoleculeNames(i),'AUTOGEN_')
                 if regexp(MoleculeNames{i},'[0-9]+-[0-9]+-[0-9]')
-                    [Li,Lo] = ismember(MoleculeNames(i),train.pKa.CAS);
+                    [Li,Lo] = ismember(MoleculeNames(i),train.PKA.CAS);
                 elseif regexp(MoleculeNames{i},'DTXSID[0-9]+')
-                    [Li,Lo] = ismember(MoleculeNames{i},train.pKa.DTXSID);
+                    [Li,Lo] = ismember(MoleculeNames{i},train.PKA.DTXSID);
                 end
                 if Li
-                    res.pKa_a_exp(i,1)=train.pKa.model.set.y_exp(Lo,1);
-                    res.pKa_b_exp(i,1)=train.pKa.model.set.y_exp(Lo,2);
+                    res.pKa_a_exp(i,1)=train.PKA.model.set.y_exp(Lo,1);
+                    res.pKa_b_exp(i,1)=train.PKA.model.set.y_exp(Lo,2);
                 end
             end
             if sum(Xin(i,13:14))-sum(Xin(i,731:732))==0
@@ -2780,12 +2787,12 @@ else
             end
             
             
-            pKa_CAS_neighbor(i,:)=train.pKa.CAS(pred.neighbors(i,:));
-            pKa_InChiKey_neighbor(i,:)=train.pKa.InChiKey(pred.neighbors(i,:));
-            pKa_DTXSID_neighbor(i,:)=train.pKa.DTXSID(pred.neighbors(i,:));
-            %                 pKa_DSSTOXMPID_neighbor(i,:)=train.pKa.DSSTOXMPID(pred.neighbors(i,:));
-            pKa_Exp_neighbor(i,:)=train.pKa.model.set.y(pred.neighbors(i,:));
-            pKa_pred_neighbor(i,:)=train.pKa.model.set.yc(pred.neighbors(i,:));
+            pKa_CAS_neighbor(i,:)=train.PKA.CAS(pred.neighbors(i,:));
+            pKa_InChiKey_neighbor(i,:)=train.PKA.InChiKey(pred.neighbors(i,:));
+            pKa_DTXSID_neighbor(i,:)=train.PKA.DTXSID(pred.neighbors(i,:));
+            %                 pKa_DSSTOXMPID_neighbor(i,:)=train.PKA.DSSTOXMPID(pred.neighbors(i,:));
+            pKa_Exp_neighbor(i,:)=train.PKA.model.set.y(pred.neighbors(i,:));
+            pKa_pred_neighbor(i,:)=train.PKA.model.set.yc(pred.neighbors(i,:));
             
             %                 rmse=calc_reg_param(res.LogKOA_Exp_neighbor(i,:),res.LogKOA_pred_neighbor(i,:));
             %                 res.Conf_index(i,1)=1/(1+rmse.RMSEC);
@@ -2834,9 +2841,9 @@ else
                 %CAS=strjoin(res.RT_CAS_neighbor(i,1:5),',\t');
                 %CAS=strrep([res.CAS_neighbors(i,1:5)],' ',', ');
                 if neighbors==1
-                    fprintf(output(Locb(1)),'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.pKa.model.set.K, res.pKa_CAS_neighbor{i,1:3});
-                    fprintf(output(Locb(1)),'Exp of the %i nearest neighbors:%15.3f,%15.3f,%15.3f,%15.3f,%15.3f\n',train.pKa.model.set.K, res.pKa_Exp_neighbor(i,1:3));
-                    fprintf(output(Locb(1)),'Pred of the %i nearest neighbors:%14.3f,%15.3f,%15.3f,%15.3f,%15.3f\n\n',train.pKa.model.set.K, res.pKa_pred_neighbor(i,1:3));
+                    fprintf(output(Locb(1)),'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.PKA.model.set.K, res.pKa_CAS_neighbor{i,1:3});
+                    fprintf(output(Locb(1)),'Exp of the %i nearest neighbors:%15.3f,%15.3f,%15.3f,%15.3f,%15.3f\n',train.PKA.model.set.K, res.pKa_Exp_neighbor(i,1:3));
+                    fprintf(output(Locb(1)),'Pred of the %i nearest neighbors:%14.3f,%15.3f,%15.3f,%15.3f,%15.3f\n\n',train.PKA.model.set.K, res.pKa_pred_neighbor(i,1:3));
                 end
                 
             elseif strcmpi(ext,'.txt') && sep==0 && Lia(1)
@@ -2857,9 +2864,9 @@ else
                 %CAS=strjoin(res.KOA_CAS_neighbor(i,1:5),',\t');
                 %CAS=strrep([res.CAS_neighbors(i,1:5)],' ',', ');
                 if neighbors==1
-                    fprintf(output,'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.pKa.model.set.K, res.pKa_CAS_neighbor{i,1:3});
-                    fprintf(output,'Exp of the %i nearest neighbors:%15.3f,%15.3f,%15.3f,%15.3f,%15.3f\n',train.pKa.model.set.K, res.pKa_Exp_neighbor(i,1:3));
-                    fprintf(output,'Pred of the %i nearest neighbors:%14.3f,%15.3f,%15.3f,%15.3f,%15.3f\n\n',train.pKa.model.set.K, res.pKa_pred_neighbor(i,1:3));
+                    fprintf(output,'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.PKA.model.set.K, res.pKa_CAS_neighbor{i,1:3});
+                    fprintf(output,'Exp of the %i nearest neighbors:%15.3f,%15.3f,%15.3f,%15.3f,%15.3f\n',train.PKA.model.set.K, res.pKa_Exp_neighbor(i,1:3));
+                    fprintf(output,'Pred of the %i nearest neighbors:%14.3f,%15.3f,%15.3f,%15.3f,%15.3f\n\n',train.PKA.model.set.K, res.pKa_pred_neighbor(i,1:3));
                 end
                 
             end
@@ -2960,9 +2967,9 @@ else
                     fprintf(output(Locb(1)),'AD_index= %.2f\n', res.AD_index_LogD(i));
                     fprintf(output(Locb(1)),'Conf_index= %.2f\n', res.Conf_index_LogD(i));
                     if neighbors==1
-                        fprintf(output(Locb(1)),'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.LogP.model.set.K,resf.LogP.LogP_CAS_neighbor{i,1:5});
-                        %fprintf(output(Locb(1)),'Exp of the %i nearest neighbors:%15.3f,%15.3f,%15.3f,%15.3f,%15.3f\n',train.LogP.model.set.K, res.LogP_Exp_neighbor(i,1:5));
-                        %fprintf(output(Locb(1)),'Pred of the %i nearest neighbors:%14.3f,%15.3f,%15.3f,%15.3f,%15.3f\n\n',train.LogP.model.set.K, res.LogP_pred_neighbor(i,1:5));
+                        fprintf(output(Locb(1)),'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.LOGP.model.set.K,resf.LogP.LogP_CAS_neighbor{i,1:5});
+                        %fprintf(output(Locb(1)),'Exp of the %i nearest neighbors:%15.3f,%15.3f,%15.3f,%15.3f,%15.3f\n',train.LOGP.model.set.K, res.LogP_Exp_neighbor(i,1:5));
+                        %fprintf(output(Locb(1)),'Pred of the %i nearest neighbors:%14.3f,%15.3f,%15.3f,%15.3f,%15.3f\n\n',train.LOGP.model.set.K, res.LogP_pred_neighbor(i,1:5));
                     end
                 end
             end
@@ -3019,9 +3026,9 @@ else
                     fprintf(output,'AD_index= %.2f\n', res.AD_index_LogD(i));
                     fprintf(output,'Conf_index= %.2f\n', res.Conf_index_LogD(i));
                     if neighbors==1
-                        fprintf(output,'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.LogP.model.set.K, res.LogP_CAS_neighbor{i,1:5});
-                        %fprintf(output,'Exp of the %i nearest neighbors:%15.3f,%15.3f,%15.3f,%15.3f,%15.3f\n',train.LogP.model.set.K, res.LogP_Exp_neighbor(i,1:5));
-                        %fprintf(output,'Pred of the %i nearest neighbors:%14.3f,%15.3f,%15.3f,%15.3f,%15.3f\n\n',train.LogP.model.set.K, res.LogP_pred_neighbor(i,1:5));
+                        fprintf(output,'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.LOGP.model.set.K, res.LogP_CAS_neighbor{i,1:5});
+                        %fprintf(output,'Exp of the %i nearest neighbors:%15.3f,%15.3f,%15.3f,%15.3f,%15.3f\n',train.LOGP.model.set.K, res.LogP_Exp_neighbor(i,1:5));
+                        %fprintf(output,'Pred of the %i nearest neighbors:%14.3f,%15.3f,%15.3f,%15.3f,%15.3f\n\n',train.LOGP.model.set.K, res.LogP_pred_neighbor(i,1:5));
                     end
                     
                 end
@@ -3436,7 +3443,7 @@ else
     [Lia,Locb] =ismember({'biohc','biohl','biodeg','biodeghl'},lower(prop));
     if find(Lia)
         
-        Desc=train.Biodeg.Desc;
+        Desc=train.BIODEG.Desc;
         
         if verbose>0
             disp('Predicting Biodeg. half-life values (Log10 days)...');
@@ -3458,16 +3465,16 @@ else
         %                     end
         %                 end
         %             end
-        Xtest=Xin(:,train.Biodeg.Desc_i);
+        Xtest=Xin(:,train.BIODEG.Desc_i);
         
-        pred = nnrpred(Xtest,train.Biodeg.model.set.train,train.Biodeg.model.set.y,train.Biodeg.model.set.K,train.Biodeg.model.set.dist_type,train.Biodeg.model.set.param.pret_type);
+        pred = nnrpred(Xtest,train.BIODEG.model.set.train,train.BIODEG.model.set.y,train.BIODEG.model.set.K,train.BIODEG.model.set.dist_type,train.BIODEG.model.set.param.pret_type);
         pred.D=diag(pred.D);
         res.MoleculeID=MoleculeNames;
         if exp
             res.BioDeg_exp=NaN(size(Xtest,1),1);
         end
         res.BioDeg_LogHalfLife_pred(:,1)=pred.y_pred_weighted;
-        AD=classical_leverage(train.Biodeg.model.set.train,Xtest,'auto');
+        AD=classical_leverage(train.BIODEG.model.set.train,Xtest,'auto');
         res.AD_BioDeg=abs(AD.inorout-1)';
         res.AD_BioDeg(round(pred.dc(:,1),3)==0)=1;
         
@@ -3494,23 +3501,23 @@ else
             Li=0;
             if exp && ~contains(MoleculeNames(i),'AUTOGEN_')
                 if regexp(MoleculeNames{i},'[0-9]+-[0-9]+-[0-9]')
-                    [Li,Lo] = ismember(MoleculeNames(i),train.Biodeg.CAS);
+                    [Li,Lo] = ismember(MoleculeNames(i),train.BIODEG.CAS);
                 elseif regexp(MoleculeNames{i},'DTXSID[0-9]+')
-                    [Li,Lo] = ismember(MoleculeNames{i},train.Biodeg.DTXSID);
+                    [Li,Lo] = ismember(MoleculeNames{i},train.BIODEG.DTXSID);
                 end
                 if Li
-                    if Lo>size(train.Biodeg.DTXSID,1)
-                        Lo=mod(Lo,size(train.Biodeg.DTXSID,1));
+                    if Lo>size(train.BIODEG.DTXSID,1)
+                        Lo=mod(Lo,size(train.BIODEG.DTXSID,1));
                     end
-                    res.BioDeg_exp(i)=train.Biodeg.model.set.y(Lo);
+                    res.BioDeg_exp(i)=train.BIODEG.model.set.y(Lo);
                 end
             end
-            BioDeg_CAS_neighbor(i,:)=train.Biodeg.CAS(pred.neighbors(i,:));
-            BioDeg_InChiKey_neighbor(i,:)=train.Biodeg.InChiKey(pred.neighbors(i,:));
-            BioDeg_DTXSID_neighbor(i,:)=train.Biodeg.DTXSID(pred.neighbors(i,:));
-            BioDeg_DSSTOXMPID_neighbor(i,:)=train.Biodeg.DSSTOXMPID(pred.neighbors(i,:));
-            BioDeg_LogHalfLife_Exp_neighbor(i,:)=train.Biodeg.model.set.y(pred.neighbors(i,:));
-            BioDeg_LogHalfLife_pred_neighbor(i,:)=train.Biodeg.model.yc_weighted(pred.neighbors(i,:));
+            BioDeg_CAS_neighbor(i,:)=train.BIODEG.CAS(pred.neighbors(i,:));
+            BioDeg_InChiKey_neighbor(i,:)=train.BIODEG.InChiKey(pred.neighbors(i,:));
+            BioDeg_DTXSID_neighbor(i,:)=train.BIODEG.DTXSID(pred.neighbors(i,:));
+            BioDeg_DSSTOXMPID_neighbor(i,:)=train.BIODEG.DSSTOXMPID(pred.neighbors(i,:));
+            BioDeg_LogHalfLife_Exp_neighbor(i,:)=train.BIODEG.model.set.y(pred.neighbors(i,:));
+            BioDeg_LogHalfLife_pred_neighbor(i,:)=train.BIODEG.model.yc_weighted(pred.neighbors(i,:));
             
             %                 rmse=calc_reg_param(res.BioDeg_LogHalfLife_Exp_neighbor(i,:),res.BioDeg_LogHalfLife_pred_neighbor(i,:));
             %                 res.Conf_index(i,1)=1/(1+rmse.RMSEC);
@@ -3559,9 +3566,9 @@ else
                 %CAS=strjoin(res.BioDeg_CAS_neighbor(i,1:5),',\t');
                 %CAS=strrep([res.CAS_neighbors(i,1:5)],' ',', ');
                 if neighbors==1
-                    fprintf(output(Locb(find(Locb))),'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.Biodeg.model.set.K, res.BioDeg_CAS_neighbor{i,1:5});
-                    fprintf(output(Locb(find(Locb))),'Exp of the %i nearest neighbors:%15.3f,%15.3f,%15.3f,%15.3f,%15.3f\n',train.Biodeg.model.set.K, res.BioDeg_LogHalfLife_Exp_neighbor(i,1:5));
-                    fprintf(output(Locb(find(Locb))),'Pred of the %i nearest neighbors:%14.3f,%15.3f,%15.3f,%15.3f,%15.3f\n\n',train.Biodeg.model.set.K, res.BioDeg_LogHalfLife_pred_neighbor(i,1:5));
+                    fprintf(output(Locb(find(Locb))),'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.BIODEG.model.set.K, res.BioDeg_CAS_neighbor{i,1:5});
+                    fprintf(output(Locb(find(Locb))),'Exp of the %i nearest neighbors:%15.3f,%15.3f,%15.3f,%15.3f,%15.3f\n',train.BIODEG.model.set.K, res.BioDeg_LogHalfLife_Exp_neighbor(i,1:5));
+                    fprintf(output(Locb(find(Locb))),'Pred of the %i nearest neighbors:%14.3f,%15.3f,%15.3f,%15.3f,%15.3f\n\n',train.BIODEG.model.set.K, res.BioDeg_LogHalfLife_pred_neighbor(i,1:5));
                 end
  
             elseif strcmpi(ext,'.txt') && sep==0
@@ -3582,9 +3589,9 @@ else
                 %CAS=strjoin(res.BioDeg_CAS_neighbor(i,1:5),',\t');
                 %CAS=strrep([res.CAS_neighbors(i,1:5)],' ',', ');
                 if neighbors==1
-                    fprintf(output,'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.Biodeg.model.set.K, res.BioDeg_CAS_neighbor{i,1:5});
-                    fprintf(output,'Exp of the %i nearest neighbors:%15.3f,%15.3f,%15.3f,%15.3f,%15.3f\n',train.Biodeg.model.set.K, res.BioDeg_LogHalfLife_Exp_neighbor(i,1:5));
-                    fprintf(output,'Pred of the %i nearest neighbors:%14.3f,%15.3f,%15.3f,%15.3f,%15.3f\n\n',train.Biodeg.model.set.K, res.BioDeg_LogHalfLife_pred_neighbor(i,1:5));
+                    fprintf(output,'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.BIODEG.model.set.K, res.BioDeg_CAS_neighbor{i,1:5});
+                    fprintf(output,'Exp of the %i nearest neighbors:%15.3f,%15.3f,%15.3f,%15.3f,%15.3f\n',train.BIODEG.model.set.K, res.BioDeg_LogHalfLife_Exp_neighbor(i,1:5));
+                    fprintf(output,'Pred of the %i nearest neighbors:%14.3f,%15.3f,%15.3f,%15.3f,%15.3f\n\n',train.BIODEG.model.set.K, res.BioDeg_LogHalfLife_pred_neighbor(i,1:5));
                 end
                 
             end
@@ -3627,7 +3634,7 @@ else
     [Lia,Locb] =ismember({'biowin','rb','readybiodeg','rbiodeg'},lower(prop));
     if find(Lia)
         
-        Desc=train.RBioDeg.Desc;
+        Desc=train.RBIODEG.Desc;
         
         if verbose>0
             disp('Predicting Ready-Biodegradability (Binary 0/1)...');
@@ -3651,18 +3658,18 @@ else
         %                     end
         %                 end
         %             end
-        Xtest=Xin(:,train.RBioDeg.Desc_i);
+        Xtest=Xin(:,train.RBIODEG.Desc_i);
         
-        pred = knnpred(Xtest,train.RBioDeg.model.set.train,train.RBioDeg.model.set.class,train.RBioDeg.model.set.K,train.RBioDeg.model.set.dist_type,train.RBioDeg.model.set.param.pret_type);
+        pred = knnpred(Xtest,train.RBIODEG.model.set.train,train.RBIODEG.model.set.class,train.RBIODEG.model.set.K,train.RBIODEG.model.set.dist_type,train.RBIODEG.model.set.param.pret_type);
         pred.D=diag(pred.D);
-        %pred.w = (ones(1,train.RBioDeg.model.set.K)./train.RBioDeg.model.set.K)';
+        %pred.w = (ones(1,train.RBIODEG.model.set.K)./train.RBIODEG.model.set.K)';
         
         res.MoleculeID=MoleculeNames;
         if exp
             res.ReadyBiodeg_exp=NaN(size(Xtest,1),1);
         end
         res.ReadyBiodeg_pred(:,1)=pred.class_pred-1;
-        AD=classical_leverage(train.RBioDeg.model.set.train,Xtest,'auto');
+        AD=classical_leverage(train.RBIODEG.model.set.train,Xtest,'auto');
         res.AD_ReadyBiodeg=abs(AD.inorout-1)';
         res.AD_ReadyBiodeg(round(pred.dc(:,1),3)==0)=1;
         %
@@ -3690,23 +3697,23 @@ else
             Li=0;
             if exp && ~contains(MoleculeNames(i),'AUTOGEN_')
                 if regexp(MoleculeNames{i},'[0-9]+-[0-9]+-[0-9]')
-                    [Li,Lo] = ismember(MoleculeNames(i),train.RBioDeg.CAS);
+                    [Li,Lo] = ismember(MoleculeNames(i),train.RBIODEG.CAS);
                 elseif regexp(MoleculeNames{i},'DTXSID[0-9]+')
-                    [Li,Lo] = ismember(MoleculeNames{i},train.RBioDeg.DTXSID);
+                    [Li,Lo] = ismember(MoleculeNames{i},train.RBIODEG.DTXSID);
                 end
                 if Li
-                    if Lo>size(train.RBioDeg.DTXSID,1)
-                        Lo=mod(Lo,size(train.RBioDeg.DTXSID,1));
+                    if Lo>size(train.RBIODEG.DTXSID,1)
+                        Lo=mod(Lo,size(train.RBIODEG.DTXSID,1));
                     end
-                    res.ReadyBiodeg_exp(i)=train.RBioDeg.model.set.class(Lo);
+                    res.ReadyBiodeg_exp(i)=train.RBIODEG.model.set.class(Lo);
                 end
             end
-            ReadyBiodeg_CAS_neighbor(i,:)=train.RBioDeg.CAS(pred.neighbors(i,:));
-            ReadyBiodeg_InChiKey_neighbor(i,:)=train.RBioDeg.InChiKey(pred.neighbors(i,:));
-            ReadyBiodeg_DTXSID_neighbor(i,:)=train.RBioDeg.DTXSID(pred.neighbors(i,:));
-            ReadyBiodeg_DSSTOXMPID_neighbor(i,:)=train.RBioDeg.DSSTOXMPID(pred.neighbors(i,:));
-            ReadyBiodeg_Exp_neighbor(i,:)=train.RBioDeg.model.set.class(pred.neighbors(i,:))-1;
-            ReadyBiodeg_pred_neighbor(i,:)=train.RBioDeg.model.class_calc(pred.neighbors(i,:))-1;
+            ReadyBiodeg_CAS_neighbor(i,:)=train.RBIODEG.CAS(pred.neighbors(i,:));
+            ReadyBiodeg_InChiKey_neighbor(i,:)=train.RBIODEG.InChiKey(pred.neighbors(i,:));
+            ReadyBiodeg_DTXSID_neighbor(i,:)=train.RBIODEG.DTXSID(pred.neighbors(i,:));
+            ReadyBiodeg_DSSTOXMPID_neighbor(i,:)=train.RBIODEG.DSSTOXMPID(pred.neighbors(i,:));
+            ReadyBiodeg_Exp_neighbor(i,:)=train.RBIODEG.model.set.class(pred.neighbors(i,:))-1;
+            ReadyBiodeg_pred_neighbor(i,:)=train.RBIODEG.model.class_calc(pred.neighbors(i,:))-1;
             
             rmse=calc_reg_param(ReadyBiodeg_Exp_neighbor(i,:),ReadyBiodeg_pred_neighbor(i,:));
 
@@ -3762,9 +3769,9 @@ else
                 %CAS=strjoin(res.ReadyBiodeg_CAS_neighbor(i,1:5),',\t');
                 %CAS=strrep([res.CAS_neighbors(i,1:5)],' ',', ');
                 if neighbors==1
-                    fprintf(output(Locb(find(Locb))),'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.RBioDeg.model.set.K, res.ReadyBiodeg_CAS_neighbor{i,1:5});
-                    fprintf(output(Locb(find(Locb))),'Exp of the %i nearest neighbors:%15d,%15d,%15d,%15d,%15d\n',train.RBioDeg.model.set.K, res.ReadyBiodeg_Exp_neighbor(i,1:5));
-                    fprintf(output(Locb(find(Locb))),'Pred of the %i nearest neighbors:%14d,%15d,%15d,%15d,%15d\n\n',train.RBioDeg.model.set.K, res.ReadyBiodeg_pred_neighbor(i,1:5));
+                    fprintf(output(Locb(find(Locb))),'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.RBIODEG.model.set.K, res.ReadyBiodeg_CAS_neighbor{i,1:5});
+                    fprintf(output(Locb(find(Locb))),'Exp of the %i nearest neighbors:%15d,%15d,%15d,%15d,%15d\n',train.RBIODEG.model.set.K, res.ReadyBiodeg_Exp_neighbor(i,1:5));
+                    fprintf(output(Locb(find(Locb))),'Pred of the %i nearest neighbors:%14d,%15d,%15d,%15d,%15d\n\n',train.RBIODEG.model.set.K, res.ReadyBiodeg_pred_neighbor(i,1:5));
                 end
   
             elseif strcmpi(ext,'.txt') && sep==0
@@ -3785,9 +3792,9 @@ else
                 %CAS=strjoin(res.ReadyBiodeg_CAS_neighbor(i,1:5),',\t');
                 %CAS=strrep([res.CAS_neighbors(i,1:5)],' ',', ');
                 if neighbors==1
-                    fprintf(output,'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.RBioDeg.model.set.K, res.ReadyBiodeg_CAS_neighbor{i,1:5});
-                    fprintf(output,'Exp of the %i nearest neighbors:%15d,%15d,%15d,%15d,%15d\n',train.RBioDeg.model.set.K, res.ReadyBiodeg_Exp_neighbor(i,1:5));
-                    fprintf(output,'Pred of the %i nearest neighbors:%14d,%15d,%15d,%15d,%15d\n\n',train.RBioDeg.model.set.K, res.ReadyBiodeg_pred_neighbor(i,1:5));
+                    fprintf(output,'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.RBIODEG.model.set.K, res.ReadyBiodeg_CAS_neighbor{i,1:5});
+                    fprintf(output,'Exp of the %i nearest neighbors:%15d,%15d,%15d,%15d,%15d\n',train.RBIODEG.model.set.K, res.ReadyBiodeg_Exp_neighbor(i,1:5));
+                    fprintf(output,'Pred of the %i nearest neighbors:%14d,%15d,%15d,%15d,%15d\n\n',train.RBIODEG.model.set.K, res.ReadyBiodeg_pred_neighbor(i,1:5));
                 end
                 
             end
@@ -4413,7 +4420,7 @@ else
     [Lia,Locb] =ismember({'cl','clint'},lower(prop));
     if find(Lia)
         
-        Desc=train.Clint.Desc;
+        Desc=train.CLINT.Desc;
         
         if verbose>0
             disp('Predicting Clint values...');
@@ -4427,10 +4434,10 @@ else
             fprintf(output,'\n\n\t\t\t\t\t Predicting Clint values... \n\n			==============================================================  \n\n');
         end
         
-        %             Temp=XinCDK(:,train.Clint.cdk_in);
+        %             Temp=XinCDK(:,train.CLINT.cdk_in);
         %             i=1;
         %             XinCDK_Clint=zeros(size(Temp));
-        %             while i<=length(train.Clint.cdk_in)
+        %             while i<=length(train.CLINT.cdk_in)
         %                 if cellfun(@ischar,table2cell(Temp(1,i)))
         %                     XinCDK_Clint(:,i)=str2double(table2cell(Temp(:,i)));
         %                 else
@@ -4440,12 +4447,12 @@ else
         %             end
         %             clear('Temp');
         
-        XinCDK_Clint=XinCDK(:,train.Clint.cdk_in);
-        Xtest=[Xin(:,train.PadelVarIn(train.Clint.Padel_in)), XinCDK_Clint];
+        XinCDK_Clint=XinCDK(:,train.CLINT.cdk_in);
+        Xtest=[Xin(:,train.PadelVarIn(train.CLINT.Padel_in)), XinCDK_Clint];
         
-        Xtest=Xtest(:,train.Clint.Desc_i);
+        Xtest=Xtest(:,train.CLINT.Desc_i);
         
-        pred = nnrpred(Xtest,train.Clint.model.set.train,train.Clint.model.set.y,train.Clint.model.set.K,train.Clint.model.set.dist_type,train.Clint.model.set.param.pret_type);
+        pred = nnrpred(Xtest,train.CLINT.model.set.train,train.CLINT.model.set.y,train.CLINT.model.set.K,train.CLINT.model.set.dist_type,train.CLINT.model.set.param.pret_type);
         pred.D=diag(pred.D);
         %pred.D=[];
         res.MoleculeID=MoleculeNames;
@@ -4453,7 +4460,7 @@ else
             res.Clint_exp=NaN(size(Xtest,1),1);
         end
         res.Clint_pred(:,1)=pred.y_pred_weighted;
-        AD=classical_leverage(train.Clint.model.set.train,Xtest,'auto');
+        AD=classical_leverage(train.CLINT.model.set.train,Xtest,'auto');
         res.AD_Clint=abs(AD.inorout-1)';
         res.AD_Clint(round(pred.dc(:,1),3)==0)=1;
         
@@ -4471,20 +4478,20 @@ else
             Li=0;
             if exp && ~contains(MoleculeNames(i),'AUTOGEN_')
                 if regexp(MoleculeNames{i},'[0-9]+-[0-9]+-[0-9]')
-                    [Li,Lo] = ismember(MoleculeNames(i),train.Clint.CAS);
+                    [Li,Lo] = ismember(MoleculeNames(i),train.CLINT.CAS);
                 elseif regexp(MoleculeNames{i},'DTXSID[0-9]+')
-                    [Li,Lo] = ismember(MoleculeNames{i},train.Clint.DTXSID);
+                    [Li,Lo] = ismember(MoleculeNames{i},train.CLINT.DTXSID);
                 end
                 if Li
-                    res.Clint_exp(i)=train.Clint.model.set.y(Lo);
+                    res.Clint_exp(i)=train.CLINT.model.set.y(Lo);
                 end
             end
-            Clint_CAS_neighbor(i,:)=train.Clint.CAS(pred.neighbors(i,:));
-            Clint_InChiKey_neighbor(i,:)=train.Clint.InChiKey(pred.neighbors(i,:));
-            Clint_DTXSID_neighbor(i,:)=train.Clint.DTXSID(pred.neighbors(i,:));
-            %Clint_DSSTOXMPID_neighbor(i,:)=train.Clint.DSSTOXMPID(pred.neighbors(i,:));
-            Clint_Exp_neighbor(i,:)=train.Clint.model.set.y(pred.neighbors(i,:));
-            Clint_pred_neighbor(i,:)=train.Clint.model.yc_weighted(pred.neighbors(i,:));
+            Clint_CAS_neighbor(i,:)=train.CLINT.CAS(pred.neighbors(i,:));
+            Clint_InChiKey_neighbor(i,:)=train.CLINT.InChiKey(pred.neighbors(i,:));
+            Clint_DTXSID_neighbor(i,:)=train.CLINT.DTXSID(pred.neighbors(i,:));
+            %Clint_DSSTOXMPID_neighbor(i,:)=train.CLINT.DSSTOXMPID(pred.neighbors(i,:));
+            Clint_Exp_neighbor(i,:)=train.CLINT.model.set.y(pred.neighbors(i,:));
+            Clint_pred_neighbor(i,:)=train.CLINT.model.yc_weighted(pred.neighbors(i,:));
             
             %                 rmse=calc_reg_param(res.Clint_Exp_neighbor(i,:),res.Clint_pred_neighbor(i,:));
             %                 res.Conf_index(i,1)=1/(1+rmse.RMSEC);
@@ -4533,9 +4540,9 @@ else
                 %CAS=strjoin(res.Clint_CAS_neighbor(i,1:5),',\t');
                 %CAS=strrep([res.CAS_neighbors(i,1:5)],' ',', ');
                 if neighbors==1
-                    fprintf(output(Locb(find(Locb))),'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.Clint.model.set.K, res.Clint_CAS_neighbor{i,1:5});
-                    fprintf(output(Locb(find(Locb))),'Exp of the %i nearest neighbors:%15.3f,%15.3f,%15.3f,%15.3f,%15.3f\n',train.Clint.model.set.K, res.Clint_Exp_neighbor(i,1:5));
-                    fprintf(output(Locb(find(Locb))),'Pred of the %i nearest neighbors:%14.3f,%15.3f,%15.3f,%15.3f,%15.3f\n\n',train.Clint.model.set.K, res.Clint_pred_neighbor(i,1:5));
+                    fprintf(output(Locb(find(Locb))),'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.CLINT.model.set.K, res.Clint_CAS_neighbor{i,1:5});
+                    fprintf(output(Locb(find(Locb))),'Exp of the %i nearest neighbors:%15.3f,%15.3f,%15.3f,%15.3f,%15.3f\n',train.CLINT.model.set.K, res.Clint_Exp_neighbor(i,1:5));
+                    fprintf(output(Locb(find(Locb))),'Pred of the %i nearest neighbors:%14.3f,%15.3f,%15.3f,%15.3f,%15.3f\n\n',train.CLINT.model.set.K, res.Clint_pred_neighbor(i,1:5));
                 end
                 
             elseif strcmpi(ext,'.txt') && sep==0
@@ -4556,9 +4563,9 @@ else
                 %CAS=strjoin(res.Clint_CAS_neighbor(i,1:5),',\t');
                 %CAS=strrep([res.CAS_neighbors(i,1:5)],' ',', ');
                 if neighbors==1
-                    fprintf(output,'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.Clint.model.set.K, res.Clint_CAS_neighbor{i,1:5});
-                    fprintf(output,'Exp of the %i nearest neighbors:%15.3f,%15.3f,%15.3f,%15.3f,%15.3f\n',train.Clint.model.set.K, res.Clint_Exp_neighbor(i,1:5));
-                    fprintf(output,'Pred of the %i nearest neighbors:%14.3f,%15.3f,%15.3f,%15.3f,%15.3f\n\n',train.Clint.model.set.K, res.Clint_pred_neighbor(i,1:5));
+                    fprintf(output,'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.CLINT.model.set.K, res.Clint_CAS_neighbor{i,1:5});
+                    fprintf(output,'Exp of the %i nearest neighbors:%15.3f,%15.3f,%15.3f,%15.3f,%15.3f\n',train.CLINT.model.set.K, res.Clint_Exp_neighbor(i,1:5));
+                    fprintf(output,'Pred of the %i nearest neighbors:%14.3f,%15.3f,%15.3f,%15.3f,%15.3f\n\n',train.CLINT.model.set.K, res.Clint_pred_neighbor(i,1:5));
                 end
                 
             end
@@ -4646,13 +4653,13 @@ else
         XtestAN=Xtest(:,train.CERAPP.model_AN.DescAN_i);
         XtestBD=Xtest(:,train.CERAPP.model_BD.DescBD_i);
         
-        predAG = knnpred2(XtestAG,train.CERAPP.model_AG.set.train,train.CERAPP.model_AG.set.class,train.CERAPP.model_AG.set.K,train.CERAPP.model_AG.set.dist_type,train.CERAPP.model_AG.set.param.pret_type);
+        predAG = knnpred2(XtestAG,train.CERAPP.model_AG.set.train,train.CERAPP.model_AG.set.class,train.CERAPP.model_AG.set.class_Exp_N,train.CERAPP.model_AG.set.K,train.CERAPP.model_AG.set.dist_type,train.CERAPP.model_AG.set.param.pret_type);
         %predAG.D=diag(predAG.D);
         predAG.D=[];
-        predAN = knnpred2(XtestAN,train.CERAPP.model_AN.set.train,train.CERAPP.model_AN.set.class,train.CERAPP.model_AN.set.K,train.CERAPP.model_AN.set.dist_type,train.CERAPP.model_AN.set.param.pret_type);
+        predAN = knnpred2(XtestAN,train.CERAPP.model_AN.set.train,train.CERAPP.model_AN.set.class,train.CERAPP.model_AN.set.class_Exp_N,train.CERAPP.model_AN.set.K,train.CERAPP.model_AN.set.dist_type,train.CERAPP.model_AN.set.param.pret_type);
         %predAN.D=diag(predAN.D);
         predAN.D=[];
-        predBD = knnpred2(XtestBD,train.CERAPP.model_BD.set.train,train.CERAPP.model_BD.set.class,train.CERAPP.model_BD.set.K,train.CERAPP.model_BD.set.dist_type,train.CERAPP.model_BD.set.param.pret_type);
+        predBD = knnpred2(XtestBD,train.CERAPP.model_BD.set.train,train.CERAPP.model_BD.set.class,train.CERAPP.model_BD.set.class_Exp_N,train.CERAPP.model_BD.set.K,train.CERAPP.model_BD.set.dist_type,train.CERAPP.model_BD.set.param.pret_type);
         %predBD.D=diag(predBD.D);
         predBD.D=[];
         
@@ -4707,28 +4714,47 @@ else
                     [Li_ag,Lo_ag] = ismember(MoleculeNames(i),train.CERAPP.model_AG.CAS);
                     [Li_an,Lo_an] = ismember(MoleculeNames(i),train.CERAPP.model_AN.CAS);
                     [Li_bd,Lo_bd] = ismember(MoleculeNames(i),train.CERAPP.model_BD.CAS);
+                    if Li_ag
+                        if Lo_ag>size(train.CERAPP.model_AG.CAS,1)
+                            Lo_ag=mod(Lo_ag,size(train.CERAPP.model_AG.CAS,1));
+                        end
+                        res.CERAPP_Ago_exp(i)=train.CERAPP.model_AG.set.class_Exp(Lo_ag);
+                    end
+                    if Li_an
+                        if Lo_an>size(train.CERAPP.model_AN.CAS,1)
+                            Lo_an=mod(Lo_an,size(train.CERAPP.model_AN.CAS,1));
+                        end
+                        res.CERAPP_Anta_exp(i,1)=train.CERAPP.model_AN.set.class_Exp(Lo_an);
+                    end
+                    if Li_bd
+                        if Lo_bd>size(train.CERAPP.model_BD.CAS,1)
+                            Lo_bd=mod(Lo_bd,size(train.CERAPP.model_BD.CAS,1));
+                        end
+                        res.CERAPP_Bind_exp(i,1)=train.CERAPP.model_BD.set.class_Exp(Lo_bd);
+                    end
                 elseif regexp(MoleculeNames{i},'DTXSID[0-9]+')
                     [Li_ag,Lo_ag] = ismember(MoleculeNames{i},train.CERAPP.model_AG.DTXSID);
                     [Li_an,Lo_an] = ismember(MoleculeNames{i},train.CERAPP.model_AN.DTXSID);
                     [Li_bd,Lo_bd] = ismember(MoleculeNames{i},train.CERAPP.model_BD.DTXSID);
-                end
-                if Li_ag
-                    if Lo_ag>size(train.CERAPP.model_AG.DTXSID,1)
-                        Lo_ag=mod(Lo_ag,size(train.CERAPP.model_AG.DTXSID,1));
+                    
+                    if Li_ag
+                        if Lo_ag>size(train.CERAPP.model_AG.DTXSID,1)
+                            Lo_ag=mod(Lo_ag,size(train.CERAPP.model_AG.DTXSID,1));
+                        end
+                        res.CERAPP_Ago_exp(i)=train.CERAPP.model_AG.set.class_Exp(Lo_ag);
                     end
-                    res.CERAPP_Ago_exp(i)=train.CERAPP.model_AG.set.class_Exp(Lo_ag);
-                end
-                if Li_an
-                    if Lo_an>size(train.CERAPP.model_AN.DTXSID,1)
-                        Lo_an=mod(Lo_an,size(train.CERAPP.model_AN.DTXSID,1));
+                    if Li_an
+                        if Lo_an>size(train.CERAPP.model_AN.DTXSID,1)
+                            Lo_an=mod(Lo_an,size(train.CERAPP.model_AN.DTXSID,1));
+                        end
+                        res.CERAPP_Anta_exp(i,1)=train.CERAPP.model_AN.set.class_Exp(Lo_an);
                     end
-                    res.CERAPP_Anta_exp(i,1)=train.CERAPP.model_AN.set.class_Exp(Lo_an);
-                end
-                if Li_bd
-                    if Lo_bd>size(train.CERAPP.model_BD.DTXSID,1)
-                        Lo_bd=mod(Lo_bd,size(train.CERAPP.model_BD.DTXSID,1));
+                    if Li_bd
+                        if Lo_bd>size(train.CERAPP.model_BD.DTXSID,1)
+                            Lo_bd=mod(Lo_bd,size(train.CERAPP.model_BD.DTXSID,1));
+                        end
+                        res.CERAPP_Bind_exp(i,1)=train.CERAPP.model_BD.set.class_Exp(Lo_bd);
                     end
-                    res.CERAPP_Bind_exp(i,1)=train.CERAPP.model_BD.set.class_Exp(Lo_bd);
                 end
             end
             res.Conf_index_CERAPP_Ago(i,1)=(train.CERAPP.model_AG.conc_AG(predAG.neighbors(i,:),1)'*predAG.w(i,:)'+res.AD_index_CERAPP_Ago(i))/2;
@@ -4874,7 +4900,7 @@ else
     [Lia,Locb] =ismember({'compara','ar'},lower(prop));
     if find(Lia)
         
-        Desc=train.CoMPARA.DescIn;
+        Desc=train.COMPARA.DescIn;
         
         if verbose>0
             disp('Predicting Androgen Receptor Activity (CoMPARA)...');
@@ -4900,20 +4926,20 @@ else
         %             end
         
         %XlabelsCDK
-        XinCDK_CoMPARA=XinCDK(:,train.CoMPARA.cdk_in);
-        Xtest=[Xin(:,train.PadelVarIn(train.CoMPARA.Padel_in)), XinCDK_CoMPARA];
+        XinCDK_CoMPARA=XinCDK(:,train.COMPARA.cdk_in);
+        Xtest=[Xin(:,train.PadelVarIn(train.COMPARA.Padel_in)), XinCDK_CoMPARA];
         
-        XtestAG=Xtest(:,train.CoMPARA.model_AG.DescAG_i);
-        XtestAN=Xtest(:,train.CoMPARA.model_AN.DescAN_i);
-        XtestBD=Xtest(:,train.CoMPARA.model_BD.DescBD_i);
+        XtestAG=Xtest(:,train.COMPARA.model_AG.DescAG_i);
+        XtestAN=Xtest(:,train.COMPARA.model_AN.DescAN_i);
+        XtestBD=Xtest(:,train.COMPARA.model_BD.DescBD_i);
         
-        predAG = knnpred2(XtestAG,train.CoMPARA.model_AG.set.train,train.CoMPARA.model_AG.set.class,train.CoMPARA.model_AG.set.K,train.CoMPARA.model_AG.set.dist_type,train.CoMPARA.model_AG.set.param.pret_type);
+        predAG = knnpred2(XtestAG,train.COMPARA.model_AG.set.train,train.COMPARA.model_AG.set.class,train.COMPARA.model_AG.set.class_Exp_N,train.COMPARA.model_AG.set.K,train.COMPARA.model_AG.set.dist_type,train.COMPARA.model_AG.set.param.pret_type);
         %predAG.D=diag(predAG.D);
         predAG.D=[];
-        predAN = knnpred2(XtestAN,train.CoMPARA.model_AN.set.train,train.CoMPARA.model_AN.set.class,train.CoMPARA.model_AN.set.K,train.CoMPARA.model_AN.set.dist_type,train.CoMPARA.model_AN.set.param.pret_type);
+        predAN = knnpred2(XtestAN,train.COMPARA.model_AN.set.train,train.COMPARA.model_AN.set.class,train.COMPARA.model_AN.set.class_Exp_N,train.COMPARA.model_AN.set.K,train.COMPARA.model_AN.set.dist_type,train.COMPARA.model_AN.set.param.pret_type);
         %predAN.D=diag(predAN.D);
         predAN.D=[];
-        predBD = knnpred2(XtestBD,train.CoMPARA.model_BD.set.train,train.CoMPARA.model_BD.set.class,train.CoMPARA.model_BD.set.K,train.CoMPARA.model_BD.set.dist_type,train.CoMPARA.model_BD.set.param.pret_type);
+        predBD = knnpred2(XtestBD,train.COMPARA.model_BD.set.train,train.COMPARA.model_BD.set.class,train.COMPARA.model_BD.set.class_Exp_N,train.COMPARA.model_BD.set.K,train.COMPARA.model_BD.set.dist_type,train.COMPARA.model_BD.set.param.pret_type);
         %predBD.D=diag(predBD.D);
         predBD.D=[];
         
@@ -4922,9 +4948,9 @@ else
             res.CoMPARA_Ago_exp=cell(size(Xtest,1),1);
         end
         res.CoMPARA_Ago_pred(:,1)=predAG.class_pred-1;
-        AD=classical_leverage(train.CoMPARA.model_AG.set.train,XtestAG,'auto');
+        AD=classical_leverage(train.COMPARA.model_AG.set.train,XtestAG,'auto');
         res.AD_CoMPARA_Ago=abs(AD.inorout-1)';
-        res.AD_index_CoMPARA_Ago=1-test_pretreatment(predAG.dc(:,1),train.CoMPARA.model_AG.set.dc_param);
+        res.AD_index_CoMPARA_Ago=1-test_pretreatment(predAG.dc(:,1),train.COMPARA.model_AG.set.dc_param);
         res.AD_index_CoMPARA_Ago(find(res.AD_index_CoMPARA_Ago<0),1)=1./(1+predAG.dc(find(res.AD_index_CoMPARA_Ago<0),1));
         res.CoMPARA_Ago_pred(find(isnan(predAG.dc(:,1))))=NaN;
         res.AD_CoMPARA_Ago(find(isnan(predAG.dc(:,1))))=0;
@@ -4935,9 +4961,9 @@ else
             res.CoMPARA_Anta_exp=cell(size(Xtest,1),1);
         end
         res.CoMPARA_Anta_pred(:,1)=predAN.class_pred-1;
-        AD=classical_leverage(train.CoMPARA.model_AN.set.train,XtestAN,'auto');
+        AD=classical_leverage(train.COMPARA.model_AN.set.train,XtestAN,'auto');
         res.AD_CoMPARA_Anta=abs(AD.inorout-1)';
-        res.AD_index_CoMPARA_Anta=1-test_pretreatment(predAN.dc(:,1),train.CoMPARA.model_AN.set.dc_param);
+        res.AD_index_CoMPARA_Anta=1-test_pretreatment(predAN.dc(:,1),train.COMPARA.model_AN.set.dc_param);
         res.AD_index_CoMPARA_Anta(find(res.AD_index_CoMPARA_Anta<0),1)=1./(1+predAN.dc(find(res.AD_index_CoMPARA_Anta<0),1));
         res.CoMPARA_Anta_pred(find(isnan(predAN.dc(:,1))))=NaN;
         res.AD_CoMPARA_Anta(find(isnan(predAN.dc(:,1))))=0;
@@ -4948,9 +4974,9 @@ else
             res.CoMPARA_Bind_exp=cell(size(Xtest,1),1);
         end
         res.CoMPARA_Bind_pred(:,1)=predBD.class_pred-1;
-        AD=classical_leverage(train.CoMPARA.model_BD.set.train,XtestBD,'auto');
+        AD=classical_leverage(train.COMPARA.model_BD.set.train,XtestBD,'auto');
         res.AD_CoMPARA_Bind=abs(AD.inorout-1)';
-        res.AD_index_CoMPARA_Bind=1-test_pretreatment(predBD.dc(:,1),train.CoMPARA.model_BD.set.dc_param);
+        res.AD_index_CoMPARA_Bind=1-test_pretreatment(predBD.dc(:,1),train.COMPARA.model_BD.set.dc_param);
         res.AD_index_CoMPARA_Bind(find(res.AD_index_CoMPARA_Bind<0),1)=1./(1+predBD.dc(find(res.AD_index_CoMPARA_Bind<0),1));
         res.CoMPARA_Bind_pred(find(isnan(predBD.dc(:,1))))=NaN;
         res.AD_CoMPARA_Bind(find(isnan(predBD.dc(:,1))))=0;
@@ -4964,54 +4990,74 @@ else
             Li_bd=0;
             if exp && ~contains(MoleculeNames(i),'AUTOGEN_')
                 if regexp(MoleculeNames{i},'[0-9]+-[0-9]+-[0-9]')
-                    [Li_ag,Lo_ag] = ismember(MoleculeNames(i),train.CoMPARA.model_AG.CAS);
-                    [Li_an,Lo_an] = ismember(MoleculeNames(i),train.CoMPARA.model_AN.CAS);
-                    [Li_bd,Lo_bd] = ismember(MoleculeNames(i),train.CoMPARA.model_BD.CAS);
+                    [Li_ag,Lo_ag] = ismember(MoleculeNames(i),train.COMPARA.model_AG.CAS);
+                    [Li_an,Lo_an] = ismember(MoleculeNames(i),train.COMPARA.model_AN.CAS);
+                    [Li_bd,Lo_bd] = ismember(MoleculeNames(i),train.COMPARA.model_BD.CAS);
+                    if Li_ag
+                        if Lo_ag>size(train.COMPARA.model_AG.CAS,1)
+                            Lo_ag=mod(Lo_ag,size(train.COMPARA.model_AG.CAS,1));
+                        end
+                        res.CoMPARA_Ago_exp(i)=train.COMPARA.model_AG.set.class_Exp(Lo_ag);
+                    end
+                    if Li_an
+                        if Lo_an>size(train.COMPARA.model_AN.CAS,1)
+                            Lo_an=mod(Lo_an,size(train.COMPARA.model_AN.CAS,1));
+                        end
+                        res.CoMPARA_Anta_exp(i,1)=train.COMPARA.model_AN.set.class_Exp(Lo_an);
+                    end
+                    if Li_bd
+                        if Lo_bd>size(train.COMPARA.model_BD.CAS,1)
+                            Lo_bd=mod(Lo_bd,size(train.COMPARA.model_BD.CAS,1));
+                        end
+                        res.CoMPARA_Bind_exp(i,1)=train.COMPARA.model_BD.set.class_Exp(Lo_bd);
+                    end
                 elseif regexp(MoleculeNames{i},'DTXSID[0-9]+')
-                    [Li_ag,Lo_ag] = ismember(MoleculeNames{i},train.CoMPARA.model_AG.DTXSID);
-                    [Li_an,Lo_an] = ismember(MoleculeNames{i},train.CoMPARA.model_AN.DTXSID);
-                    [Li_bd,Lo_bd] = ismember(MoleculeNames{i},train.CoMPARA.model_BD.DTXSID);
-                end
-                if Li_ag
-                    if Lo_ag>size(train.CoMPARA.model_AG.DTXSID,1)
-                        Lo_ag=mod(Lo_ag,size(train.CoMPARA.model_AG.DTXSID,1));
+                    [Li_ag,Lo_ag] = ismember(MoleculeNames{i},train.COMPARA.model_AG.DTXSID);
+                    [Li_an,Lo_an] = ismember(MoleculeNames{i},train.COMPARA.model_AN.DTXSID);
+                    [Li_bd,Lo_bd] = ismember(MoleculeNames{i},train.COMPARA.model_BD.DTXSID);
+                    
+                    if Li_ag
+                        if Lo_ag>size(train.COMPARA.model_AG.DTXSID,1)
+                            Lo_ag=mod(Lo_ag,size(train.COMPARA.model_AG.DTXSID,1));
+                        end
+                        res.CoMPARA_Ago_exp(i)=train.COMPARA.model_AG.set.class_Exp(Lo_ag);
                     end
-                    res.CoMPARA_Ago_exp(i)=train.CoMPARA.model_AG.set.class_Exp(Lo_ag);
-                end
-                if Li_an
-                    if Lo_an>size(train.CoMPARA.model_AN.DTXSID,1)
-                        Lo_an=mod(Lo_an,size(train.CoMPARA.model_AN.DTXSID,1));
+                    if Li_an
+                        if Lo_an>size(train.COMPARA.model_AN.DTXSID,1)
+                            Lo_an=mod(Lo_an,size(train.COMPARA.model_AN.DTXSID,1));
+                        end
+                        res.CoMPARA_Anta_exp(i,1)=train.COMPARA.model_AN.set.class_Exp(Lo_an);
                     end
-                    res.CoMPARA_Anta_exp(i,1)=train.CoMPARA.model_AN.set.class_Exp(Lo_an);
-                end
-                if Li_bd
-                    if Lo_bd>size(train.CoMPARA.model_BD.DTXSID,1)
-                        Lo_bd=mod(Lo_bd,size(train.CoMPARA.model_BD.DTXSID,1));
+                    if Li_bd
+                        if Lo_bd>size(train.COMPARA.model_BD.DTXSID,1)
+                            Lo_bd=mod(Lo_bd,size(train.COMPARA.model_BD.DTXSID,1));
+                        end
+                        res.CoMPARA_Bind_exp(i,1)=train.COMPARA.model_BD.set.class_Exp(Lo_bd);
                     end
-                    res.CoMPARA_Bind_exp(i,1)=train.CoMPARA.model_BD.set.class_Exp(Lo_bd);
                 end
+                
             end
-            res.Conf_index_CoMPARA_Ago(i,1)=(train.CoMPARA.model_AG.conc_AG(predAG.neighbors(i,:),1)'*predAG.w(i,:)'+res.AD_index_CoMPARA_Ago(i))/2;
+            res.Conf_index_CoMPARA_Ago(i,1)=(train.COMPARA.model_AG.conc_AG(predAG.neighbors(i,:),1)'*predAG.w(i,:)'+res.AD_index_CoMPARA_Ago(i))/2;
             if res.AD_index_CoMPARA_Ago(i)==0
                 res.Conf_index_CoMPARA_Ago(i,1)=0;
             end
-            res.Conf_index_CoMPARA_Anta(i,1)=(train.CoMPARA.model_AN.conc_AN(predAN.neighbors(i,:),1)'*predAN.w(i,:)'+res.AD_index_CoMPARA_Anta(i))/2;
+            res.Conf_index_CoMPARA_Anta(i,1)=(train.COMPARA.model_AN.conc_AN(predAN.neighbors(i,:),1)'*predAN.w(i,:)'+res.AD_index_CoMPARA_Anta(i))/2;
             if res.AD_index_CoMPARA_Anta(i)==0
                 res.Conf_index_CoMPARA_Anta(i,1)=0;
             end
-            res.Conf_index_CoMPARA_Bind(i,1)=(train.CoMPARA.model_BD.conc_BD(predBD.neighbors(i,:),1)'*predBD.w(i,:)'+res.AD_index_CoMPARA_Bind(i))/2;
+            res.Conf_index_CoMPARA_Bind(i,1)=(train.COMPARA.model_BD.conc_BD(predBD.neighbors(i,:),1)'*predBD.w(i,:)'+res.AD_index_CoMPARA_Bind(i))/2;
             if res.AD_index_CoMPARA_Bind(i)==0
                 res.Conf_index_CoMPARA_Bind(i,1)=0;
             end
             
             if neighbors==1
                 if res.AD_index_CoMPARA_Ago(i)~=0
-                    res.CoMPARA_Ago_CAS_neighbor(i,:)=train.CoMPARA.model_AG.CAS(predAG.neighbors(i,:));
-                    res.CoMPARA_Ago_InChiKey_neighbor(i,:)=train.CoMPARA.model_AG.InChiKey(predAG.neighbors(i,:));
-                    res.CoMPARA_Ago_DTXSID_neighbor(i,:)=train.CoMPARA.model_AG.DTXSID(predAG.neighbors(i,:));
-                    %res.CoMPARA_Ago_DSSTOXMPID_neighbor(i,:)=train.CoMPARA.model_AG.DSSTOXMPID(pred.neighbors(i,:));
-                    res.CoMPARA_Ago_Exp_neighbor(i,:)=train.CoMPARA.model_AG.set.class_Exp(predAG.neighbors(i,:));
-                    res.CoMPARA_Ago_pred_neighbor(i,:)=train.CoMPARA.model_AG.set.class_S(predAG.neighbors(i,:));
+                    res.CoMPARA_Ago_CAS_neighbor(i,:)=train.COMPARA.model_AG.CAS(predAG.neighbors(i,:));
+                    res.CoMPARA_Ago_InChiKey_neighbor(i,:)=train.COMPARA.model_AG.InChiKey(predAG.neighbors(i,:));
+                    res.CoMPARA_Ago_DTXSID_neighbor(i,:)=train.COMPARA.model_AG.DTXSID(predAG.neighbors(i,:));
+                    %res.CoMPARA_Ago_DSSTOXMPID_neighbor(i,:)=train.COMPARA.model_AG.DSSTOXMPID(pred.neighbors(i,:));
+                    res.CoMPARA_Ago_Exp_neighbor(i,:)=train.COMPARA.model_AG.set.class_Exp(predAG.neighbors(i,:));
+                    res.CoMPARA_Ago_pred_neighbor(i,:)=train.COMPARA.model_AG.set.class_S(predAG.neighbors(i,:));
                else
                     res.CoMPARA_Ago_CAS_neighbor(i,:)=cell(1,5);
                     res.CoMPARA_Ago_InChiKey_neighbor(i,:)=cell(1,5);
@@ -5021,12 +5067,12 @@ else
                     res.CoMPARA_Ago_pred_neighbor(i,:)=cell(1,5);
                 end
                 if res.AD_index_CoMPARA_Anta(i)~=0
-                    res.CoMPARA_Anta_CAS_neighbor(i,:)=train.CoMPARA.model_AN.CAS(predAN.neighbors(i,:));
-                    res.CoMPARA_Anta_InChiKey_neighbor(i,:)=train.CoMPARA.model_AN.InChiKey(predAN.neighbors(i,:));
-                    res.CoMPARA_Anta_DTXSID_neighbor(i,:)=train.CoMPARA.model_AN.DTXSID(predAN.neighbors(i,:));
-                    %res.CoMPARA_Anta_DSSTOXMPID_neighbor(i,:)=train.CoMPARA.model_AN.DSSTOXMPID(pred.neighbors(i,:));
-                    res.CoMPARA_Anta_Exp_neighbor(i,:)=train.CoMPARA.model_AN.set.class_Exp(predAN.neighbors(i,:));
-                    res.CoMPARA_Anta_pred_neighbor(i,:)=train.CoMPARA.model_AN.set.class_S(predAN.neighbors(i,:));
+                    res.CoMPARA_Anta_CAS_neighbor(i,:)=train.COMPARA.model_AN.CAS(predAN.neighbors(i,:));
+                    res.CoMPARA_Anta_InChiKey_neighbor(i,:)=train.COMPARA.model_AN.InChiKey(predAN.neighbors(i,:));
+                    res.CoMPARA_Anta_DTXSID_neighbor(i,:)=train.COMPARA.model_AN.DTXSID(predAN.neighbors(i,:));
+                    %res.CoMPARA_Anta_DSSTOXMPID_neighbor(i,:)=train.COMPARA.model_AN.DSSTOXMPID(pred.neighbors(i,:));
+                    res.CoMPARA_Anta_Exp_neighbor(i,:)=train.COMPARA.model_AN.set.class_Exp(predAN.neighbors(i,:));
+                    res.CoMPARA_Anta_pred_neighbor(i,:)=train.COMPARA.model_AN.set.class_S(predAN.neighbors(i,:));
                else
                     res.CoMPARA_Anta_CAS_neighbor(i,:)=cell(1,5);
                     res.CoMPARA_Anta_InChiKey_neighbor(i,:)=cell(1,5);
@@ -5036,12 +5082,12 @@ else
                     res.CoMPARA_Anta_pred_neighbor(i,:)=cell(1,5);
                 end
                 if res.AD_index_CoMPARA_Bind(i)~=0
-                    res.CoMPARA_Bind_CAS_neighbor(i,:)=train.CoMPARA.model_BD.CAS(predBD.neighbors(i,:));
-                    res.CoMPARA_Bind_InChiKey_neighbor(i,:)=train.CoMPARA.model_BD.InChiKey(predBD.neighbors(i,:));
-                    res.CoMPARA_Bind_DTXSID_neighbor(i,:)=train.CoMPARA.model_BD.DTXSID(predBD.neighbors(i,:));
-                    %res.CoMPARA_Bind_DSSTOXMPID_neighbor(i,:)=train.CoMPARA.model_BD.DSSTOXMPID(predBD.neighbors(i,:));
-                    res.CoMPARA_Bind_Exp_neighbor(i,:)=train.CoMPARA.model_BD.set.class_Exp(predBD.neighbors(i,:));
-                    res.CoMPARA_Bind_pred_neighbor(i,:)=train.CoMPARA.model_BD.set.class_S(predBD.neighbors(i,:));
+                    res.CoMPARA_Bind_CAS_neighbor(i,:)=train.COMPARA.model_BD.CAS(predBD.neighbors(i,:));
+                    res.CoMPARA_Bind_InChiKey_neighbor(i,:)=train.COMPARA.model_BD.InChiKey(predBD.neighbors(i,:));
+                    res.CoMPARA_Bind_DTXSID_neighbor(i,:)=train.COMPARA.model_BD.DTXSID(predBD.neighbors(i,:));
+                    %res.CoMPARA_Bind_DSSTOXMPID_neighbor(i,:)=train.COMPARA.model_BD.DSSTOXMPID(predBD.neighbors(i,:));
+                    res.CoMPARA_Bind_Exp_neighbor(i,:)=train.COMPARA.model_BD.set.class_Exp(predBD.neighbors(i,:));
+                    res.CoMPARA_Bind_pred_neighbor(i,:)=train.COMPARA.model_BD.set.class_S(predBD.neighbors(i,:));
                 else
                     res.CoMPARA_Bind_CAS_neighbor(i,:)=cell(1,5);
                     res.CoMPARA_Bind_InChiKey_neighbor(i,:)=cell(1,5);
@@ -5063,9 +5109,9 @@ else
                 fprintf(output(Locb(find(Locb))),'BD category predicted= %i, AD: %i, AD_index= %.2f, Conf_index= %.2f\n', res.CoMPARA_Bind_pred(i),res.AD_CoMPARA_Bind(i),res.AD_index_CoMPARA_Bind(i),res.Conf_index_CoMPARA_Bind(i));
                 
                 if neighbors==1
-                    fprintf(output(Locb(find(Locb))),'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.CoMPARA.model_AG.set.K, res.CoMPARA_Ago_CAS_neighbor{i,1:5});
-                    fprintf(output(Locb(find(Locb))),'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.CoMPARA.model_AN.set.K, res.CoMPARA_Anta_CAS_neighbor{i,1:5});
-                    fprintf(output(Locb(find(Locb))),'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.CoMPARA.model_BD.set.K, res.CoMPARA_Bind_CAS_neighbor{i,1:5});
+                    fprintf(output(Locb(find(Locb))),'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.COMPARA.model_AG.set.K, res.CoMPARA_Ago_CAS_neighbor{i,1:5});
+                    fprintf(output(Locb(find(Locb))),'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.COMPARA.model_AN.set.K, res.CoMPARA_Anta_CAS_neighbor{i,1:5});
+                    fprintf(output(Locb(find(Locb))),'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.COMPARA.model_BD.set.K, res.CoMPARA_Bind_CAS_neighbor{i,1:5});
                 end
                 
             elseif strcmpi(ext,'.txt') && sep==0
@@ -5079,9 +5125,9 @@ else
                 fprintf(output,'BD category predicted= %i, AD: %i, AD_index= %.2f, Conf_index= %.2f\n', res.CoMPARA_Bind_pred(i),res.AD_CoMPARA_Bind(i),res.AD_index_CoMPARA_Bind(i),res.Conf_index_CoMPARA_Bind(i));
                 
                 if neighbors==1
-                    fprintf(output,'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.CoMPARA.model_AG.set.K, res.CoMPARA_Ago_CAS_neighbor{i,1:5});
-                    fprintf(output,'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.CoMPARA.model_AN.set.K, res.CoMPARA_Anta_CAS_neighbor{i,1:5});
-                    fprintf(output,'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.CoMPARA.model_BD.set.K, res.CoMPARA_Bind_CAS_neighbor{i,1:5});
+                    fprintf(output,'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.COMPARA.model_AG.set.K, res.CoMPARA_Ago_CAS_neighbor{i,1:5});
+                    fprintf(output,'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.COMPARA.model_AN.set.K, res.CoMPARA_Anta_CAS_neighbor{i,1:5});
+                    fprintf(output,'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.COMPARA.model_BD.set.K, res.CoMPARA_Bind_CAS_neighbor{i,1:5});
                 end
                 
             end
@@ -5133,7 +5179,7 @@ else
     [Lia,Locb] =ismember({'catmos','acutetox'},lower(prop));
     if find(Lia)
         
-        Desc=train.CATMoS.DescIn;
+        Desc=train.CATMOS.DescIn;
         
         if verbose>0
             disp('Predicting Acute Oral Tox. endpoints (CATMoS)...');
@@ -5159,290 +5205,334 @@ else
         %             end
         
         %XlabelsCDK
-        XinCDK_CATMoS=XinCDK(:,train.CATMoS.cdk_in);
-        Xtest=[Xin(:,train.PadelVarIn(train.CATMoS.Padel_in)), XinCDK_CATMoS];
+        XinCDK_CATMoS=XinCDK(:,train.CATMOS.cdk_in);
+        Xtest=[Xin(:,train.PadelVarIn(train.CATMOS.Padel_in)), XinCDK_CATMoS];
         
-        XtestVT=Xtest(:,train.CATMoS.model_VT.DescVT_i);
-        XtestNT=Xtest(:,train.CATMoS.model_NT.DescNT_i);
-        XtestEPA=Xtest(:,train.CATMoS.model_EPA.DescEPA_i);
-        XtestGHS=Xtest(:,train.CATMoS.model_GHS.DescGHS_i);
-        XtestLD50=Xtest(:,train.CATMoS.model_LD50.DescLD50_i);
+        XtestVT=Xtest(:,train.CATMOS.model_VT.DescVT_i);
+        XtestNT=Xtest(:,train.CATMOS.model_NT.DescNT_i);
+        XtestEPA=Xtest(:,train.CATMOS.model_EPA.DescEPA_i);
+        XtestGHS=Xtest(:,train.CATMOS.model_GHS.DescGHS_i);
+        XtestLD50=Xtest(:,train.CATMOS.model_LD50.DescLD50_i);
         
-        predVT = knnpred2(XtestVT,train.CATMoS.model_VT.set.train,train.CATMoS.model_VT.set.class,train.CATMoS.model_VT.set.K,train.CATMoS.model_VT.set.dist_type,train.CATMoS.model_VT.set.param.pret_type);
+        predVT = knnpred2(XtestVT,train.CATMOS.model_VT.set.train,train.CATMOS.model_VT.set.class,train.CATMOS.model_VT.set.class_Exp+1,train.CATMOS.model_VT.set.K,train.CATMOS.model_VT.set.dist_type,train.CATMOS.model_VT.set.param.pret_type);
         %predVT.D=diag(predVT.D);
         predVT.D=[];
-        predNT = knnpred2(XtestNT,train.CATMoS.model_NT.set.train,train.CATMoS.model_NT.set.class,train.CATMoS.model_NT.set.K,train.CATMoS.model_NT.set.dist_type,train.CATMoS.model_NT.set.param.pret_type);
+        predNT = knnpred2(XtestNT,train.CATMOS.model_NT.set.train,train.CATMOS.model_NT.set.class,train.CATMOS.model_NT.set.class_Exp+1,train.CATMOS.model_NT.set.K,train.CATMOS.model_NT.set.dist_type,train.CATMOS.model_NT.set.param.pret_type);
         %predNT.D=diag(predNT.D);
         predNT.D=[];
-        predEPA = knnpred2(XtestEPA,train.CATMoS.model_EPA.set.train,train.CATMoS.model_EPA.set.class,train.CATMoS.model_EPA.set.K,train.CATMoS.model_EPA.set.dist_type,train.CATMoS.model_EPA.set.param.pret_type);
+        predEPA = knnpred2(XtestEPA,train.CATMOS.model_EPA.set.train,train.CATMOS.model_EPA.set.class,train.CATMOS.model_EPA.set.class_Exp,train.CATMOS.model_EPA.set.K,train.CATMOS.model_EPA.set.dist_type,train.CATMOS.model_EPA.set.param.pret_type);
         %predEPA.D=diag(predEPA.D);
         predEPA.D=[];
-        predGHS = knnpred2(XtestGHS,train.CATMoS.model_GHS.set.train,train.CATMoS.model_GHS.set.class,train.CATMoS.model_GHS.set.K,train.CATMoS.model_GHS.set.dist_type,train.CATMoS.model_GHS.set.param.pret_type);
+        predGHS = knnpred2(XtestGHS,train.CATMOS.model_GHS.set.train,train.CATMOS.model_GHS.set.class,train.CATMOS.model_GHS.set.class_Exp,train.CATMOS.model_GHS.set.K,train.CATMOS.model_GHS.set.dist_type,train.CATMOS.model_GHS.set.param.pret_type);
         %predGHS.D=diag(predGHS.D);
         predGHS.D=[];
-        predLD50 = nnrpred2(XtestLD50,train.CATMoS.model_LD50.set.train,train.CATMoS.model_LD50.set.y,train.CATMoS.model_LD50.set.K,train.CATMoS.model_LD50.set.dist_type,train.CATMoS.model_LD50.set.param.pret_type);
+        predLD50 = nnrpred2(XtestLD50,train.CATMOS.model_LD50.set.train,train.CATMOS.model_LD50.set.y,train.CATMOS.model_LD50.set.y_Exp_nAll,train.CATMOS.model_LD50.set.K,train.CATMOS.model_LD50.set.dist_type,train.CATMOS.model_LD50.set.param.pret_type);
         %predLD50.D=diag(predLD50.D);
         predLD50.D=[];
         
         res.MoleculeID=MoleculeNames;
-        if exp
-            res.CATMoS_VT_exp=NaN(size(Xtest,1),1);
-        end
+%         if exp
+%             res.CATMoS_VT_exp=NaN(size(Xtest,1),1);
+%         end
         res.CATMoS_VT_pred(:,1)=predVT.class_pred-1;
-        AD=classical_leverage(train.CATMoS.model_VT.set.train,XtestVT,'auto');
+        AD=classical_leverage(train.CATMOS.model_VT.set.train,XtestVT,'auto');
         res.AD_VT=abs(AD.inorout-1)';
-        res.AD_index_VT=1-test_pretreatment(predVT.dc(:,1),train.CATMoS.model_VT.set.dc_param);
+        res.AD_index_VT=1-test_pretreatment(predVT.dc(:,1),train.CATMOS.model_VT.set.dc_param);
         res.AD_index_VT(find(res.AD_index_VT<0),1)=1./(1+predVT.dc(find(res.AD_index_VT<0),1));
         res.CATMoS_VT_pred(find(isnan(predVT.dc(:,1))))=NaN;
         res.AD_VT(find(isnan(predVT.dc(:,1))))=0;
         res.AD_index_VT(find(isnan(predVT.dc(:,1))))=0;
+        res.AD_index_VT(find(res.AD_index_VT>0.9999),1)=1;
         res.AD_VT(find(res.AD_index_VT>0.5))=1;
         res.Conf_index_VT=zeros(size(XtestVT,1),1);
-        if exp
-            res.CATMoS_NT_exp=NaN(size(Xtest,1),1);
-        end
+%         if exp
+%             res.CATMoS_NT_exp=NaN(size(Xtest,1),1);
+%         end
         res.CATMoS_NT_pred(:,1)=predNT.class_pred-1;
-        AD=classical_leverage(train.CATMoS.model_NT.set.train,XtestNT,'auto');
+        AD=classical_leverage(train.CATMOS.model_NT.set.train,XtestNT,'auto');
         res.AD_NT=abs(AD.inorout-1)';
-        res.AD_index_NT=1-test_pretreatment(predNT.dc(:,1),train.CATMoS.model_NT.set.dc_param);
+        res.AD_index_NT=1-test_pretreatment(predNT.dc(:,1),train.CATMOS.model_NT.set.dc_param);
         res.AD_index_NT(find(res.AD_index_NT<0),1)=1./(1+predNT.dc(find(res.AD_index_NT<0),1));
         res.CATMoS_NT_pred(find(isnan(predNT.dc(:,1))))=NaN;
         res.AD_NT(find(isnan(predNT.dc(:,1))))=0;
         res.AD_index_NT(find(isnan(predNT.dc(:,1))))=0;
+        res.AD_index_NT(find(res.AD_index_NT>0.9999),1)=1;
         res.AD_NT(find(res.AD_index_NT>0.5))=1;
         res.Conf_index_NT=zeros(size(XtestNT,1),1);
-        if exp
-            res.CATMoS_EPA_exp=NaN(size(Xtest,1),1);
-        end
+%         if exp
+%             res.CATMoS_EPA_exp=NaN(size(Xtest,1),1);
+%         end
         res.CATMoS_EPA_pred(:,1)=predEPA.class_pred;
-        AD=classical_leverage(train.CATMoS.model_EPA.set.train,XtestEPA,'auto');
+        AD=classical_leverage(train.CATMOS.model_EPA.set.train,XtestEPA,'auto');
         res.AD_EPA=abs(AD.inorout-1)';
-        res.AD_index_EPA=1-test_pretreatment(predEPA.dc(:,1),train.CATMoS.model_EPA.set.dc_param);
+        res.AD_index_EPA=1-test_pretreatment(predEPA.dc(:,1),train.CATMOS.model_EPA.set.dc_param);
         res.AD_index_EPA(find(res.AD_index_EPA<0),1)=1./(1+predEPA.dc(find(res.AD_index_EPA<0),1));
         res.CATMoS_EPA_pred(find(isnan(predEPA.dc(:,1))))=NaN;
         res.AD_EPA(find(isnan(predEPA.dc(:,1))))=0;
         res.AD_index_EPA(find(isnan(predEPA.dc(:,1))))=0;
+        res.AD_index_EPA(find(res.AD_index_EPA>0.9999),1)=1;
         res.AD_EPA(find(res.AD_index_EPA>0.5))=1;
         res.Conf_index_EPA=zeros(size(XtestEPA,1),1);
-        if exp
-            res.CATMoS_GHS_exp=NaN(size(Xtest,1),1);
-        end
+%         if exp
+%             res.CATMoS_GHS_exp=NaN(size(Xtest,1),1);
+%         end
         res.CATMoS_GHS_pred(:,1)=predGHS.class_pred;
-        AD=classical_leverage(train.CATMoS.model_GHS.set.train,XtestGHS,'auto');
+        AD=classical_leverage(train.CATMOS.model_GHS.set.train,XtestGHS,'auto');
         res.AD_GHS=abs(AD.inorout-1)';
-        res.AD_index_GHS=1-test_pretreatment(predGHS.dc(:,1),train.CATMoS.model_GHS.set.dc_param);
+        res.AD_index_GHS=1-test_pretreatment(predGHS.dc(:,1),train.CATMOS.model_GHS.set.dc_param);
         res.AD_index_GHS(find(res.AD_index_GHS<0),1)=1./(1+predGHS.dc(find(res.AD_index_GHS<0),1));
         res.CATMoS_GHS_pred(find(isnan(predGHS.dc(:,1))))=NaN;
         res.AD_GHS(find(isnan(predGHS.dc(:,1))))=0;
         res.AD_index_GHS(find(isnan(predGHS.dc(:,1))))=0;
+        res.AD_index_GHS(find(res.AD_index_GHS>0.9999),1)=1;
         res.AD_GHS(find(res.AD_index_GHS>0.5))=1;
         res.Conf_index_GHS=zeros(size(XtestGHS,1),1);
         if exp
-            res.CATMoS_LD50_exp=NaN(size(Xtest,1),1);
+            %res.CATMoS_LD50_exp=NaN(size(Xtest,1),1);
+            res.CATMoS_LD50_exp=cell(size(Xtest,1),1);
         end
         res.CATMoS_LD50_pred(:,1)=predLD50.y_pred_weighted;
-        AD=classical_leverage(train.CATMoS.model_LD50.set.train,XtestLD50,'auto');
+        res.CATMoS_LD50_predRange=cell(size(Xtest,1),1);
+        AD=classical_leverage(train.CATMOS.model_LD50.set.train,XtestLD50,'auto');
         res.AD_LD50=abs(AD.inorout-1)';
-        res.AD_index_LD50=1-test_pretreatment(predLD50.dc(:,1),train.CATMoS.model_LD50.set.dc_param);
+        res.AD_index_LD50=1-test_pretreatment(predLD50.dc(:,1),train.CATMOS.model_LD50.set.dc_param);
         res.AD_index_LD50(find(res.AD_index_LD50<0),1)=1./(1+predLD50.dc(find(res.AD_index_LD50<0),1));
         res.CATMoS_LD50_pred(find(isnan(predLD50.dc(:,1))))=NaN;
         res.AD_LD50(find(isnan(predLD50.dc(:,1))))=0;
         res.AD_index_LD50(find(isnan(predLD50.dc(:,1))))=0;
+        res.AD_index_LD50(find(res.AD_index_LD50>0.9999),1)=1;
         res.AD_LD50(find(res.AD_index_LD50>0.5))=1;
         res.Conf_index_LD50=zeros(size(XtestLD50,1),1);
         
-        
         for i=1:size(Xtest(:,1))
-            Li_vt=0;
-            Li_nt=0;
-            Li_epa=0;
-            Li_ghs=0;
+%             Li_vt=0;
+%             Li_nt=0;
+%             Li_epa=0;
+%             Li_ghs=0;
             Li_ld50=0;
-            if exp && ~contains(MoleculeNames(i),'AUTOGEN_')
+            if ~contains(MoleculeNames(i),'AUTOGEN_')
                 if regexp(MoleculeNames{i},'[0-9]+-[0-9]+-[0-9]')
-                    [Li_vt,Lo_vt] = ismember(MoleculeNames(i),train.CATMoS.model_VT.CAS);
-                    [Li_nt,Lo_nt] = ismember(MoleculeNames(i),train.CATMoS.model_NT.CAS);
-                    [Li_epa,Lo_epa] = ismember(MoleculeNames(i),train.CATMoS.model_EPA.CAS);
-                    [Li_ghs,Lo_ghs] = ismember(MoleculeNames(i),train.CATMoS.model_GHS.CAS);
-                    [Li_ld50,Lo_ld50] = ismember(MoleculeNames(i),train.CATMoS.model_LD50.CAS);
+%                     [Li_vt,Lo_vt] = ismember(MoleculeNames(i),train.CATMOS.model_VT.CAS);
+%                     [Li_nt,Lo_nt] = ismember(MoleculeNames(i),train.CATMOS.model_NT.CAS);
+%                     [Li_epa,Lo_epa] = ismember(MoleculeNames(i),train.CATMOS.model_EPA.CAS);
+%                     [Li_ghs,Lo_ghs] = ismember(MoleculeNames(i),train.CATMOS.model_GHS.CAS);
+                    [Li_ld50,Lo_ld50] = ismember(MoleculeNames(i),train.CATMOS.model_LD50.CAS);
                 elseif regexp(MoleculeNames{i},'DTXSID[0-9]+')
-                    [Li_vt,Lo_vt] = ismember(MoleculeNames{i},train.CATMoS.model_VT.DTXSID);
-                    [Li_nt,Lo_nt] = ismember(MoleculeNames{i},train.CATMoS.model_NT.DTXSID);
-                    [Li_epa,Lo_epa] = ismember(MoleculeNames{i},train.CATMoS.model_EPA.DTXSID);
-                    [Li_ghs,Lo_ghs] = ismember(MoleculeNames{i},train.CATMoS.model_GHS.DTXSID);
-                    [Li_ld50,Lo_ld50] = ismember(MoleculeNames{i},train.CATMoS.model_LD50.DTXSID);
+%                     [Li_vt,Lo_vt] = ismember(MoleculeNames{i},train.CATMOS.model_VT.DTXSID);
+%                     [Li_nt,Lo_nt] = ismember(MoleculeNames{i},train.CATMOS.model_NT.DTXSID);
+%                     [Li_epa,Lo_epa] = ismember(MoleculeNames{i},train.CATMOS.model_EPA.DTXSID);
+%                     [Li_ghs,Lo_ghs] = ismember(MoleculeNames{i},train.CATMOS.model_GHS.DTXSID);
+                    [Li_ld50,Lo_ld50] = ismember(MoleculeNames{i},train.CATMOS.model_LD50.DTXSID);
                 end
-                if Li_vt
-                    res.CATMoS_VT_exp(i,1)=train.CATMoS.model_VT.set.class_Exp(Lo_vt);
-                end
-                if Li_nt
-                    res.CATMoS_NT_exp(i)=train.CATMoS.model_NT.set.class_Exp(Lo_nt);
-                end
-                if Li_epa
-                    res.CATMoS_EPA_exp(i)=train.CATMoS.model_EPA.set.class_Exp(Lo_epa);
-                end
-                if Li_ghs
-                    res.CATMoS_GHS_exp(i)=train.CATMoS.model_GHS.set.class_Exp(Lo_ghs);
-                end
+%                 if Li_vt
+%                     res.CATMoS_VT_exp(i,1)=train.CATMOS.model_VT.set.class_Exp(Lo_vt);
+%                 end
+%                 if Li_nt
+%                     res.CATMoS_NT_exp(i,1)=train.CATMOS.model_NT.set.class_Exp(Lo_nt);
+%                 end
+%                 if Li_epa
+%                     res.CATMoS_EPA_exp(i,1)=train.CATMOS.model_EPA.set.class_Exp(Lo_epa);
+%                 end
+%                 if Li_ghs
+%                     res.CATMoS_GHS_exp(i,1)=train.CATMOS.model_GHS.set.class_Exp(Lo_ghs);
+%                 end
                 if Li_ld50
-                    res.CATMoS_LD50_exp(i,1)=train.CATMoS.model_LD50.set.y_Exp_n(Lo_ld50);
+                    res.AD_VT(i)=1;
+                    res.AD_index_VT(i,1)=1;
+                    res.AD_NT(i)=1;
+                    res.AD_index_NT(i,1)=1;
+                    res.AD_EPA(i)=1;
+                    res.AD_index_EPA(i,1)=1;
+                    res.AD_GHS(i)=1;
+                    res.AD_index_GHS(i,1)=1;
+                    res.AD_LD50(i)=1;
+                    res.AD_index_LD50(i,1)=1;
+                    if exp
+                        res.CATMoS_LD50_exp(i,1)=train.CATMOS.model_LD50.set.y_Exp(Lo_ld50);
+                    else
+                        res.CATMoS_LD50_exp(i,1)={'NA'};
+                    end
                 end
             end
             %res.AD_index_VT(i,1)=1./(1+predVT.dc(i,1)*predVT.w(i,~isnan(predVT.dc(i,1)))');
             
-            res.Conf_index_VT(i,1)=(train.CATMoS.model_VT.conc_VT(predVT.neighbors(i,:),1)'*predVT.w(i,:)'+res.AD_index_VT(i))/2;
+            res.Conf_index_VT(i,1)=(train.CATMOS.model_VT.conc_VT(predVT.neighbors(i,:),1)'*predVT.w(i,:)'+res.AD_index_VT(i))/2;
             if res.AD_index_VT(i)==0
                 res.Conf_index_VT(i,1)=0;
             end
-            res.Conf_index_NT(i,1)=(train.CATMoS.model_NT.conc_NT(predNT.neighbors(i,:),1)'*predNT.w(i,:)'+res.AD_index_NT(i))/2;
+            res.Conf_index_NT(i,1)=(train.CATMOS.model_NT.conc_NT(predNT.neighbors(i,:),1)'*predNT.w(i,:)'+res.AD_index_NT(i))/2;
             if res.AD_index_NT(i)==0
                 res.Conf_index_NT(i,1)=0;
             end
-            res.Conf_index_EPA(i,1)=(train.CATMoS.model_EPA.conc_EPA(predEPA.neighbors(i,:),1)'*predEPA.w(i,:)'+res.AD_index_EPA(i))/2;
+            res.Conf_index_EPA(i,1)=(train.CATMOS.model_EPA.conc_EPA(predEPA.neighbors(i,:),1)'*predEPA.w(i,:)'+res.AD_index_EPA(i))/2;
             if res.AD_index_EPA(i)==0
                 res.Conf_index_EPA(i,1)=0;
             end
-            res.Conf_index_GHS(i,1)=(train.CATMoS.model_GHS.conc_GHS(predGHS.neighbors(i,:),1)'*predGHS.w(i,:)'+res.AD_index_GHS(i))/2;
+            res.Conf_index_GHS(i,1)=(train.CATMOS.model_GHS.conc_GHS(predGHS.neighbors(i,:),1)'*predGHS.w(i,:)'+res.AD_index_GHS(i))/2;
             if res.AD_index_GHS(i)==0
                 res.Conf_index_GHS(i,1)=0;
             end
-            res.Conf_index_LD50(i,1)=(train.CATMoS.model_LD50.conc_LD50(predLD50.neighbors(i,:),1)'*predLD50.w(i,:)'+res.AD_index_LD50(i))/2;
+            res.Conf_index_LD50(i,1)=(train.CATMOS.model_LD50.conc_LD50(predLD50.neighbors(i,:),1)'*predLD50.w(i,:)'+res.AD_index_LD50(i))/2;
             if res.AD_index_LD50(i)==0
                 res.Conf_index_LD50(i,1)=0;
             end
             
+            %WOE corrections
+            %res.CATMoS_LD50_pred_i(i,1)=10^res.CATMoS_LD50_pred(i);
+            %res.CATMoS_LD50_range{i,1}='';
+            res=woe_corr(res,i);
+            res.CATMoS_LD50_predRange{i,1}=strcat('[',num2str(floor(10^(res.CATMoS_LD50_pred(i)-0.3))),'-',num2str(ceil(10^(res.CATMoS_LD50_pred(i)+0.3))),']');
+            if 10^(res.CATMoS_LD50_pred(i)+0.3)>=5
+                res.CATMoS_LD50_pred(i)=round(10^res.CATMoS_LD50_pred(i));
+            else
+                res.CATMoS_LD50_pred(i)=10^res.CATMoS_LD50_pred(i);
+            end
+
+            
+            %neighbors
             if neighbors==1
-                if res.AD_index_VT(i,:)~=0
-                    %res.VT_CATMoS_ID_neighbor(i,:)=train.CATMoS.model_VT.ChemID(predVT.neighbors(i,:));
-                    res.VT_CAS_neighbor(i,:)=train.CATMoS.model_VT.CAS(predVT.neighbors(i,:));
-                    res.VT_InChiKey_neighbor(i,:)=train.CATMoS.model_VT.InChiKey(predVT.neighbors(i,:));
-                    res.VT_DTXSID_neighbor(i,:)=train.CATMoS.model_VT.DTXSID(predVT.neighbors(i,:));
-                    %res.VT_DSSTOXMPID_neighbor(i,:)=train.CATMoS.model_VT.DSSTOXMPID(pred.neighbors(i,:));
-                    res.VT_Exp_neighbor(i,:)=train.CATMoS.model_VT.set.class_Exp(predVT.neighbors(i,:));
-                    res.VT_pred_neighbor(i,:)=train.CATMoS.model_VT.set.class(predVT.neighbors(i,:))-1;
-                else
-                    res.VT_CAS_neighbor(i,:)=cell(1,5);
-                    res.VT_InChiKey_neighbor(i,:)=cell(1,5);
-                    res.VT_DTXSID_neighbor(i,:)=cell(1,5);
-                    %res.VT_DSSTOXMPID_neighbor(i,:)=cell(1,5);
-                    res.VT_Exp_neighbor(i,:)=nan(1,5);
-                    res.VT_pred_neighbor(i,:)=nan(1,5);
-                end
-                if res.AD_index_NT(i,:)~=0
-                    %res.NT_CATMoS_ID_neighbor(i,:)=train.CATMoS.model_NT.ChemID(predNT.neighbors(i,:));
-                    res.NT_CAS_neighbor(i,:)=train.CATMoS.model_NT.CAS(predNT.neighbors(i,:));
-                    res.NT_InChiKey_neighbor(i,:)=train.CATMoS.model_NT.InChiKey(predNT.neighbors(i,:));
-                    res.NT_DTXSID_neighbor(i,:)=train.CATMoS.model_NT.DTXSID(predNT.neighbors(i,:));
-                    %res.NT_DSSTOXMPID_neighbor(i,:)=train.CATMoS.model_NT.DSSTOXMPID(pred.neighbors(i,:));
-                    res.NT_Exp_neighbor(i,:)=train.CATMoS.model_NT.set.class_Exp(predNT.neighbors(i,:));
-                    res.NT_pred_neighbor(i,:)=train.CATMoS.model_NT.set.class(predNT.neighbors(i,:))-1;
-                else
-                    res.NT_CAS_neighbor(i,:)=cell(1,5);
-                    res.NT_InChiKey_neighbor(i,:)=cell(1,5);
-                    res.NT_DTXSID_neighbor(i,:)=cell(1,5);
-                    %res.NT_DSSTOXMPID_neighbor(i,:)=cell(1,5);
-                    res.NT_Exp_neighbor(i,:)=nan(1,5);
-                    res.NT_pred_neighbor(i,:)=nan(1,5);
-                end
-                if res.AD_index_EPA(i,:)~=0
-                    %res.EPA_CATMoS_ID_neighbor(i,:)=train.CATMoS.model_EPA.ChemID(predEPA.neighbors(i,:));
-                    res.EPA_CAS_neighbor(i,:)=train.CATMoS.model_EPA.CAS(predEPA.neighbors(i,:));
-                    res.EPA_InChiKey_neighbor(i,:)=train.CATMoS.model_EPA.InChiKey(predEPA.neighbors(i,:));
-                    res.EPA_DTXSID_neighbor(i,:)=train.CATMoS.model_EPA.DTXSID(predEPA.neighbors(i,:));
-                    %res.EPA_DSSTOXMPID_neighbor(i,:)=train.CATMoS.model_EPA.DSSTOXMPID(predEPA.neighbors(i,:));
-                    res.EPA_Exp_neighbor(i,:)=train.CATMoS.model_EPA.set.class_Exp(predEPA.neighbors(i,:));
-                    res.EPA_pred_neighbor(i,:)=train.CATMoS.model_EPA.set.class(predEPA.neighbors(i,:));
-                else
-                    res.EPA_CAS_neighbor(i,:)=cell(1,5);
-                    res.EPA_InChiKey_neighbor(i,:)=cell(1,5);
-                    res.EPA_DTXSID_neighbor(i,:)=cell(1,5);
-                    %res.EPA_DSSTOXMPID_neighbor(i,:)=cell(1,5);
-                    res.EPA_Exp_neighbor(i,:)=nan(1,5);
-                    res.EPA_pred_neighbor(i,:)=nan(1,5);
-                end
-                if res.AD_index_GHS(i,:)~=0
-                    %res.GHS_CATMoS_ID_neighbor(i,:)=train.CATMoS.model_GHS.ChemID(predGHS.neighbors(i,:));
-                    res.GHS_CAS_neighbor(i,:)=train.CATMoS.model_GHS.CAS(predGHS.neighbors(i,:));
-                    res.GHS_InChiKey_neighbor(i,:)=train.CATMoS.model_GHS.InChiKey(predGHS.neighbors(i,:));
-                    res.GHS_DTXSID_neighbor(i,:)=train.CATMoS.model_GHS.DTXSID(predGHS.neighbors(i,:));
-                    %res.GHS_DSSTOXMPID_neighbor(i,:)=train.CATMoS.model_GHS.DSSTOXMPID(pred.neighbors(i,:));
-                    res.GHS_Exp_neighbor(i,:)=train.CATMoS.model_GHS.set.class_Exp(predGHS.neighbors(i,:));
-                    res.GHS_pred_neighbor(i,:)=train.CATMoS.model_GHS.set.class(predGHS.neighbors(i,:));
-                else
-                    res.GHS_CAS_neighbor(i,:)=cell(1,5);
-                    res.GHS_InChiKey_neighbor(i,:)=cell(1,5);
-                    res.GHS_DTXSID_neighbor(i,:)=cell(1,5);
-                    %res.GHS_DSSTOXMPID_neighbor(i,:)=cell(1,5);
-                    res.GHS_Exp_neighbor(i,:)=nan(1,5);
-                    res.GHS_pred_neighbor(i,:)=nan(1,5);
-                end
+%                 if res.AD_index_VT(i,:)~=0
+%                     %res.VT_CATMoS_ID_neighbor(i,:)=train.CATMOS.model_VT.ChemID(predVT.neighbors(i,:));
+%                     res.VT_CAS_neighbor(i,:)=train.CATMOS.model_VT.CAS(predVT.neighbors(i,:));
+%                     res.VT_InChiKey_neighbor(i,:)=train.CATMOS.model_VT.InChiKey(predVT.neighbors(i,:));
+%                     res.VT_DTXSID_neighbor(i,:)=train.CATMOS.model_VT.DTXSID(predVT.neighbors(i,:));
+%                     %res.VT_DSSTOXMPID_neighbor(i,:)=train.CATMOS.model_VT.DSSTOXMPID(pred.neighbors(i,:));
+%                     res.VT_Exp_neighbor(i,:)=train.CATMOS.model_VT.set.class_Exp(predVT.neighbors(i,:));
+%                     res.VT_pred_neighbor(i,:)=train.CATMOS.model_VT.set.class(predVT.neighbors(i,:))-1;
+%                 else
+%                     res.VT_CAS_neighbor(i,:)=cell(1,5);
+%                     res.VT_InChiKey_neighbor(i,:)=cell(1,5);
+%                     res.VT_DTXSID_neighbor(i,:)=cell(1,5);
+%                     %res.VT_DSSTOXMPID_neighbor(i,:)=cell(1,5);
+%                     res.VT_Exp_neighbor(i,:)=nan(1,5);
+%                     res.VT_pred_neighbor(i,:)=nan(1,5);
+%                 end
+%                 if res.AD_index_NT(i,:)~=0
+%                     %res.NT_CATMoS_ID_neighbor(i,:)=train.CATMOS.model_NT.ChemID(predNT.neighbors(i,:));
+%                     res.NT_CAS_neighbor(i,:)=train.CATMOS.model_NT.CAS(predNT.neighbors(i,:));
+%                     res.NT_InChiKey_neighbor(i,:)=train.CATMOS.model_NT.InChiKey(predNT.neighbors(i,:));
+%                     res.NT_DTXSID_neighbor(i,:)=train.CATMOS.model_NT.DTXSID(predNT.neighbors(i,:));
+%                     %res.NT_DSSTOXMPID_neighbor(i,:)=train.CATMOS.model_NT.DSSTOXMPID(pred.neighbors(i,:));
+%                     res.NT_Exp_neighbor(i,:)=train.CATMOS.model_NT.set.class_Exp(predNT.neighbors(i,:));
+%                     res.NT_pred_neighbor(i,:)=train.CATMOS.model_NT.set.class(predNT.neighbors(i,:))-1;
+%                 else
+%                     res.NT_CAS_neighbor(i,:)=cell(1,5);
+%                     res.NT_InChiKey_neighbor(i,:)=cell(1,5);
+%                     res.NT_DTXSID_neighbor(i,:)=cell(1,5);
+%                     %res.NT_DSSTOXMPID_neighbor(i,:)=cell(1,5);
+%                     res.NT_Exp_neighbor(i,:)=nan(1,5);
+%                     res.NT_pred_neighbor(i,:)=nan(1,5);
+%                 end
+%                 if res.AD_index_EPA(i,:)~=0
+%                     %res.EPA_CATMoS_ID_neighbor(i,:)=train.CATMOS.model_EPA.ChemID(predEPA.neighbors(i,:));
+%                     res.EPA_CAS_neighbor(i,:)=train.CATMOS.model_EPA.CAS(predEPA.neighbors(i,:));
+%                     res.EPA_InChiKey_neighbor(i,:)=train.CATMOS.model_EPA.InChiKey(predEPA.neighbors(i,:));
+%                     res.EPA_DTXSID_neighbor(i,:)=train.CATMOS.model_EPA.DTXSID(predEPA.neighbors(i,:));
+%                     %res.EPA_DSSTOXMPID_neighbor(i,:)=train.CATMOS.model_EPA.DSSTOXMPID(predEPA.neighbors(i,:));
+%                     res.EPA_Exp_neighbor(i,:)=train.CATMOS.model_EPA.set.class_Exp(predEPA.neighbors(i,:));
+%                     res.EPA_pred_neighbor(i,:)=train.CATMOS.model_EPA.set.class(predEPA.neighbors(i,:));
+%                 else
+%                     res.EPA_CAS_neighbor(i,:)=cell(1,5);
+%                     res.EPA_InChiKey_neighbor(i,:)=cell(1,5);
+%                     res.EPA_DTXSID_neighbor(i,:)=cell(1,5);
+%                     %res.EPA_DSSTOXMPID_neighbor(i,:)=cell(1,5);
+%                     res.EPA_Exp_neighbor(i,:)=nan(1,5);
+%                     res.EPA_pred_neighbor(i,:)=nan(1,5);
+%                 end
+%                 if res.AD_index_GHS(i,:)~=0
+%                     %res.GHS_CATMoS_ID_neighbor(i,:)=train.CATMOS.model_GHS.ChemID(predGHS.neighbors(i,:));
+%                     res.GHS_CAS_neighbor(i,:)=train.CATMOS.model_GHS.CAS(predGHS.neighbors(i,:));
+%                     res.GHS_InChiKey_neighbor(i,:)=train.CATMOS.model_GHS.InChiKey(predGHS.neighbors(i,:));
+%                     res.GHS_DTXSID_neighbor(i,:)=train.CATMOS.model_GHS.DTXSID(predGHS.neighbors(i,:));
+%                     %res.GHS_DSSTOXMPID_neighbor(i,:)=train.CATMOS.model_GHS.DSSTOXMPID(pred.neighbors(i,:));
+%                     res.GHS_Exp_neighbor(i,:)=train.CATMOS.model_GHS.set.class_Exp(predGHS.neighbors(i,:));
+%                     res.GHS_pred_neighbor(i,:)=train.CATMOS.model_GHS.set.class(predGHS.neighbors(i,:));
+%                 else
+%                     res.GHS_CAS_neighbor(i,:)=cell(1,5);
+%                     res.GHS_InChiKey_neighbor(i,:)=cell(1,5);
+%                     res.GHS_DTXSID_neighbor(i,:)=cell(1,5);
+%                     %res.GHS_DSSTOXMPID_neighbor(i,:)=cell(1,5);
+%                     res.GHS_Exp_neighbor(i,:)=nan(1,5);
+%                     res.GHS_pred_neighbor(i,:)=nan(1,5);
+%                 end
                 if res.AD_index_LD50(i,:)~=0
-                    %res.LD50_CATMoS_ID_neighbor(i,:)=train.CATMoS.model_LD50.ChemID(predLD50.neighbors(i,:));
-                    res.LD50_CAS_neighbor(i,:)=train.CATMoS.model_LD50.CAS(predLD50.neighbors(i,:));
-                    res.LD50_InChiKey_neighbor(i,:)=train.CATMoS.model_LD50.InChiKey(predLD50.neighbors(i,:));
-                    res.LD50_DTXSID_neighbor(i,:)=train.CATMoS.model_LD50.DTXSID(predLD50.neighbors(i,:));
-                    %res.LD50_DSSTOXMPID_neighbor(i,:)=train.CATMoS.model_LD50.DSSTOXMPID(pred.neighbors(i,:));
-                    res.LD50_Exp_neighbor(i,:)=train.CATMoS.model_LD50.set.y_Exp(predLD50.neighbors(i,:));
-                    res.LD50_pred_neighbor(i,:)=train.CATMoS.model_LD50.set.y(predLD50.neighbors(i,:));
+                    %res.LD50_CATMoS_ID_neighbor(i,:)=train.CATMOS.model_LD50.ChemID(predLD50.neighbors(i,:));
+                    res.CAS_neighbor(i,:)=train.CATMOS.model_LD50.CAS(predLD50.neighbors(i,:));
+                    res.InChiKey_neighbor(i,:)=train.CATMOS.model_LD50.InChiKey(predLD50.neighbors(i,:));
+                    res.DTXSID_neighbor(i,:)=train.CATMOS.model_LD50.DTXSID(predLD50.neighbors(i,:));
+                    %res.LD50_DSSTOXMPID_neighbor(i,:)=train.CATMOS.model_LD50.DSSTOXMPID(pred.neighbors(i,:));
+                    res.LD50_Exp_neighbor(i,:)=train.CATMOS.model_LD50.set.y_Exp(predLD50.neighbors(i,:));
+                    res.LD50_pred_neighbor(i,:)=train.CATMOS.model_LD50.set.y(predLD50.neighbors(i,:));
                 else
-                    res.LD50_CAS_neighbor(i,:)=cell(1,5);
-                    res.LD50_InChiKey_neighbor(i,:)=cell(1,5);
-                    res.LD50_DTXSID_neighbor(i,:)=cell(1,5);
+                    res.CAS_neighbor(i,:)=cell(1,5);
+                    res.InChiKey_neighbor(i,:)=cell(1,5);
+                    res.DTXSID_neighbor(i,:)=cell(1,5);
                     %res.LD50_DSSTOXMPID_neighbor(i,:)=cell(1,5);
                     res.LD50_Exp_neighbor(i,:)=cell(1,5);
                     res.LD50_pred_neighbor(i,:)=nan(1,5);
                 end
             end
-            
+
             if strcmpi(ext,'.txt') && sep==1
                 %res.Xtest=Xtest;
                 fprintf(output(Locb(find(Locb))),'\t Molecule %s:\n', MoleculeNames{i});
                 if exp
-                    fprintf(output(Locb(find(Locb))),'VT experimental= %i, NT experimental= %i, EPA category experimental= %i, GHS category experimental= %i, LD50 experimental= %.3f\n', res.CATMoS_VT_exp(i),res.CATMoS_NT_exp(i),res.CATMoS_EPA_exp(i),res.CATMoS_GHS_exp(i),res.CATMoS_LD50_exp(i));
+                    %fprintf(output(Locb(find(Locb))),'LD50 experimental= %.3f\n', res.CATMoS_LD50_exp(i));
+                    fprintf(output(Locb(find(Locb))),'LD50 experimental= %s\n', res.CATMoS_LD50_exp{i});
                 end
-                fprintf(output(Locb(find(Locb))),'VT predicted= %i, AD: %i, AD_index= %.2f, Conf_index= %.2f\n', res.CATMoS_VT_pred(i),res.AD_VT(i),res.AD_index_VT(i),res.Conf_index_VT(i));
-                fprintf(output(Locb(find(Locb))),'NT predicted= %i, AD: %i, AD_index= %.2f, Conf_index= %.2f\n', res.CATMoS_NT_pred(i),res.AD_NT(i),res.AD_index_NT(i),res.Conf_index_NT(i));
-                fprintf(output(Locb(find(Locb))),'EPA category predicted= %i, AD: %i, AD_index= %.2f, Conf_index= %.2f\n', res.CATMoS_EPA_pred(i),res.AD_EPA(i),res.AD_index_EPA(i),res.Conf_index_EPA(i));
-                fprintf(output(Locb(find(Locb))),'GHS category predicted= %i, AD: %i,AD_index= %.2f, Conf_index= %.2f\n', res.CATMoS_GHS_pred(i),res.AD_GHS(i),res.AD_index_GHS(i),res.Conf_index_GHS(i));
-                fprintf(output(Locb(find(Locb))),'LD50 predicted= %.3f, AD: %i,AD_index= %.2f, Conf_index= %.2f\n', res.CATMoS_LD50_pred(i),res.AD_LD50(i),res.AD_index_LD50(i),res.Conf_index_LD50(i));
+%                 fprintf(output(Locb(find(Locb))),'VT predicted= %i, AD: %i, AD_index= %.2f, Conf_index= %.2f\n', res.CATMoS_VT_pred(i),res.AD_VT(i),res.AD_index_VT(i),res.Conf_index_VT(i));
+%                 fprintf(output(Locb(find(Locb))),'NT predicted= %i, AD: %i, AD_index= %.2f, Conf_index= %.2f\n', res.CATMoS_NT_pred(i),res.AD_NT(i),res.AD_index_NT(i),res.Conf_index_NT(i));
+%                 fprintf(output(Locb(find(Locb))),'EPA category predicted= %i, AD: %i, AD_index= %.2f, Conf_index= %.2f\n', res.CATMoS_EPA_pred(i),res.AD_EPA(i),res.AD_index_EPA(i),res.Conf_index_EPA(i));
+%                 fprintf(output(Locb(find(Locb))),'GHS category predicted= %i, AD: %i,AD_index= %.2f, Conf_index= %.2f\n', res.CATMoS_GHS_pred(i),res.AD_GHS(i),res.AD_index_GHS(i),res.Conf_index_GHS(i));
+%                 fprintf(output(Locb(find(Locb))),'LD50 predicted= %.3f, AD: %i,AD_index= %.2f, Conf_index= %.2f\n', res.CATMoS_LD50_pred(i),res.AD_LD50(i),res.AD_index_LD50(i),res.Conf_index_LD50(i));
+                fprintf(output(Locb(find(Locb))),'VT predicted= %i, NT predicted= %i, EPA category predicted= %i, GHS category predicted= %i, LD50 predicted= %.3f\n', res.CATMoS_VT_pred(i),...
+                    res.CATMoS_NT_pred(i),res.CATMoS_EPA_pred(i),res.CATMoS_GHS_pred(i),res.CATMoS_LD50_pred(i));
                 
+                fprintf(output(Locb(find(Locb))),'AD: %i,AD_index= %.2f, Conf_index= %.2f\n',res.AD_CATMoS(i),res.AD_index_CATMoS(i),res.Conf_index_CATMoS(i));
                 if neighbors==1
-                    fprintf(output(Locb(find(Locb))),'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.CATMoS.model_VT.set.K, res.VT_CAS_neighbor{i,1:5});
-                    fprintf(output(Locb(find(Locb))),'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.CATMoS.model_NT.set.K, res.NT_CAS_neighbor{i,1:5});
-                    fprintf(output(Locb(find(Locb))),'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.CATMoS.model_EPA.set.K, res.EPA_CAS_neighbor{i,1:5});
-                    fprintf(output(Locb(find(Locb))),'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.CATMoS.model_GHS.set.K, res.GHS_CAS_neighbor{i,1:5});
-                    fprintf(output(Locb(find(Locb))),'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.CATMoS.model_LD50.set.K, res.LD50_CAS_neighbor{i,1:5});
+%                     fprintf(output(Locb(find(Locb))),'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.CATMOS.model_VT.set.K, res.VT_CAS_neighbor{i,1:5});
+%                     fprintf(output(Locb(find(Locb))),'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.CATMOS.model_NT.set.K, res.NT_CAS_neighbor{i,1:5});
+%                     fprintf(output(Locb(find(Locb))),'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.CATMOS.model_EPA.set.K, res.EPA_CAS_neighbor{i,1:5});
+%                     fprintf(output(Locb(find(Locb))),'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.CATMOS.model_GHS.set.K, res.GHS_CAS_neighbor{i,1:5});
+                    fprintf(output(Locb(find(Locb))),'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.CATMOS.model_LD50.set.K, res.CAS_neighbor{i,1:5});
                 end
 
             elseif strcmpi(ext,'.txt') && sep==0
-                
                 fprintf(output,'\t Molecule %s:\n', MoleculeNames{i});
                 if exp
-                    fprintf(output,'VT experimental= %i, NT experimental= %i, EPA category experimental= %i, GHS category experimental= %i, LD50 experimental= %.3f\n', res.CATMoS_VT_exp(i),res.CATMoS_NT_exp(i),res.CATMoS_EPA_exp(i),res.CATMoS_GHS_exp(i),res.CATMoS_LD50_exp(i));
+                    fprintf(output,'LD50 experimental= %.s\n',res.CATMoS_LD50_exp{i});
                 end
-                fprintf(output,'VT predicted= %i, AD: %i, AD_index= %.2f, Conf_index= %.2f\n', res.CATMoS_VT_pred(i),res.AD_VT(i),res.AD_index_VT(i),res.Conf_index_VT(i));
-                fprintf(output,'NT predicted= %i, AD: %i, AD_index= %.2f, Conf_index= %.2f\n', res.CATMoS_NT_pred(i),res.AD_NT(i),res.AD_index_NT(i),res.Conf_index_NT(i));
-                fprintf(output,'EPA category predicted= %i, AD: %i, AD_index= %.2f, Conf_index= %.2f\n', res.CATMoS_EPA_pred(i),res.AD_EPA(i),res.AD_index_EPA(i),res.Conf_index_EPA(i));
-                fprintf(output,'GHS category predicted= %i, AD: %i,AD_index= %.2f, Conf_index= %.2f\n', res.CATMoS_GHS_pred(i),res.AD_GHS(i),res.AD_index_GHS(i),res.Conf_index_GHS(i));
-                fprintf(output,'LD50 predicted= %.3f, AD: %i,AD_index= %.2f, Conf_index= %.2f\n', res.CATMoS_LD50_pred(i),res.AD_LD50(i),res.AD_index_LD50(i),res.Conf_index_LD50(i));
+%                 fprintf(output,'VT predicted= %i, AD: %i, AD_index= %.2f, Conf_index= %.2f\n', res.CATMoS_VT_pred(i),res.AD_VT(i),res.AD_index_VT(i),res.Conf_index_VT(i));
+%                 fprintf(output,'NT predicted= %i, AD: %i, AD_index= %.2f, Conf_index= %.2f\n', res.CATMoS_NT_pred(i),res.AD_NT(i),res.AD_index_NT(i),res.Conf_index_NT(i));
+%                 fprintf(output,'EPA category predicted= %i, AD: %i, AD_index= %.2f, Conf_index= %.2f\n', res.CATMoS_EPA_pred(i),res.AD_EPA(i),res.AD_index_EPA(i),res.Conf_index_EPA(i));
+%                 fprintf(output,'GHS category predicted= %i, AD: %i,AD_index= %.2f, Conf_index= %.2f\n', res.CATMoS_GHS_pred(i),res.AD_GHS(i),res.AD_index_GHS(i),res.Conf_index_GHS(i));
+%                 fprintf(output,'LD50 predicted= %.3f, AD: %i,AD_index= %.2f, Conf_index= %.2f\n', res.CATMoS_LD50_pred(i),res.AD_LD50(i),res.AD_index_LD50(i),res.Conf_index_LD50(i));
+                fprintf(output,'VT predicted= %i, NT predicted= %i, EPA category predicted= %i, GHS category predicted= %i, LD50 predicted= %.3f\n',res.CATMoS_VT_pred(i),...
+                    res.CATMoS_NT_pred(i),res.CATMoS_EPA_pred(i),res.CATMoS_GHS_pred(i),res.CATMoS_LD50_pred(i));
+                
+                fprintf(output,'AD: %i,AD_index= %.2f, Conf_index= %.2f\n',res.AD_CATMoS(i),res.AD_index_CATMoS(i),res.Conf_index_CATMoS(i));
                 
                 if neighbors==1
-                    fprintf(output,'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.CATMoS.model_VT.set.K, res.VT_CAS_neighbor{i,1:5});
-                    fprintf(output,'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.CATMoS.model_NT.set.K, res.NT_CAS_neighbor{i,1:5});
-                    fprintf(output,'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.CATMoS.model_EPA.set.K, res.EPA_CAS_neighbor{i,1:5});
-                    fprintf(output,'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.CATMoS.model_GHS.set.K, res.GHS_CAS_neighbor{i,1:5});
-                    fprintf(output,'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.CATMoS.model_LD50.set.K, res.LD50_CAS_neighbor{i,1:5});
+%                     fprintf(output,'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.CATMOS.model_VT.set.K, res.VT_CAS_neighbor{i,1:5});
+%                     fprintf(output,'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.CATMOS.model_NT.set.K, res.NT_CAS_neighbor{i,1:5});
+%                     fprintf(output,'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.CATMOS.model_EPA.set.K, res.EPA_CAS_neighbor{i,1:5});
+%                     fprintf(output,'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.CATMOS.model_GHS.set.K, res.GHS_CAS_neighbor{i,1:5});
+                    fprintf(output,'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',train.CATMOS.model_LD50.set.K, res.CAS_neighbor{i,1:5});
                 end
                 
             end
         end
+        
+res=rmfield(res,{'AD_VT','AD_index_VT','Conf_index_VT','AD_NT','AD_index_NT','Conf_index_NT','AD_EPA','AD_index_EPA','Conf_index_EPA',...
+    'AD_GHS','AD_index_GHS','Conf_index_GHS','AD_LD50','AD_index_LD50','Conf_index_LD50'});
+
 
         if sep==1 && strcmpi(ext,'.csv')
             T=struct2table(res);
             if printtDesc==1
                 %Xtest=[XtestVT; XtestNT; XtestEPA; XtestGHS; XtestLD50];
                 Xtest=array2table(Xtest,'VariableNames',Desc);
-                
+                %Xtest=array2table(XtestLD50);
                 T=[T Xtest];
                 res.Descriptors=Xtest;
             end
@@ -5451,7 +5541,6 @@ else
             clear('T');
             
         elseif sep==0 && printtDesc==1 && strcmpi(ext,'.csv')
-            
             %Xtest=[XtestVT; XtestNT; XtestEPA; XtestGHS; XtestLD50];
             Xtest(:,ismember(Desc,DescNames))=[];
             Desc(ismember(Desc,DescNames))=[];
@@ -5499,9 +5588,11 @@ else
     end
     
     fclose('all');
+    tElapsed = toc(timerAll);
     if verbose>0
-        fprintf(1,'\n========== End Of Calculation ==========\n');
-        fprintf('%i molecules predicted\n', length(MoleculeNames));
+        
+        fprintf(1,'\n==========   End Of Calculation   ==========\n');
+        fprintf('%i molecules predicted in total %0.2f seconds.\n', length(MoleculeNames),round(tElapsed,2));
     end
     
     
