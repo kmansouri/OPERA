@@ -1,13 +1,13 @@
 function res=OPERA(varargin)
 
 Version='2.4';
-SubVersion='2.4-beta2';
+SubVersion='2.4-beta3';
 %%
 %
 %        _______________________________________________________________________
 %       |                                                                       |
 %       |   OPERA models for physchem, environmental fate and tox properties.   |
-%       |                 Version 2.4 (August 2019)                               |
+%       |                 Version 2.4 (August 2019)                             |
 %       |_______________________________________________________________________|
 %
 %
@@ -778,10 +778,11 @@ else
             if structure==1 && inputCDK==0
                 %Bond_HA_r=Xin(:,466)./Xin(:,9);
                 Amb_str=intersect(find((Xin(:,466)./Xin(:,9))>1.3),find(Xin(:,9)>50));
-                if ~isempty(Amb_str)||~isempty(find(Xin(:,9)>150, 1))
+                Amb_str=unique(sort([Amb_str; find(Xin(:,9)>150)]));
+                if ~isempty(Amb_str)%||~isempty(find(Xin(:,9)>150, 1))
                     Amb_str=num2str(Amb_str);
-                    Amb_str=strjoin(num2cell(Amb_str(1:length(Amb_str))),',  ');
-                    error('CDK descriptors cannot be calculated for structure(s) number: %s.',Amb_str);
+                    Amb_str=strjoin(num2cell(Amb_str(1:length(Amb_str))),', ');
+                    error('Structure(s) number: %s exceed recommended size limit. CDK descriptors might fail or take long time.',Amb_str);
                 end
                 
                 InputDescCDK=strcat(StructureFile(1:length(StructureFile)-4),'_CDKDesc.csv');
@@ -5382,10 +5383,10 @@ else
             %res.CATMoS_LD50_range{i,1}='';
             res=woe_corr(res,i);
             res.CATMoS_LD50_predRange{i,1}=strcat('[',num2str(floor(10^(res.CATMoS_LD50_pred(i)-0.3))),'-',num2str(ceil(10^(res.CATMoS_LD50_pred(i)+0.3))),']');
-            if 10^(res.CATMoS_LD50_pred(i)+0.3)>=5
+            if 10^(res.CATMoS_LD50_pred(i))>=5
                 res.CATMoS_LD50_pred(i)=round(10^res.CATMoS_LD50_pred(i));
             else
-                res.CATMoS_LD50_pred(i)=10^res.CATMoS_LD50_pred(i);
+                res.CATMoS_LD50_pred(i)=round(10^res.CATMoS_LD50_pred(i),2);
             end
 
             
@@ -5462,7 +5463,7 @@ else
                     res.DTXSID_neighbor(i,:)=train.CATMOS.model_LD50.DTXSID(predLD50.neighbors(i,:));
                     %res.LD50_DSSTOXMPID_neighbor(i,:)=train.CATMOS.model_LD50.DSSTOXMPID(pred.neighbors(i,:));
                     res.LD50_Exp_neighbor(i,:)=train.CATMOS.model_LD50.set.y_Exp(predLD50.neighbors(i,:));
-                    res.LD50_pred_neighbor(i,:)=train.CATMOS.model_LD50.set.y(predLD50.neighbors(i,:));
+                    res.LD50_pred_neighbor(i,:)=round(10.^(train.CATMOS.model_LD50.set.y(predLD50.neighbors(i,:))),2);
                 else
                     res.CAS_neighbor(i,:)=cell(1,5);
                     res.InChiKey_neighbor(i,:)=cell(1,5);
