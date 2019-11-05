@@ -723,7 +723,7 @@ else
             end
             Xin.Properties.VariableNames{1}='Name';
             Xlabels=Xlabels(2:end);
-            Names=Xin.Name;
+            Names=cellstr(Xin.Name);
             if isnumeric(Names) && strcmpi(ext,'.txt')
                 
                 for i=1:size(Xin,1)
