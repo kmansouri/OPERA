@@ -14,6 +14,10 @@ References:
 
 [5] JRC QSAR Model Database https://qsardb.jrc.ec.europa.eu/qmrf/endpoint
 
+[6] Mansouri, K. et al. EHP (2016) https://ehp.niehs.nih.gov/doi/full/10.1289/ehp.1510267
+
+[7] Mansouri, K. et al. J Cheminform (2019) https://link.springer.com/article/10.1186/s13321-019-0384-1
+
 
 
 Models:
