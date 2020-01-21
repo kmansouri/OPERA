@@ -3,7 +3,7 @@
        _______________________________________________________________________
       |                                                                       |
       |   OPERA models for physchem, environmental fate and tox properties.   |
-      |                 Version 2.4 (August 2019)                             |
+      |                 Version 2.5 (January 2020)                            |
       |_______________________________________________________________________|   
  
  
@@ -46,7 +46,8 @@
                             'VP'/'logVP','WS', 'AOH', 'BioDeg', 'RB'/'ReadyBiodeg','HL'/'logHL','KM'/'logKM',
                             'KOA','Koc'/'logKoc', 'RT', 'pKa', 'logD', 'CERAPP'/'ER', 'CoMPARA'/'AR', 'CATMoS/AcuteTox', 'Fu/FuB', 'Cl/Clint'.
    -PC, -EF, -Tox, -ADME    Groups of Endpoints: 'StrP' (Structural properties), 'PC'/'Physchem', 'EnvFate'/'EF', 'Tox' (ER, AR, AcuteTox), 'ADME' (FuB, Clint).
-   -e, --Endpoint      		List endpoints to be calculated.
+   -e, --Endpoint      		List of endpoints to be calculated.
+   -exp						Get experimental values, when available. Requires CAS or DTXSID.
    -h, --Help               Display this help file and exit.
    -V, --Version            Version of the application  
  
@@ -55,6 +56,7 @@
  Developed by:
  Kamel Mansouri
  mansourikamel@gmail.com
+ kamel.mansouri@nih.gov
 
  
 For more information about the models and the data:
@@ -63,4 +65,6 @@ For more information about the models and the data:
 [3] The CompTox Chemistry Dashboard (https://comptox.epa.gov/dashboard)
 [4] Williams A. J. et al. J Cheminform (2017) https://doi.org/10.1186/s13321-017-0247-6
 [5] JRC QSAR Model Database https://qsardb.jrc.ec.europa.eu/qmrf/endpoint
+[6] Mansouri, K. et al. EHP (2016) https://ehp.niehs.nih.gov/doi/full/10.1289/ehp.1510267
+[7] Mansouri, K. et al. J Cheminform (2019) https://link.springer.com/article/10.1186/s13321-019-0384-1
 

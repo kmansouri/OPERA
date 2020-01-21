@@ -1,4 +1,4 @@
-function pred = knnpred2(Xtest,X,class,K,dist_type,pret_type)
+function pred = knnpred2(Xtest,X,class,class_exp,K,dist_type,pret_type)
 
 % prediction of new samples with calculated model
 %
@@ -44,7 +44,7 @@ if length(class)~=size(X,1)
     disp('the class input should be for the training set')
     %class_tr=input('class tr');
     %class=evalin(WS,);
-    keyboard
+    %keyboard
 end
 
 [n,p] = size(Xtest);
@@ -55,14 +55,27 @@ Xd = [X_scal;X_scal_train];
 % D = squareform(D);
 D = knn_calc_dist(X_scal_train,X_scal,dist_type,pret_type);
 neighbors = zeros(n,K);
+w=zeros(n,K);
+class_exp(find(isnan(class_exp)))=class(find(isnan(class_exp)));
 for i=1:n
     D_in = D(i,:);
     [d_tmp,n_tmp] = sort(D_in);
     neighbors(i,:) = n_tmp(1:K);
     d_neighbors = d_tmp(1:K);
-    class_calc(i) = knnclass2(class(neighbors(i,:)),d_neighbors,max(class),K);
-    [yc(i),class_calc_weighted(i),w(i,:)] = nnrcalcy2(class(neighbors(i,:)),d_neighbors,K);
-    class_calc_weighted(i)=round(class_calc_weighted(i));
+    if d_neighbors(1)<1e-5 %&& d_neighbors(2)>d_neighbors(1)
+        d_neighbors(1)=0;
+    end
+    if d_neighbors(1)==0 %&& isnan(class_exp(neighbors(i,1)))%&& d_neighbors(2)~=0
+        class_calc(i) = knnclass2(class(neighbors(i,:)),d_neighbors,max(class),K);
+        class_calc_weighted(i)=class(neighbors(i,1));
+        w(i,1)=1;
+    else
+        %class(find(~isnan(class_exp)))=class_exp(find(~isnan(class_exp)));
+        class_calc(i) = knnclass2(class_exp(neighbors(i,:)),d_neighbors,max(class_exp),K);
+        [yc(i),class_calc_weighted(i),w(i,:)] = nnrcalcy2(class_exp(neighbors(i,:)),d_neighbors,K);
+        class_calc_weighted(i)=round(class_calc_weighted(i));
+    end
+    
     dc(i,:)=d_neighbors;
 end
 

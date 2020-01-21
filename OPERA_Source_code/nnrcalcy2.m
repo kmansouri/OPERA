@@ -22,7 +22,7 @@ yc = mean(neighbors_y);
 
 w=zeros(1,K);
 % 
-if any(neighbors_distance==0)
+if any(neighbors_distance<1e-5)
     f=1e-10;
 else
       f=0.05;

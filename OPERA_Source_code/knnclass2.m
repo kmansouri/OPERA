@@ -7,7 +7,7 @@ end
 
 unique_class = find(freq == max(freq));
 
-if neighbors_distance(1)==0
+if neighbors_distance(1)<1e-5
     class_calc=neighbors_class(1);
 elseif length(unique_class) == 1
     [M,class_calc] = max(freq);

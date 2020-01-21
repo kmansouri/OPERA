@@ -44,7 +44,7 @@ if length(class)~=size(X,1)
     disp('the class input should be for the training set')
     %class_tr=input('class tr');
     %class=evalin(WS,);
-    keyboard
+    %keyboard
 end
 
 [n,p] = size(Xtest);

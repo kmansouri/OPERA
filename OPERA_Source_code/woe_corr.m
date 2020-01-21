@@ -124,6 +124,13 @@ Cfi=zeros(5,7);
         WoE=7;
     elseif (sum(M(:,6))>=4 && max(find(sum(M)==max(sum(M))))>=6) && res.CATMoS_NT_pred(i,1)==1 && res.CATMoS_LD50_pred(i,1)>=log10(2500) && res.CATMoS_LD50_pred(i,1)<=log10(5000) && res.CATMoS_EPA_pred(i,1)==3
         WoE=6;
+    elseif (res.AD_index_VT(i,1)+ res.AD_index_NT(i,1) + res.AD_index_EPA(i,1) + res.AD_index_GHS(i,1)+ res.AD_index_LD50(i,1)<5) && res.CATMoS_LD50_pred(i,1)<=log10(500) && min(find(sum(M)>=2))<=4
+        %WoE=min(find(sum(M)>=2));
+        WoE=find([res.CATMoS_LD50_pred(i,1)<=log10(5) res.CATMoS_LD50_pred(i,1)>log10(5)&&res.CATMoS_LD50_pred(i,1)<=log10(50) res.CATMoS_LD50_pred(i,1)>log10(50)&&res.CATMoS_LD50_pred(i,1)<=log10(300)...
+            res.CATMoS_LD50_pred(i,1)>log10(300)&&res.CATMoS_LD50_pred(i,1)<=log10(500) res.CATMoS_LD50_pred(i,1)>log10(500)&&res.CATMoS_LD50_pred(i,1)<=log10(2000) res.CATMoS_LD50_pred(i,1)>log10(2000)&&res.CATMoS_LD50_pred(i,1)<=log10(5000)]);
+        if WoE > min(find(sum(M)>=2))
+            WoE=min(find(sum(M)>=2));
+        end
     else
         WoE=find(sum(M)==max(sum(M)));
         if length(WoE)>1
@@ -156,6 +163,7 @@ Cfi=zeros(5,7);
             end
         end
     end
+    WoE=min(WoE);
     %WoE
     switch WoE
         case 1
