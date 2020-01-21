@@ -2,7 +2,7 @@
        _______________________________________________________________________
       |                                                                       |
       |   OPERA models for physchem, environmental fate and tox properties.   |
-      |                 Version 2.3-beta.1 (May 2019)                         |
+      |                 Version 2.5 (January 2020)                            |
       |_______________________________________________________________________|      
 
 
@@ -12,7 +12,7 @@ models predictions as well as applicability domain and accuracy assessment.
 Developed by:
 Kamel Mansouri
 mansourikamel@gmail.com
-
+kamel.mansouri@nih.gov
 
  Usage: OPERA <argument_list>
 

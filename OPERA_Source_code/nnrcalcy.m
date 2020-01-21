@@ -22,13 +22,13 @@ yc = mean(neighbors_y);
 
 w=zeros(1,K);
 
-% if any(neighbors_distance==0)
-%     f=0.05;
-% else
-%     f=0.1;
-% end
+if any(neighbors_distance<1e-5)
+    f=5e-4;
+else
+    f=0.05;
+end
 
-f=0.05;
+% f=0.05;
 
 if length(find(isnan(neighbors_distance))) < (K-1)
     w(~isnan(neighbors_distance)) = ones(1,length(find(~isnan(neighbors_distance))))./(f + neighbors_distance(~isnan(neighbors_distance)));

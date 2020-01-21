@@ -1,34 +1,34 @@
-Structural properties (StrP v2.0) included by default.
-    MolWeight, nbAtoms, nbHeavyAtoms, nbC, nbO, nbN, nbAromAtom, nbRing, nbHeteroRing, Sp3Sp2HybRatio, nbRotBd, nbHBdAcc, ndHBdDon, nbLipinskiFailures, TopoPolSurfAir, MolarRefract, CombDipolPolarizability
+Structural properties:
+    StrP v2.5     MW, nAtoms, nHeavyAtoms, nC, nO, nN, nAromAtom, nRing, nHeteroRing, Sp3Sp2HybRatio, nRotBd, nHBdAcc, nHBdDon, LipinskiFails, ToPolSurf, MRefract, Polarizability
 	
-	Physicochemical properties:
-    LogP v2.0     Octanol-water partition coefficient
-    MP   v1.5      Melting Point
-    BP   v1.5      Boiling Point at 760 mm Hg
-    VP   v1.5      Vapor Pressure
+Physicochemical properties:
+    LogP v2.5     Octanol-water partition coefficient
+    MP   v2.5      Melting Point
+    BP   v2.5      Boiling Point at 760 mm Hg
+    VP   v2.5      Vapor Pressure
     WS   v2.1     Water solubility at 25C
-    HL   v1.5      	Henrys Law constant (air/water partition coefficient)
-    KOA  v1.5     The octanol/air partition coefficient.
-    RT   v1.5      	HPLC retention time.
-    pKa  v2.0     	Logarithmic (acid) dissociation constant
-    LogD v2.0    Octanol-water distribution coefficient
+    HL   v2.5      	Henrys Law constant (air/water partition coefficient)
+    KOA  v2.5     The octanol/air partition coefficient.
+    RT   v2.5      	HPLC retention time.
+    pKa  v2.5     	Logarithmic (acid) dissociation constant
+    LogD v2.5    Octanol-water distribution coefficient
 
 Environmental fate:
-    LogBCF  v1.5 	Fish bioconcentration factor
-    AOH     v1.5  	OH rate constant for atmospheric gas-phase reactions
-    BioDeg  v1.5  	Biodegradation half-life in days 
-    RBioDeg v1.5  	Ready biodegradability of organic chemicals
-    KM      v1.5     Whole body primary biotransformation rate constant.
-    KOC     v1.5     Soil adsorption coefficient of organic compounds.
+    LogBCF  v2.5 	Fish bioconcentration factor
+    AOH     v2.5  	OH rate constant for atmospheric gas-phase reactions
+    BioDeg  v2.5  	Biodegradation half-life in days 
+    RBioDeg v2.5  	Ready biodegradability of organic chemicals
+    KM      v2.5     Whole body primary biotransformation rate constant.
+    KOC     v2.5     Soil adsorption coefficient of organic compounds.
 
 Toxicity endpoints:
-    ER v2.0 Collaborative Estrogen Receptor Activity Prediction Project (CERAPP). Binding, Agonist and Antagonist ER activity
-    AR v2.0 Collaborative Modeling Project for Androgen Receptor Activity (CoMPARA). Binding, Agonist and Antagonist AR activity	
-    AcuteTox v2.4 Collaborative Acute Toxicity Modeling Suite (CATMoS). Very-Toxic, Non-Toxic, EPA categories, GHS categories, LD50 (Log mg/kg)
+    ER v2.5 Collaborative Estrogen Receptor Activity Prediction Project (CERAPP). Binding, Agonist and Antagonist ER activity
+    AR v2.5 Collaborative Modeling Project for Androgen Receptor Activity (CoMPARA). Binding, Agonist and Antagonist AR activity	
+    AcuteTox v2.5 Collaborative Acute Toxicity Modeling Suite (CATMoS). Very-Toxic, Non-Toxic, EPA categories, GHS categories, LD50 (Log mg/kg)
 
 ADME endpoints:
-    FuB     v2.1 Human plasma fraction unbound 
-    Clint    v2.1 Human hepatic intrinsic clearance
+    FuB     v2.5 Human plasma fraction unbound 
+    Clint    v2.5 Human hepatic intrinsic clearance
 
 	For more information:
 -----------------------------

@@ -1,0 +1,24 @@
+
+       _______________________________________________________________________
+      |                                                                       |
+      |   OPERA models for physchem, environmental fate and tox properties.   |
+      |                 Version 2.5 Parallel (January 2020)                   |
+      |_______________________________________________________________________|      
+
+
+  OPERA_P is the parallel computing version of OPERA, a command line application 
+  developed in Matlab providing QSAR models predictions as well as applicability 
+  domain and accuracy assessment. 
+
+Developed by:
+Kamel Mansouri
+mansourikamel@gmail.com
+kamel.mansouri@nih.gov
+
+ Usage: OPERA <argument_list>
+
+ Examples: 
+OPERA -s Sample_50.sdf -o predictions.csv -a -x -v 2 -P 16
+opera -d Sample_50.csv -o predictions.txt -e logP BCF -n -v 1
+
+Type OPERA -h or OPERA --help for more info.
