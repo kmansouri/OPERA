@@ -1,7 +1,7 @@
 function res=OPERA_par(varargin)
 
 Version='2.5';
-SubVersion='2.5-beta1';
+SubVersion='2.5-beta2';
 %%
 %
 %        _______________________________________________________________________
@@ -523,6 +523,14 @@ else
     end
     %-----------------------------
     
+    poolobj = gcp('nocreate');
+    if cpus && (isempty(poolobj)||poolobj.NumWorkers<cpus)
+        delete(gcp('nocreate'))
+        poolobj=parpool(cpus);
+    elseif isempty(poolobj)
+        poolobj=parpool;
+    end
+    NumWorkers=poolobj.NumWorkers;
     
     %Start input Matrix
     if InputMatrix==1
@@ -610,6 +618,7 @@ else
                     if La(i)
                         f=f+1;
                         FoundBy{f,1}=SearchID;
+                        inputStructure{f,1}=train.DSSToxQSARr{Lb(i),1};
                         fprintf(fileID,'%s\t%s\n',train.DSSToxQSARr{Lb(i),1},strings{i});
                         if (ismember('mp',lower(prop))||ismember('logp',lower(prop))) && isempty(FileSalt)
                             salt=1;
@@ -619,6 +628,7 @@ else
                     else
                         nf=nf+1;
                         nfID{nf,1}=strings{i};
+                        err_index=0;
                         if regexp(strings{i},'[0-9]+-[0-9]+-[0-9]')
                             [~,err_index] = ismember(strings{i},train.StructError{:,2});
                         elseif regexp(strings{i},'DTXSID[0-9]+')
@@ -836,31 +846,146 @@ else
                     Amb_str=strjoin(num2cell(Amb_str(1:length(Amb_str))),', ');
                     error('Structure(s) number: %s exceed recommended size limit. CDK descriptors might fail or take long time.',Amb_str);
                 end
-                
-                InputDescCDK=strcat(StructureFile(1:length(StructureFile)-4),'_CDKDesc.csv');
                 if verbose> 0
                     fprintf(1,'CDK 2.0 calculating 2D descriptors...\n');
                 end
-                    if verbose<2
-                        [statusDesc,cmdoutDesc] =system (['java -jar ' strcat('"',fullfile(installdir,'CDKDescUI-2.0.jar'),'"') ' -b -t all -o ' strcat('"',InputDescCDK,'"')...
-                            ' ' strcat('"',char(StructureFile),'"') ' > ' strcat('"','CDKlogfile.log','"') ' 2> ' strcat('"','CDKerr.log','"')]);
-                        if statusDesc~=0 && ~isempty(cmdoutDesc)
-                            disp(cmdoutDesc);
-                            error('CDK descriptors failed. Check input structures!');
+                
+                if ~exist('CDKtemp','file')
+                    [status, msg] = mkdir('CDKtemp');
+                    if status==0
+                        if ~isempty(msg) && verbose
+                            disp(msg);
                         end
-                    else
-                        statusDesc =system (['java -jar ' strcat('"',fullfile(installdir,'CDKDescUI-2.0.jar'),'"') ' -b -t all -o ' strcat('"',InputDescCDK,'"')...
-                            ' ' strcat('"',char(StructureFile),'"') ' > ' strcat('"','CDKlogfile.log','"')]);
-                        if statusDesc~=0
-                            error('CDK descriptors failed. Check input structures!');
+                        error('CDK couldn not create temp files. Check permissions');
+                    end
+                end
+                if strcmpi(StructureFile(length(StructureFile)-3:end),'.smi')
+                    fid = fopen(StructureFile,'r');
+                    indic = 1;
+                    while 1
+                        tline = fgetl(fid);
+                        if ~ischar(tline)
+                            break
+                        end
+                        inputStructure{indic}=strtrim(tline);
+                        indic = indic + 1;
+                    end
+                    fclose(fid);
+                elseif strcmpi(StructureFile(length(StructureFile)-3:end),'.sdf')
+                    fid = fopen(StructureFile,'r');
+                    indic = 1;
+                    lineSDF=1;
+                    %inputStructure{indic}={};
+                    while 1
+                        tline = fgetl(fid);
+                        if ~ischar(tline)
+                            break
+                        end
+                        if strcmp('$$$$',tline)
+                            inputStructure{indic}=sprintf('%s\n',TempStructure{:});
+                            inputStructure{indic}=sprintf('%s%s',inputStructure{indic},'$$$$');
+                            indic = indic + 1;
+                            lineSDF=1;
+                        else
+                            TempStructure{lineSDF,1}= tline;
+                            lineSDF=lineSDF+1;
                         end
                     end
-                if ispc
-                    [~, numlines] = system(['FINDSTR /R /N "^.*" ',InputDescCDK,' | FIND /C ":"']); %win
-                else
-                    [~, numlines] = system( ['wc -l ', InputDescCDK] ); %linux
+                    fclose(fid);
                 end
-                numlines=str2double(strrep(numlines,InputDescCDK,''))-1;
+                for i=1:NumWorkers
+                    bins=[i:NumWorkers:size(Names,1)];
+                    if strcmpi(StructureFile(length(StructureFile)-3:end),'.txt')|| strcmpi(StructureFile(length(StructureFile)-3:end),'.smi')
+                        StructureFileTemp{i}=fullfile('CDKtemp',strcat('Struct_',num2str(i),'_temp.smi'));
+                    elseif strcmpi(StructureFile(length(StructureFile)-3:end),'.sdf')
+                        StructureFileTemp{i}=fullfile('CDKtemp',strcat('Struct_',num2str(i),'_temp.sdf'));
+                    end
+
+                    InputDescCDKTemp{i}=fullfile('CDKtemp',strcat('CDKDesc_',num2str(i),'_temp.csv'));
+                    fileIDTemp(i) = fopen(StructureFileTemp{i}, 'w');
+                    for j=1:length(bins)
+                        if strcmpi(StructureFile(length(StructureFile)-3:end),'.txt')
+                            fprintf(fileIDTemp(i),'%s\t%s\n',inputStructure{bins(j)},Names{bins(j)});
+                        elseif strcmpi(StructureFile(length(StructureFile)-3:end),'.smi')
+                            fprintf(fileIDTemp(i),'%s\n',inputStructure{bins(j)});
+                        elseif strcmpi(StructureFile(length(StructureFile)-3:end),'.sdf')
+                            fprintf(fileIDTemp(i),'%s\n',inputStructure{bins(j)});
+                        end
+                                
+                    end
+                    fclose(fileIDTemp(i));
+                end
+                
+                parfor i=1:NumWorkers
+                    CDKlogfile{i}=fullfile('CDKtemp',strcat('CDKlogfile_',num2str(i),'.log'));
+                    CDKerr{i}=fullfile('CDKtemp',strcat('CDKerr_',num2str(i),'.log'));
+                    if verbose<2
+                        [statusDescCDK(i),cmdoutDescCDK{i}] =system (['java -jar ' strcat('"',fullfile(installdir,'CDKDescUI-2.0.jar'),'"') ' -b -t all -o ' strcat('"',InputDescCDKTemp{i},'"')...
+                            ' ' strcat('"',char(StructureFileTemp{i}),'"') ' > ' strcat('"',char(CDKlogfile{i}),'"') ' 2> ' strcat('"',char(CDKerr{i}),'"')]);                       
+                    else
+                        statusDescCDK(i) =system (['java -jar ' strcat('"',fullfile(installdir,'CDKDescUI-2.0.jar'),'"') ' -b -t all -o ' strcat('"',InputDescCDKTemp{i},'"')...
+                            ' ' strcat('"',char(StructureFileTemp{i}),'"') ' > ' strcat('"',char(CDKlogfile{i}),'"')]);
+                    end
+                end
+                if verbose> 0
+                    disp('Checking and loading of CDK descriptors files...');
+                end
+                numlines =0;
+                XinCDK=nan(size(Names,1),286);
+                for i=1:NumWorkers
+                    if statusDescCDK(i)~=0 
+                        if ~isempty(cmdoutDescCDK{i})
+                            disp(cmdoutDescCDK{i});
+                        end
+                        error('CDK descriptors failed. Check input structures!');
+                    end
+                    if ispc
+                        [~, numlinesTemp] = system(['FINDSTR /R /N "^.*" ',InputDescCDKTemp{i},' | FIND /C ":"']); %win
+                    else
+                        [~, numlinesTemp] = system( ['wc -l ', InputDescCDKTemp{i}] ); %linux
+                    end
+                    numlines=numlines+str2double(strrep(numlinesTemp,InputDescCDKTemp{i},''))-1;
+                    try
+                        XinCDKTemp=readtable(InputDescCDKTemp{i},'delimiter','\t','DatetimeType','text');
+                    catch ME
+                        if strcmp(ME.identifier,'MATLAB:readtable:OpenFailed')
+                            error('Unable to open descriptors file');
+                        else
+                            error(ME.message);
+                            return;
+                        end
+                    end
+                    XinCDKTemp(:,1)=[];
+                    if strcmpi(XinCDKTemp.Properties.VariableNames(end),'Zagreb')
+                        XlabelsCDK=XinCDKTemp.Properties.VariableNames;
+                    elseif strcmpi(XinCDKTemp.Properties.VariableNames(end),'nAcid')
+                        XinCDKTemp=XinCDKTemp(:,train.reorder_CDK);
+                        XlabelsCDK=XinCDKTemp.Properties.VariableNames;
+                    else
+                        error('Check or recalculate CDK descriptors');
+                    end
+                    j=1;
+                    %XinCDK=XinCDKTemp{i};
+                    Temp=zeros(size(XinCDKTemp));
+                    
+                    while j<=length(XlabelsCDK)
+                        if cellfun(@ischar,table2cell(XinCDKTemp(1,j)))
+                            Temp(:,j)=str2double(table2cell(XinCDKTemp(:,j)));
+                        else
+                            Temp(:,j)=XinCDKTemp{:,j};
+                        end
+                        j=j+1;
+                    end
+                    if size(XinCDKTemp,1)==0 || size(XinCDKTemp,2)==0
+                        error('Empty descriptors file!');
+                    end
+                    clear('XinCDKTemp');
+                    bins=[i:NumWorkers:size(Names,1)];
+                    XinCDK(bins,:)=Temp;
+                    clear('Temp');
+                end
+                
+                %numlines=str2double(strrep(numlines,InputDescCDK,''))-1;
                 if verbose>0
                     fprintf(1,'CDK descriptors calculated for: ');
                     fprintf(1, '%d molecules.\n',numlines);
@@ -868,69 +993,20 @@ else
                 if numlines < str2double(numStruct)
                     error('CDK descriptors failed. Check input structures!');
                 end
-                
-                
+
             end
-            if verbose> 0
-                disp('Loading of CDK descriptors file...');
-            end
-            try
-                XinCDK=readtable(InputDescCDK,'delimiter','\t','DatetimeType','text');
-            catch ME
-                if strcmp(ME.identifier,'MATLAB:readtable:OpenFailed')
-                    error('Unable to open descriptors file');
-                else
-                    error(ME.message);
-                    return;
-                end
-            end
-            if size(XinCDK,1)==0 || size(XinCDK,2)==0
-                error('Empty descriptors file!');
-            end
-            XinCDK(:,1)=[];
+           %XinCDK=vertcat(XinCDKTemp{:});
+
             if size(XinCDK,1)~=size(Xin,1)
                 error('Mismatch between PaDEL and CDK descriptors files')
-            elseif strcmpi(XinCDK.Properties.VariableNames(end),'Zagreb')
-                XlabelsCDK=XinCDK.Properties.VariableNames;
-            elseif strcmpi(XinCDK.Properties.VariableNames(end),'nAcid')
-                XinCDK=XinCDK(:,train.reorder_CDK);
-                XlabelsCDK=XinCDK.Properties.VariableNames;
             else
-                error('Check or recalculate CDK descriptors');
-            end
-
-            if size(XinCDK,1)==size(Xin,1)
-                %fprintf(1,'The number of input molecules is: %d \n',size(XinCDK,1));
-                
-                i=1;
-                Temp=zeros(size(XinCDK));
-                if verbose> 0
-                    disp('Checking loaded variables.');
-                end
-%                 if cpus
-%                     parpool(cpus);
-%                 end
-%                   %parpool(3);
-%                 parfor i=1:length(XlabelsCDK)
-                while i<=length(XlabelsCDK)
-                    if cellfun(@ischar,table2cell(XinCDK(1,i)))
-                        Temp(:,i)=str2double(table2cell(XinCDK(:,i)));
-                    else
-                        Temp(:,i)=XinCDK{:,i};
-                    end
-                    i=i+1;
-                end
                 if verbose> 0
                     %disp(['The number of loaded CDK descriptors is: ', num2str(length(XlabelsCDK))]);
                     disp(['Loaded ', num2str(length(XlabelsCDK)),' CDK descriptors for ', num2str(size(XinCDK,1)),' molecules.']);
-                    
                 end
-                clear('XinCDK');
-                XinCDK=Temp;
-                clear('Temp');
             end
-            
         end
+        
         if fp==1
             if structure==1 && inputFP==0
                 InputDescFP=strcat(StructureFile(1:length(StructureFile)-4),'_PadelFP.csv');
@@ -1032,11 +1108,22 @@ else
                 end
             end
             if cdk==1
-                delete(InputDescCDK);
+                delete(InputDescCDKTemp{:});
+                delete(StructureFileTemp{:});
+                
                 %delete('CDKDesc.csv');
                 if verbose <2
-                    delete('CDKlogfile.log');
-                    delete('CDKerr.log');
+                    delete(CDKlogfile{:});
+                    delete(CDKerr{:});
+                end
+                if exist('CDKtemp','file')
+                    [status, msg] = rmdir('CDKtemp','s');
+                    if status==0 && verbose
+                        if ~isempty(msg)
+                            disp(msg);
+                        end
+                        warning('CDK could not delete temp files. Check permissions');
+                    end
                 end
             end
             
