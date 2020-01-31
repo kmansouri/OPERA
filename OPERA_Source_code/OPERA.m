@@ -1,7 +1,7 @@
 function res=OPERA(varargin)
 
 Version='2.5';
-SubVersion='2.5-beta1';
+SubVersion='2.5-beta2';
 %%
 %
 %        _______________________________________________________________________
@@ -616,6 +616,7 @@ else
                     else
                         nf=nf+1;
                         nfID{nf,1}=strings{i};
+                        err_index=0;
                         if regexp(strings{i},'[0-9]+-[0-9]+-[0-9]')
                             [~,err_index] = ismember(strings{i},train.StructError{:,2});
                         elseif regexp(strings{i},'DTXSID[0-9]+')
