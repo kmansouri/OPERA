@@ -10,13 +10,15 @@ References:
 
 [3] Williams A. J. et al. J Cheminform (2017) https://doi.org/10.1186/s13321-017-0247-6
 
-[4] The CompTox Chemistry Dashboard (https://comptox.epa.gov/dashboard)
+[4] The CompTox Chemistry Dashboard https://comptox.epa.gov/dashboard
 
 [5] JRC QSAR Model Database https://qsardb.jrc.ec.europa.eu/qmrf/endpoint
 
-[6] Mansouri, K. et al. EHP (2016) https://ehp.niehs.nih.gov/doi/full/10.1289/ehp.1510267
+[6] Mansouri, K. et al. EHP (2016) https://doi.org/10.1289/ehp.1510267
 
-[7] Mansouri, K. et al. J Cheminform (2019) https://link.springer.com/article/10.1186/s13321-019-0384-1
+[7] Mansouri, K. et al. J Cheminform (2019) https://doi.org/10.1186/s13321-019-0384-1
+
+[8] Mansouri, K. et al. EHP (2020) https://doi.org/10.1289/EHP5580
 
 
 
