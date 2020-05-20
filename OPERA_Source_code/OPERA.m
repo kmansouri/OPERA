@@ -1,13 +1,13 @@
 function res=OPERA(varargin)
 
-Version='2.5';
-SubVersion='2.5-beta2';
+Version='2.6';
+SubVersion='2.6-beta1';
 %%
 %
 %        _______________________________________________________________________
 %       |                                                                       |
 %       |   OPERA models for physchem, environmental fate and tox properties.   |
-%       |                 Version 2.5 (January 2020)                            |
+%       |                 Version 2.6 (January 2020)                            |
 %       |_______________________________________________________________________|
 %
 %
@@ -24,12 +24,13 @@ SubVersion='2.5-beta2';
 %  -d, --Descriptors        pre-calculated PaDEL descriptors in a comma delimited csv file. If the first column is not
 %                           "Name" as the standard PaDEL output, molecule IDs will be assinged.
 %  -fp, --fingerprints      pre-calculated descriptors using CDK2.0 in a tab delimited text file.
-%   -cdk, --cdk             pre-calculated fingerprints using PaDEL in a comma delimited csv file.
+%  -cdk, --cdk              pre-calculated fingerprints using PaDEL in a comma delimited csv file.
 %  -m, --Mat, --ascii       Matlab matrix or ascii file containing PaDEL descriptors.
 %  -i, --MolID              Molecule names in csv file.
 %  -t, --SaltInfo           Salt IDs to improve melting point predictions. List provided in Salts.xls
 %  -l, --Labels             Descriptor labels. Necessary if the descriptor file does not contain labels
 %                           or contains more than the 1444 PaDEL 2D descriptors.
+%  -st, --Standardize		Generate QSAR-ready structures from input structures.
 %
 %Output:
 %  -o, --Output             Output file containing the predictions, applicability domain and accuracy
@@ -37,8 +38,9 @@ SubVersion='2.5-beta2';
 %                           Molecule ID, predicted value (pred), Applicability domain (AD), Applicability domain index
 %                           (AD_index) and accuracy estimate (Conf_index).
 %  -n, --Neighbors          Add 5 nearest neighbors from training set (CAS, InCHiKeys, Observed and predicted values)
-%  -O, --FullOutput         Output file containing all prediction details and used descriptors in csv format.
-%  -x, --Seperate           Separate output file for each endpoint.
+%  -O, --FullOutput         Output file containing all prediction details including NN and used descriptors in csv format.
+%  -gd, -getDesc			Output file containing used descriptors in csv format.
+%  -x, --Separate           Separate output file for each endpoint.
 %
 %Miscellaneous:
 %  -v, --Verbose            Verbose level: 0=silent (default), 1=minimum details, %  2=full details.
@@ -163,6 +165,8 @@ else
     adme=0;
     exp=0;
     nf=0;
+    f=0;
+    standardize=0;
     
     
     
@@ -351,6 +355,14 @@ else
             exp=1;
             i=i+1;
             continue
+        elseif strcmpi('-getDesc',varargin{i})||strcmpi('-gd',varargin{i})||strcmpi('--getDescriptors',varargin{i})
+            printtDesc=1;
+            i=i+1;
+            continue
+        elseif strcmpi('-st',varargin{i})||strcmpi('--standardize',varargin{i})
+            standardize=1;
+            i=i+1;
+            continue
         else
             error('Check input arguments or type -h, --help for more info.')
             
@@ -401,6 +413,10 @@ else
         if cdk==1 && inputCDK==0
             error('No structure file or a tab delimited file with calculated CDK2.0 descriptors. Usage: OPERA [OPTION]... <Input> <output>... Type -h, --help for more info.')
         end
+    else
+        if ~exist(StructureFile,'file')
+            error('Input file does not exit or corrupt.');
+        end
     end
     
     
@@ -439,15 +455,16 @@ else
     end
     
     %if structure==1 && (InputDescPadel==0||(fp==1 && inputFP==0))
-    if ~isdeployed
-        installdir=pwd;
-    else
+    %if ~isdeployed
+        %installdir=pwd;
+        %installdir=fullfile('C:','Program Files','OPERA','application');
+    %else
         if ispc
             installdir=fullfile('C:','Program Files','OPERA','application');
         else
             installdir=fullfile('/','usr','local','bin','OPERA','application');
         end
-    end
+    %end
     if ~exist(fullfile(installdir,'padel-full-1.00.jar'),'file')
         
         if isdeployed
@@ -584,7 +601,7 @@ else
                 fclose(fid);
                 StructureFile=strcat(StructureFile(1:length(StructureFile)-3),'smi');
                 fileID = fopen(StructureFile, 'w');
-                f=0;
+                %f=0;
                 %nf=0;
                 La=zeros(length(strings));
                 Lb=zeros(length(strings));
@@ -608,7 +625,7 @@ else
                         f=f+1;
                         FoundBy{f,1}=SearchID;
                         fprintf(fileID,'%s\t%s\n',train.DSSToxQSARr{Lb(i),1},strings{i});
-                        if (ismember('mp',lower(prop))||ismember('logp',lower(prop))) && isempty(FileSalt)
+                        if (ismember('mp',lower(prop))||ismember('logp',lower(prop))||ismember('logd',lower(prop))) && isempty(FileSalt)
                             salt=1;
                             %SaltInfo(f,1)=train.DSSToxQSARr.SaltInfo(Lb(i));
                             SaltIndex(f,1)=train.DSSToxQSARr.SaltInfo(Lb(i));
@@ -656,16 +673,83 @@ else
                 
             end
         end
+        
+        %========== Standardize Structures ==========
+        if structure && standardize && f==0
+            
+            if verbose >0
+                fprintf(1,'\n========== Structures standardization ==========\n');
+                fprintf(1,'Input structures: %d.\n',str2double(numStruct));
+                fprintf(1,'Generating QSAR-ready structures...\n');
+            end
+            
+        
+        %command=[strcat('"',fullfile('C:','Users','kmansouri','Downloads','knime_4.1.1','knime'),'"') ' -reset -nosplash -nosave -application org.knime.product.KNIME_BATCH_APPLICATION -workflowDir=' strcat('"',fullfile('C:\Users\kmansouri\Downloads','knime_4.1.1','knime-workspace','QSAR-ready_2.5.6'),'"') ' -workflow.variable=cmd_input,' strcat('"',char(StructureFile),'"') ',String']
+%         [statusKnime,cmdoutKnime] =system ([strcat('"',fullfile('C:','Users','kmansouri','Downloads','knime_4.1.1','knime'),'"')...
+%             ' -reset -nosplash -nosave -application org.knime.product.KNIME_BATCH_APPLICATION -workflowDir='...
+%             strcat('"',fullfile('C:\Users\kmansouri\Downloads','knime_4.1.1','knime-workspace','QSAR-ready_2.5.6'),'"')...
+%             ' -workflow.variable=cmd_input,' strcat('"',char(StructureFile),'"') ',String']);
+        
+        homedir = char(java.lang.System.getProperty('user.home'));
+        if ~exist(fullfile(homedir,'knime-workspace'),'dir')
+            mkdir(fullfile(homedir,'knime-workspace'));
+        end
+        if ~exist(fullfile(homedir,'knime-workspace','QSAR-ready_2.5.6'),'dir')
+            mkdir(fullfile(homedir,'knime-workspace','QSAR-ready_2.5.6'));
+            [statusCp,messageCp] = copyfile(fullfile(installdir,'knime_4.1.1','knime-workspace','QSAR-ready_2.5.6'),fullfile(homedir,'knime-workspace','QSAR-ready_2.5.6'));
+            if ~statusCp && ~isempty(messageCp)
+                error(messageCp);
+            end
+        end
+        if ~exist(fullfile(homedir,'Sample_input'),'dir')
+            mkdir(fullfile(homedir,'Sample_input'));
+        end
+        if ~exist(fullfile(homedir,'Sample_input','Sample_input.sdf'),'file')
+            [statusCp,messageCp] = copyfile(fullfile(installdir,'knime_4.1.1','Sample_input'),fullfile(homedir,'Sample_input'));
+            if ~statusCp && ~isempty(messageCp)
+                error(messageCp);
+            end
+        end
+
+        [statusKnime,cmdoutKnime] =system ([strcat('"',fullfile(installdir,'knime_4.1.1','knime'),'"')...
+            ' -reset -nosplash -nosave -application org.knime.product.KNIME_BATCH_APPLICATION -workflowDir='...
+            strcat('"',fullfile(homedir,'knime-workspace','QSAR-ready_2.5.6'),'"')...
+            ' -workflow.variable=cmd_input,' strcat('"',char(StructureFile),'"') ',String']);
+        
+                    if statusKnime==0
+                        salt=1;
+                        FileSalt=strcat(StructureFile(1:length(StructureFile)-4),'_QSAR-ready_saltInfo.csv');
+                        StructureFile=strcat(StructureFile(1:length(StructureFile)-4),'_QSAR-ready_smi.smi');
+                        if ispc
+                            [~, numStruct] = system(['FINDSTR /R /N "^.*" ', strcat('"',char(StructureFile),'"'),' | FIND /C ":"']);%win
+                        else
+                            [~, numStruct] = system(['cat ', strcat('"',char(StructureFile),'"'),' | sed "/^\s*$/d" | wc -l ']); %linux
+                        end
+
+                    if verbose >0   
+                        fprintf(1,'Standardized structures: %d.\n',str2double(numStruct));
+                    end
+                        
+                        
+                    else
+                        if verbose >0
+                            disp(cmdoutKnime);
+                        end
+                        error('Standardization process failed. Check the input file.');
+                    end
+            
+        end
         %========== Molecular Descriptors ==========
         
         %Calculating PaDEL descriptors...
         
         if verbose >0
-            fprintf(1,'\n========== Molecular Descriptors ==========\n');
+            fprintf(1,'\n============= Molecular Descriptors ============\n');
         end
         
         if structure==1 && InputDescPadel==0
             InputDesc=strcat(StructureFile(1:length(StructureFile)-4),'_PadelDesc.csv');
+            PaDELlogfile=strcat(StructureFile(1:length(StructureFile)-4),'_PaDELlogfile.log');
             if verbose >0
                 fprintf(1,'Loaded structures: %d.\n',str2double(numStruct));
                 if str2double(numStruct)==0
@@ -674,8 +758,8 @@ else
                 fprintf(1,'PaDEL calculating 2D descriptors...\n');
                 if verbose ==1
                     [statusDesc,cmdoutDesc] =system (['java -Djava.awt.headless=true -jar ' strcat('"',fullfile(installdir,'padel-full-1.00.jar'),'"')...
-                        ' -2d -removesalt -standardizenitro -detectaromaticity -retainorder -maxruntime 60000 -dir ' strcat('"',char(StructureFile),'"') ' -file ' strcat('"',InputDesc,'"')...
-                        ' > ' strcat('"','PaDELlogfile.log','"')]);
+                        ' -2d -removesalt -standardizenitro -detectaromaticity -retainorder -maxruntime 60000 -dir ' strcat('"',char(StructureFile),'"')...
+                        ' -file ' strcat('"',InputDesc,'"') ' > ' strcat('"',PaDELlogfile,'"')]);
                     if statusDesc~=0 && ~isempty(cmdoutDesc)
                         disp(cmdoutDesc);
                         error('PaDEL descriptors failed. Check input structures!');
@@ -683,7 +767,8 @@ else
                         
                 else
                     statusDesc =system (['java -Djava.awt.headless=true -jar ' strcat('"',fullfile(installdir,'padel-full-1.00.jar'),'"')...
-                        ' -2d -removesalt -standardizenitro -detectaromaticity -retainorder -maxruntime 60000 -dir ' strcat('"',char(StructureFile),'"') ' -file ' strcat('"',InputDesc,'"')]);
+                        ' -2d -removesalt -standardizenitro -detectaromaticity -retainorder -maxruntime 60000 -dir ' strcat('"',char(StructureFile),'"')...
+                        ' -file ' strcat('"',InputDesc,'"')]);
                     if statusDesc~=0
                         error('PaDEL descriptors failed. Check input structures!');
                     end
@@ -703,8 +788,8 @@ else
                 
             else
                 [~,~] =system (['java -Djava.awt.headless=true -jar ' strcat('"',fullfile(installdir,'padel-full-1.00.jar'),'"')...
-                    ' -2d -removesalt -standardizenitro -detectaromaticity -retainorder -maxruntime 60000 -dir ' strcat('"',char(StructureFile),'"') ' -file ' strcat('"',InputDesc,'"')...
-                    ' > ' strcat('"','PaDELlogfile.log','"')]);
+                    ' -2d -removesalt -standardizenitro -detectaromaticity -retainorder -maxruntime 60000 -dir ' strcat('"',char(StructureFile),'"')...
+                    ' -file ' strcat('"',InputDesc,'"') ' > ' strcat('"',PaDELlogfile,'"')]);
                 if ispc
                     [~, numlines] = system(['FINDSTR /R /N "^.*" ',InputDesc,' | FIND /C ":"']); %win
                 else
@@ -832,19 +917,21 @@ else
                 end
                 
                 InputDescCDK=strcat(StructureFile(1:length(StructureFile)-4),'_CDKDesc.csv');
+                CDKlogfile=strcat(StructureFile(1:length(StructureFile)-4),'_CDKlogfile.log');
+                CDKerr=strcat(StructureFile(1:length(StructureFile)-4),'_CDKerr.log');
                 if verbose> 0
                     fprintf(1,'CDK 2.0 calculating 2D descriptors...\n');
                 end
                     if verbose<2
                         [statusDesc,cmdoutDesc] =system (['java -jar ' strcat('"',fullfile(installdir,'CDKDescUI-2.0.jar'),'"') ' -b -t all -o ' strcat('"',InputDescCDK,'"')...
-                            ' ' strcat('"',char(StructureFile),'"') ' > ' strcat('"','CDKlogfile.log','"') ' 2> ' strcat('"','CDKerr.log','"')]);
+                            ' ' strcat('"',char(StructureFile),'"') ' > ' strcat('"',CDKlogfile,'"') ' 2> ' strcat('"',CDKerr,'"')]);
                         if statusDesc~=0 && ~isempty(cmdoutDesc)
                             disp(cmdoutDesc);
                             error('CDK descriptors failed. Check input structures!');
                         end
                     else
                         statusDesc =system (['java -jar ' strcat('"',fullfile(installdir,'CDKDescUI-2.0.jar'),'"') ' -b -t all -o ' strcat('"',InputDescCDK,'"')...
-                            ' ' strcat('"',char(StructureFile),'"') ' > ' strcat('"','CDKlogfile.log','"')]);
+                            ' ' strcat('"',char(StructureFile),'"') ' > ' strcat('"',CDKlogfile,'"')]);
                         if statusDesc~=0
                             error('CDK descriptors failed. Check input structures!');
                         end
@@ -922,12 +1009,13 @@ else
         if fp==1
             if structure==1 && inputFP==0
                 InputDescFP=strcat(StructureFile(1:length(StructureFile)-4),'_PadelFP.csv');
+                PaDELlogfileFP=strcat(StructureFile(1:length(StructureFile)-4),'_PaDELlogfileFP.log');
                 if verbose >0
                     fprintf(1,'PaDEL generating fingerprints...\n');
                     if verbose ==1
                         [statusDesc,cmdoutDesc] =system (['java -Djava.awt.headless=true -jar ' strcat('"',fullfile(installdir,'padel-full-1.00.jar'),'"')...
                             ' -fingerprints -descriptortypes ' strcat('"',fullfile(installdir,'desc_fp.xml'),'"') ' -removesalt -standardizenitro -detectaromaticity -retainorder -maxruntime 60000 -dir '...
-                            strcat('"',char(StructureFile),'"') ' -file ' strcat('"',InputDescFP,'"') ' > ' strcat('"','PaDELlogfileFP.log','"')]);
+                            strcat('"',char(StructureFile),'"') ' -file ' strcat('"',InputDescFP,'"') ' > ' strcat('"',PaDELlogfileFP,'"')]);
                         if statusDesc~=0 && ~isempty(cmdoutDesc)
                             disp(cmdoutDesc);
                         end
@@ -955,7 +1043,7 @@ else
                 else
                     [~,~] =system (['java -Djava.awt.headless=true -jar ' strcat('"',fullfile(installdir,'padel-full-1.00.jar'),'"')...
                         ' -fingerprints -descriptortypes ' strcat('"',fullfile(installdir,'desc_fp.xml'),'"') ' -removesalt -standardizenitro -detectaromaticity -retainorder -maxruntime 60000 -dir '...
-                        strcat('"',char(StructureFile),'"') ' -file ' strcat('"',InputDescFP,'"') ' > ' strcat('"','PaDELlogfileFP.log','"')]);
+                        strcat('"',char(StructureFile),'"') ' -file ' strcat('"',InputDescFP,'"') ' > ' strcat('"',PaDELlogfileFP,'"')]);
                     if ispc
                         [~, numlines] = system('FINDSTR /R /N "^.*" PadelFP.csv | FIND /C ":"'); %win
                     else
@@ -974,11 +1062,20 @@ else
         end
         
         %Start SaltInfo
-        if salt==1 && ~isempty(FileSalt) && (ismember('mp',lower(prop))||ismember('logp',lower(prop)))
+        if salt==1 && ~isempty(FileSalt) && (ismember('mp',lower(prop))||ismember('logp',lower(prop))||ismember('logd',lower(prop)))
             if verbose> 0
                 disp('Reading file with salt information.');
             end
-            SaltIndex=readtable(FileSalt,'delimiter',',');
+            try
+                SaltIndex=readtable(FileSalt,'delimiter',',');
+                catch ME
+                if strcmp(ME.identifier,'MATLAB:readtable:OpenFailed')
+                    error('Unable to open descriptors file');
+                else
+                    error(ME.message);
+                    return;
+                end
+            end
             %     if strcmpi(SaltIndex{1},'Name')
             %         SaltIndex=SaltIndex(
             if size(SaltIndex,1)==size(Xin,1)
@@ -1006,36 +1103,12 @@ else
         end
         %End SaltInfo
         
-        if clean==1 && structure==1
-            delete(InputDesc);
-            %delete(strcat('PadelDesc_',StructureFile(1:length(StructureFile)-3),'.csv'));
-            if verbose <2
-                delete('PaDELlogfile.log');
-            end
-            if fp==1
-                delete(InputDescFP);
-                %delete('PadelFP.csv');
-                if verbose <2
-                    delete('PaDELlogfileFP.log');
-                end
-            end
-            if cdk==1
-                delete(InputDescCDK);
-                %delete('CDKDesc.csv');
-                if verbose <2
-                    delete('CDKlogfile.log');
-                    delete('CDKerr.log');
-                end
-            end
-            
-        end
-        
     end
     
     
     
     if verbose> 0 && size(prop(:),1)>=1
-        fprintf(1,'\n==========   Running The Models   ==========\n');
+        fprintf(1,'\n============== Running The Models ==============\n');
     end
     
     
@@ -1160,10 +1233,13 @@ else
                         [La(i),Lb(i)] = ismember(MoleculeNames{i},train.DSSToxQSARr{:,5});
                     end
                     if La(i)
-                        salt=1;
+                        %salt=1;
                         SaltIndex(i,1)=train.DSSToxQSARr.SaltInfo(Lb(i));
                     end
                 end
+            end
+            if any(La)
+                salt=1;
             end
         end
         
@@ -1262,6 +1338,13 @@ else
                 res.AD_index_LogP(i)=0;
                 res.Conf_index_LogP(i,1)=0;
             end
+            
+            if Xin(i,12)==0
+                res.AD_LogP(i)=0;
+                res.AD_index_LogP(i)=res.AD_index_LogP(i)/2;
+                res.Conf_index_LogP(i,1)=res.Conf_index_LogP(i,1)/2;
+            end
+            
             %res.Conf_index_LogP(i,1)=((1/(1+sqrt(((LogP_Exp_neighbor(i,:)-LogP_pred_neighbor(i,:)).^2)*pred.w(i,:)'))));
             
             
@@ -1477,10 +1560,13 @@ else
                         [La(i),Lb(i)] = ismember(MoleculeNames{i},train.DSSToxQSARr{:,5});
                     end
                     if La(i)
-                        salt=1;
+                        %salt=1;
                         SaltIndex(i,1)=train.DSSToxQSARr.SaltInfo(Lb(i));
                     end
                 end
+            end
+            if any(La)
+                salt=1;
             end
         end
         
@@ -1564,6 +1650,11 @@ else
                 res.AD_MP(i)=0;
                 res.AD_index_MP(i)=0;
                 res.Conf_index_MP(i,1)=0;
+            end
+            if Xin(i,12)==0
+                res.AD_MP(i)=0;
+                res.AD_index_MP(i)=res.AD_index_MP(i)/2;
+                res.Conf_index_MP(i,1)=res.Conf_index_MP(i,1)/2;
             end
             if neighbors==1 
                 MP.CAS=strrep(strrep(join(MP.CAS,'|',2),'|||',''),'||','');
@@ -1784,6 +1875,11 @@ else
                 res.AD_BP(i)=0;
                 res.AD_index_BP(i)=0;
                 res.Conf_index_BP(i,1)=0;
+            end
+            if Xin(i,12)==0
+                res.AD_BP(i)=0;
+                res.AD_index_BP(i)=res.AD_index_BP(i)/2;
+                res.Conf_index_BP(i,1)=res.Conf_index_BP(i,1)/2;
             end
             if neighbors==1
                 BP.CAS=strrep(strrep(join(BP.CAS,'|',2),'|||',''),'||','');
@@ -2007,6 +2103,11 @@ else
                 res.AD_VP(i)=0;
                 res.AD_index_VP(i)=0;
                 res.Conf_index_VP(i,1)=0;
+            end
+            if Xin(i,12)==0
+                res.AD_VP(i)=0;
+                res.AD_index_VP(i)=res.AD_index_VP(i)/2;
+                res.Conf_index_VP(i,1)=res.Conf_index_VP(i,1)/2;
             end
             if neighbors==1 
                 VP.CAS=strrep(strrep(join(VP.CAS,'|',2),'|||',''),'||','');
@@ -2234,6 +2335,11 @@ else
                 res.AD_index_WS(i)=0;
                 res.Conf_index_WS(i,1)=0;
             end
+            if Xin(i,12)==0
+                res.AD_WS(i)=0;
+                res.AD_index_WS(i)=res.AD_index_WS(i)/2;
+                res.Conf_index_WS(i,1)=res.Conf_index_WS(i,1)/2;
+            end
             if neighbors==1
                 WS.CAS=strrep(strrep(join(WS.CAS,'|',2),'|||',''),'||','');
                 WS.DTXSID=strrep(strrep(join(WS.DTXSID,'|',2),'|||',''),'||','');
@@ -2459,6 +2565,11 @@ else
                 res.AD_index_HL(i)=0;
                 res.Conf_index_HL(i,1)=0;
             end
+            if Xin(i,12)==0
+                res.AD_HL(i)=0;
+                res.AD_index_HL(i)=res.AD_index_HL(i)/2;
+                res.Conf_index_HL(i,1)=res.Conf_index_HL(i,1)/2;
+            end
             if neighbors==1 
                 HL.CAS=strrep(strrep(join(HL.CAS,'|',2),'|||',''),'||','');
                 HL.DTXSID=strrep(strrep(join(HL.DTXSID,'|',2),'|||',''),'||','');
@@ -2680,6 +2791,11 @@ else
                 res.AD_index_RT(i)=0;
                 res.Conf_index_RT(i,1)=0;
             end
+            if Xin(i,12)==0
+                res.AD_RT(i)=0;
+                res.AD_index_RT(i)=res.AD_index_RT(i)/2;
+                res.Conf_index_RT(i,1)=res.Conf_index_RT(i,1)/2;
+            end
             if res.RT_pred(i,1)<0
                 res.RT_pred(i,1)=0;
                 res.AD_RT(i)=0;
@@ -2899,6 +3015,11 @@ else
                 res.AD_KOA(i)=0;
                 res.AD_index_KOA(i)=0;
                 res.Conf_index_KOA(i,1)=0;
+            end
+            if Xin(i,12)==0
+                res.AD_KOA(i)=0;
+                res.AD_index_KOA(i)=res.AD_index_KOA(i)/2;
+                res.Conf_index_KOA(i,1)=res.Conf_index_KOA(i,1)/2;
             end
             if neighbors==1
                 KOA.CAS=strrep(strrep(join(KOA.CAS,'|',2),'|||',''),'||','');
@@ -3154,10 +3275,10 @@ else
                 if pred.class_pred(i)==1
                     res.pKa_b_pred(i,1)=NaN;
                     res.ionization(i)=1;
-                elseif pred.class_pred(i)==2
+                elseif pred.class_pred(i)==2 && XinFP{i,5911}==0 && Xin(i,747)==0
                     res.pKa_a_pred(i,1)=NaN;
                     res.ionization(i)=1;
-                elseif pred.class_pred(i)==3
+                elseif pred.class_pred(i)==3 || (pred.class_pred(i)==2 && (XinFP{i,5911}||Xin(i,747)))
                     res.ionization(i)=2;
                     
                 end
@@ -3177,6 +3298,11 @@ else
                 res.AD_pKa(i,1)=0;
                 res.AD_index_pKa(i,1)=0;
                 res.Conf_index_pKa(i,1)=0;
+            end
+            if Xin(i,12)==0
+                res.AD_pKa(i)=0;
+                res.AD_index_pKa(i)=res.AD_index_pKa(i)/2;
+                res.Conf_index_pKa(i,1)=res.Conf_index_pKa(i,1)/2;
             end
             if neighbors==1
                 PKA.CAS=strrep(strrep(join(PKA.CAS,'|',2),'|||',''),'||','');
@@ -3348,7 +3474,11 @@ else
             end
             
             for i=1:length(res.LogD55_pred)
-                
+                if Xin(i,12)==0
+                    res.AD_LogD(i)=0;
+                    res.AD_index_LogD(i)=res.AD_index_LogD(i)/2;
+                    res.Conf_index_LogD(i,1)=res.Conf_index_LogD(i,1)/2;
+                end
                 if pKa_ac_ba_amp(i)==1
                     res.LogD55_pred(i,1)=resf.LogP.LogP_pred(i,1)-log10(1+10^(5.5-resf.pKa.pKa_a_pred(i,1)));
                     res.LogD74_pred(i,1)=resf.LogP.LogP_pred(i,1)-log10(1+10^(7.4-resf.pKa.pKa_a_pred(i,1)));
@@ -3559,6 +3689,11 @@ else
                 res.AD_AOH(i)=0;
                 res.AD_index_AOH(i)=0;
                 res.Conf_index_AOH(i,1)=0;
+            end
+            if Xin(i,12)==0
+                res.AD_AOH(i)=0;
+                res.AD_index_AOH(i)=res.AD_index_AOH(i)/2;
+                res.Conf_index_AOH(i,1)=res.Conf_index_AOH(i,1)/2;
             end
             if neighbors==1
                 AOH.CAS=strrep(strrep(join(AOH.CAS,'|',2),'|||',''),'||','');
@@ -3787,6 +3922,11 @@ else
                 res.AD_index_BCF(i)=0;
                 res.Conf_index_BCF(i,1)=0;
             end
+            if Xin(i,12)==0
+                res.AD_BCF(i)=0;
+                res.AD_index_BCF(i)=res.AD_index_BCF(i)/2;
+                res.Conf_index_BCF(i,1)=res.Conf_index_BCF(i,1)/2;
+            end
 
             if neighbors==1
                 BCF.CAS=strrep(strrep(join(BCF.CAS,'|',2),'|||',''),'||','');
@@ -4012,6 +4152,11 @@ else
                 res.AD_index_BioDeg(i)=0;
                 res.Conf_index_BioDeg(i,1)=0;
             end
+            if Xin(i,12)==0
+                res.AD_BioDeg(i)=0;
+                res.AD_index_BioDeg(i)=res.AD_index_BioDeg(i)/2;
+                res.Conf_index_BioDeg(i,1)=res.Conf_index_BioDeg(i,1)/2;
+            end
             if neighbors==1
                 BIODEG.CAS=strrep(strrep(join(BIODEG.CAS,'|',2),'|||',''),'||','');
                 BIODEG.DTXSID=strrep(strrep(join(BIODEG.DTXSID,'|',2),'|||',''),'||','');
@@ -4234,6 +4379,11 @@ else
                 res.AD_ReadyBiodeg(i)=0;
                 res.AD_index_ReadyBiodeg(i)=0;
                 res.Conf_index_ReadyBiodeg(i,1)=0;
+            end
+            if Xin(i,12)==0
+                res.AD_ReadyBiodeg(i)=0;
+                res.AD_index_ReadyBiodeg(i)=res.AD_index_ReadyBiodeg(i)/2;
+                res.Conf_index_ReadyBiodeg(i,1)=res.Conf_index_ReadyBiodeg(i,1)/2;
             end
             
             %                 res.AD_index(i,1)=1./(1+pred.dc(i,~isnan(pred.dc(i,:)))*pred.w(i,~isnan(pred.dc(i,:)))');
@@ -4466,6 +4616,11 @@ else
                 res.AD_index_KM(i)=0;
                 res.Conf_index_KM(i,1)=0;
             end
+            if Xin(i,12)==0
+                res.AD_KM(i)=0;
+                res.AD_index_KM(i)=res.AD_index_KM(i)/2;
+                res.Conf_index_KM(i,1)=res.Conf_index_KM(i,1)/2;
+            end
             if neighbors==1
                 KM.CAS=strrep(strrep(join(KM.CAS,'|',2),'|||',''),'||','');
                 KM.DTXSID=strrep(strrep(join(KM.DTXSID,'|',2),'|||',''),'||','');
@@ -4686,6 +4841,11 @@ else
                 res.AD_index_LogKoc(i)=0;
                 res.Conf_index_LogKoc(i,1)=0;
             end
+             if Xin(i,12)==0
+                res.AD_LogKoc(i)=0;
+                res.AD_index_LogKoc(i)=res.AD_index_LogKoc(i)/2;
+                res.Conf_index_LogKoc(i,1)=res.Conf_index_LogKoc(i,1)/2;
+            end
             if neighbors==1
                 KOC.CAS=strrep(strrep(join(KOC.CAS,'|',2),'|||',''),'||','');
                 KOC.DTXSID=strrep(strrep(join(KOC.DTXSID,'|',2),'|||',''),'||','');
@@ -4821,7 +4981,7 @@ else
     
     % ADME
     if verbose> 0 && (adme||all)
-        fprintf(1,'---------- ADME Endpoints ----------\n');
+        fprintf(1,'------------- ADME Endpoints ------------\n');
     end
     
     %--------------------------------------------    
@@ -4912,7 +5072,11 @@ else
                 res.AD_index_FUB(i)=0;
                 res.Conf_index_FUB(i,1)=0;
             end
-            
+            if Xin(i,12)==0
+                res.AD_FUB(i)=0;
+                res.AD_index_FUB(i)=res.AD_index_FUB(i)/2;
+                res.Conf_index_FUB(i,1)=res.Conf_index_FUB(i,1)/2;
+            end
             if neighbors==1
                 FUB.CAS=strrep(strrep(join(FUB.CAS,'|',2),'|||',''),'||','');
                 FUB.DTXSID=strrep(strrep(join(FUB.DTXSID,'|',2),'|||',''),'||','');
@@ -5132,6 +5296,11 @@ else
                 res.AD_index_Clint(i)=0;
                 res.Conf_index_Clint(i,1)=0;
             end
+            if Xin(i,12)==0
+                res.AD_Clint(i)=0;
+                res.AD_index_Clint(i)=res.AD_index_Clint(i)/2;
+                res.Conf_index_Clint(i,1)=res.Conf_index_Clint(i,1)/2;
+            end
             if neighbors==1
                 CLINT.CAS=strrep(strrep(join(CLINT.CAS,'|',2),'|||',''),'||','');
                 CLINT.DTXSID=strrep(strrep(join(CLINT.DTXSID,'|',2),'|||',''),'||','');
@@ -5267,7 +5436,7 @@ else
     % Tox properties
     
     if verbose> 0 && (tox||all)
-        fprintf(1,'---------- Toxcity Endpoints ----------\n');
+        fprintf(1,'----------- Toxcity Endpoints -----------\n');
     end
     
     %--------------------------------------------
@@ -5440,6 +5609,17 @@ else
             res.Conf_index_CERAPP_Bind(i,1)=(CERAPP.model_BD.conc_BD(predBD.neighbors(i,:),1)'*predBD.w(i,:)'+res.AD_index_CERAPP_Bind(i))/2;
             if res.AD_index_CERAPP_Bind(i)==0
                 res.Conf_index_CERAPP_Bind(i,1)=0;
+            end
+            if Xin(i,12)==0
+                res.AD_CERAPP_Ago(i)=0;
+                res.AD_index_CERAPP_Ago(i)=res.AD_index_CERAPP_Ago(i)/2;
+                res.Conf_index_CERAPP_Ago(i,1)=res.Conf_index_CERAPP_Ago(i,1)/2;
+                res.AD_CERAPP_Anta(i)=0;
+                res.AD_index_CERAPP_Anta(i)=res.AD_index_CERAPP_Anta(i)/2;
+                res.Conf_index_CERAPP_Anta(i,1)=res.Conf_index_CERAPP_Anta(i,1)/2;
+                res.AD_CERAPP_Bind(i)=0;
+                res.AD_index_CERAPP_Bind(i)=res.AD_index_CERAPP_Bind(i)/2;
+                res.Conf_index_CERAPP_Bind(i,1)=res.Conf_index_CERAPP_Bind(i,1)/2;
             end
 
             if neighbors==1
@@ -5772,7 +5952,17 @@ else
             if res.AD_index_CoMPARA_Bind(i)==0
                 res.Conf_index_CoMPARA_Bind(i,1)=0;
             end
-            
+            if Xin(i,12)==0
+                res.AD_CoMPARA_Ago(i)=0;
+                res.AD_index_CoMPARA_Ago(i)=res.AD_index_CoMPARA_Ago(i)/2;
+                res.Conf_index_CoMPARA_Ago(i,1)=res.Conf_index_CoMPARA_Ago(i,1)/2;
+                res.AD_CoMPARA_Anta(i)=0;
+                res.AD_index_CoMPARA_Anta(i)=res.AD_index_CoMPARA_Anta(i)/2;
+                res.Conf_index_CoMPARA_Anta(i,1)=res.Conf_index_CoMPARA_Anta(i,1)/2;
+                res.AD_CoMPARA_Bind(i)=0;
+                res.AD_index_CoMPARA_Bind(i)=res.AD_index_CoMPARA_Bind(i)/2;
+                res.Conf_index_CoMPARA_Bind(i,1)=res.Conf_index_CoMPARA_Bind(i,1)/2;
+            end
             if neighbors==1
                 COMPARA.model_AG.CAS=strrep(strrep(join(COMPARA.model_AG.CAS,'|',2),'|||',''),'||','');
                 COMPARA.model_AG.DTXSID=strrep(strrep(join(COMPARA.model_AG.DTXSID,'|',2),'|||',''),'||','');
@@ -6174,6 +6364,12 @@ else
             else
                 res.CATMoS_LD50_pred(i)=round(10^res.CATMoS_LD50_pred(i),2);
             end
+            
+            if Xin(i,12)==0
+                res.AD_CATMoS(i)=0;
+                res.AD_index_CATMoS(i)=res.AD_index_CATMoS(i)/2;
+                res.Conf_index_CATMoS(i,1)=res.Conf_index_CATMoS(i,1)/2;
+            end
 
             
             %neighbors
@@ -6422,10 +6618,32 @@ res=rmfield(res,{'AD_VT','AD_index_VT','Conf_index_VT','AD_NT','AD_index_NT','Co
     tElapsed = toc(timerAll);
     if verbose>0
         
-        fprintf(1,'\n==========   End Of Calculation   ==========\n');
+        fprintf(1,'\n=============== End Of Calculation =============\n');
         fprintf('%i molecules predicted. Total process time: %s.\n', length(Xin(:,1)),duration(0,0,tElapsed));
     end
     
+    if clean==1 && structure==1
+        delete(InputDesc);
+        %delete(strcat('PadelDesc_',StructureFile(1:length(StructureFile)-3),'.csv'));
+        if verbose <2
+            delete(PaDELlogfile);
+        end
+        if fp==1
+            delete(InputDescFP);
+            %delete('PadelFP.csv');
+            if verbose <2
+                delete(PaDELlogfileFP);
+            end
+        end
+        if cdk==1
+            delete(InputDescCDK);
+            %delete('CDKDesc.csv');
+            if verbose <2
+                delete(CDKlogfile);
+                delete(CDKerr);
+            end
+        end
+    end
     
 end
 

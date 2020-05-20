@@ -3,7 +3,7 @@
        _______________________________________________________________________
       |                                                                       |
       |   OPERA models for physchem, environmental fate and tox properties.   |
-      |                 Version 2.5 (January 2020)                            |
+      |                 Version 2.6 (May 2020)                                |
       |_______________________________________________________________________|   
  
  
@@ -28,6 +28,7 @@
    -t, --SaltInfo           Salt IDs to improve melting point predictions. List provided in Salts.xls
    -l, --Labels             Descriptor labels. Necessary if the descriptor file does not contain labels 
                             or contains more than the 1444 PaDEL 2D descriptors.
+   -st, --Standardize		Generate QSAR-ready structures from input structures.
  
  Output:
    -o, --Output             Output file containing the predictions, applicability domain and accuracy 
@@ -36,7 +37,8 @@
                             (Sim_index) and accuracy estimate (Conf_index).
    -n, --Neighbors          Add 5 nearest neighbors from training set (CAS, InCHiKeys, Observed and predicted values)
    -O, --FullOutput         Output file containing all prediction details and used descriptors in csv format.
-   -x, --Seperate           Separate output file for each endpoint. 
+   -gd, -getDesc			Output file containing used descriptors in csv format.
+   -x, --Separate           Separate output file for each endpoint.  
  
  Miscellaneous:
    -v, --Verbose            Verbose level: 0=silent (default), 1=minimum details,    2=full details.
@@ -50,7 +52,7 @@
    -exp						Get experimental values, when available. Requires CAS or DTXSID.
    -h, --Help               Display this help file and exit.
    -V, --Version            Version of the application  
-   -P, --Parallel           Number of cpus for the parallel session. If non specified the app will use all cpus available. 
+   -P, --Parallel           Number of cpus for the parallel session (at least 100 chemicals/cpu). If non specified the app will use all cpus available. 
  
  
  Developed by:
