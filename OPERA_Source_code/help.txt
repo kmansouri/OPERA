@@ -3,7 +3,7 @@
        _______________________________________________________________________
       |                                                                       |
       |   OPERA models for physchem, environmental fate and tox properties.   |
-      |                 Version 2.5 (January 2020)                            |
+      |                 Version 2.6 (May 2020)                                |
       |_______________________________________________________________________|    
  
  
@@ -28,6 +28,7 @@
    -t, --SaltInfo           Salt IDs to improve melting point predictions. List provided in Salts.xls
    -l, --Labels             Descriptor labels. Necessary if the descriptor file does not contain labels 
                             or contains more than the 1444 PaDEL 2D descriptors.
+   -st, --Standardize		Generate QSAR-ready structures from input structures. 
  
  Output:
    -o, --Output             Output file containing the predictions, applicability domain and accuracy 
@@ -36,7 +37,8 @@
                             (Sim_index) and accuracy estimate (Conf_index).
    -n, --Neighbors          Add 5 nearest neighbors from training set (CAS, InCHiKeys, Observed and predicted values)
    -O, --FullOutput         Output file containing all prediction details and used descriptors in csv format.
-   -x, --Seperate           Separate output file for each endpoint. 
+   -gd, -getDesc			Output file containing used descriptors in csv format.
+   -x, --Separate           Separate output file for each endpoint. 
  
  Miscellaneous:
    -v, --Verbose            Verbose level: 0=silent (default), 1=minimum details,    2=full details.
@@ -67,3 +69,4 @@ For more information about the models and the data:
 [5] JRC QSAR Model Database https://qsardb.jrc.ec.europa.eu/qmrf/endpoint
 [6] Mansouri, K. et al. EHP (2016) https://ehp.niehs.nih.gov/doi/full/10.1289/ehp.1510267
 [7] Mansouri, K. et al. J Cheminform (2019) https://link.springer.com/article/10.1186/s13321-019-0384-1
+[8] Mansouri, K. et al. EHP (2020) https://doi.org/10.1289/EHP5580
