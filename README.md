@@ -20,6 +20,8 @@ References:
 
 [8] Mansouri, K. et al. EHP (2020) https://doi.org/10.1289/EHP5580
 
+[9] Mansouri, K. et al. EHP (2021) https://doi.org/10.1289/EHP8495
+
 
 
 Models:
