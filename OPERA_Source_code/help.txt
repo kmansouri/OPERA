@@ -3,7 +3,7 @@
        _______________________________________________________________________
       |                                                                       |
       |   OPERA models for physchem, environmental fate and tox properties.   |
-      |                 Version 2.6 (May 2020)                                |
+      |                 Version 2.7 (May 2021)                                |
       |_______________________________________________________________________|    
  
  
@@ -18,46 +18,45 @@
  ./run_OPERA.sh /mathworks/home/application/v94 -d Sample_50.csv -o predictions.txt -e logP BCF -v 1
  
  Input: 
-   -s, --SDF, --MOL, --SMI  Input file containing structure(s) or ID(s) (CAS, DTXSID, InChIkeys) of the molecule(s) 
-                            to be predicted. Generic IDs will be assigned if the file does not contain molecule names.
-                            Molecular descriptors will be calculated using PaDEL software.
-   -d, --Descriptors        pre-calculated PaDEL descriptors in csv file. If the first column is not 
-                            "Name" as the standard PaDEL output, molecule IDs will be assinged.
-   -m, --Mat, --ascii       Matlab matrix or ascii file containing PaDEL descriptors.
-   -i, --MolID              Molecule names in csv file.
-   -t, --SaltInfo           Salt IDs to improve melting point predictions. List provided in Salts.xls
-   -l, --Labels             Descriptor labels. Necessary if the descriptor file does not contain labels 
-                            or contains more than the 1444 PaDEL 2D descriptors.
-   -st, --Standardize		Generate QSAR-ready structures from input structures. 
+   -s, --SDF, --MOL,	Input file containing structure(s) or ID(s) (CAS, DTXSID, InChIkeys) of the molecule(s) 
+	 --SMI		to be predicted. Generic IDs will be assigned if the file does not contain molecule names.
+			Molecular descriptors will be calculated using PaDEL software.
+   -d, --Descriptors	pre-calculated PaDEL descriptors in csv file. If the first column is not 
+			"Name" as the standard PaDEL output, molecule IDs will be assinged.
+   -m, --Mat, --ascii	Matlab matrix or ascii file containing PaDEL descriptors.
+   -i, --MolID		Molecule names in csv file.
+   -t, --SaltInfo	Salt IDs to improve melting point predictions. List provided in Salts.xls
+   -l, --Labels		Descriptor labels. Necessary if the descriptor file does not contain labels 
+			or contains more than the 1444 PaDEL 2D descriptors.
+   -st, --Standardize	Generate QSAR-ready structures from input structures. 
  
  Output:
-   -o, --Output             Output file containing the predictions, applicability domain and accuracy 
-                            information. File extension could be csv or txt. The output will contain by default: 
-                            Molecule ID, predicted value (pred), Applicability domain (AD), Similarity index 
-                            (Sim_index) and accuracy estimate (Conf_index).
-   -n, --Neighbors          Add 5 nearest neighbors from training set (CAS, InCHiKeys, Observed and predicted values)
-   -O, --FullOutput         Output file containing all prediction details and used descriptors in csv format.
-   -gd, -getDesc			Output file containing used descriptors in csv format.
-   -x, --Separate           Separate output file for each endpoint. 
+   -o, --Output		Output file containing the predictions, applicability domain and accuracy 
+			information. File extension could be csv or txt. The output will contain by default: 
+			Molecule ID, predicted value (pred), Applicability domain (AD), Similarity index 
+			(Sim_index) and accuracy estimate (Conf_index).
+   -n, --Neighbors	Add 5 nearest neighbors from training set (CAS, InCHiKeys, Observed and predicted values)
+   -O, --FullOutput	Output file containing all prediction details and used descriptors in csv format.
+   -gd, -getDesc	Output file containing used descriptors in csv format.
+   -x, --Separate	Separate output file for each endpoint. 
  
  Miscellaneous:
-   -v, --Verbose            Verbose level: 0=silent (default), 1=minimum details,    2=full details.
-   -a, --All                All endpoints to be calculated (default).
-   -c, --Clean              Clean temporary files (generated during descriptor calculation.)
-   -logP, -BCF...           List endpoints to be calculated (case insensitive). 'BCF'/'logBCF','BP','logP','MP',
-                            'VP'/'logVP','WS', 'AOH', 'BioDeg', 'RB'/'ReadyBiodeg','HL'/'logHL','KM'/'logKM',
-                            'KOA','Koc'/'logKoc', 'RT', 'pKa', 'logD', 'CERAPP'/'ER', 'CoMPARA'/'AR', 'CATMoS/AcuteTox', 'Fu/FuB', 'Cl/Clint'.
-   -PC, -EF, -Tox, -ADME    Groups of Endpoints: 'StrP' (Structural properties), 'PC'/'Physchem', 'EnvFate'/'EF', 'Tox' (ER, AR, AcuteTox), 'ADME' (FuB, Clint).
-   -e, --Endpoint      		List of endpoints to be calculated.
-   -exp						Get experimental values, when available. Requires CAS or DTXSID.
-   -h, --Help               Display this help file and exit.
-   -V, --Version            Version of the application
+   -v, --Verbose	Verbose level: 0=silent (default), 1=minimum details,    2=full details.
+   -a, --All		All endpoints to be calculated (default).
+   -c, --Clean		Clean temporary files (generated during descriptor calculation.)
+   -logP, -BCF...	List endpoints to be calculated (case insensitive). 'BCF'/'logBCF','BP','logP','MP',
+			'VP'/'logVP','WS', 'AOH', 'BioDeg', 'RB'/'ReadyBiodeg','HL'/'logHL','KM'/'logKM',
+			'KOA','Koc'/'logKoc', 'RT', 'pKa', 'logD', 'CERAPP'/'ER', 'CoMPARA'/'AR', 'CATMoS/AcuteTox', 'Fu/FuB', 'Cl/Clint'.
+   -PC, -EF, -Tox...	Groups of Endpoints: 'StrP' (Structural properties), 'PC'/'Physchem', 'EnvFate'/'EF', 'Tox' (ER, AR, AcuteTox), 'ADME' (FuB, Clint).
+   -e, --Endpoint	List of endpoints to be calculated.
+   -exp			Get experimental values, when available. Requires CAS or DTXSID.
+   -h, --Help		Display this help file and exit.
+   -V, --Version        Version of the application
    
  
  
  Developed by:
  Kamel Mansouri
- mansourikamel@gmail.com
  kamel.mansouri@nih.gov
 
  
@@ -67,6 +66,7 @@ For more information about the models and the data:
 [3] The CompTox Chemistry Dashboard (https://comptox.epa.gov/dashboard)
 [4] Williams A. J. et al. J Cheminform (2017) https://doi.org/10.1186/s13321-017-0247-6
 [5] JRC QSAR Model Database https://qsardb.jrc.ec.europa.eu/qmrf/endpoint
-[6] Mansouri, K. et al. EHP (2016) https://ehp.niehs.nih.gov/doi/full/10.1289/ehp.1510267
-[7] Mansouri, K. et al. J Cheminform (2019) https://link.springer.com/article/10.1186/s13321-019-0384-1
+[6] Mansouri, K. et al. EHP (2016) https://doi.org/10.1289/ehp.1510267
+[7] Mansouri, K. et al. J Cheminform (2019) https://doi.org/10.1186/s13321-019-0384-1
 [8] Mansouri, K. et al. EHP (2020) https://doi.org/10.1289/EHP5580
+[9] Mansouri, K. et al. EHP (2021) https://doi.org/10.1289/EHP8495

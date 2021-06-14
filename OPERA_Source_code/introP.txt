@@ -2,7 +2,7 @@
        _______________________________________________________________________
       |                                                                       |
       |   OPERA models for physchem, environmental fate and tox properties.   |
-      |                 Version 2.6 Parallel (May 2020)                       |
+      |                 Version 2.7 Parallel (May 2021)                       |
       |_______________________________________________________________________|      
 
 
@@ -12,14 +12,13 @@
 
 Developed by:
 Kamel Mansouri
-mansourikamel@gmail.com
 kamel.mansouri@nih.gov
 
 
- Usage: ./run_OPERA.sh <mcr_directory> <argument_list>
+ Usage: ./run_OPERA_P.sh <mcr_directory> <argument_list>
 
  Examples: 
-./run_OPERA.sh /mathworks/home/application/v94 -s Sample_50.sdf -o predictions.csv -a -x -n -v 2 -P 16
-./run_OPERA.sh /mathworks/home/application/v94 -d Sample_50.csv -o predictions.txt -e logP BCF -v 1
+./run_OPERA_P.sh /mathworks/home/application/v99 -s Sample_50.sdf -o predictions.csv -a -x -n -v 2 -P 16
+./run_OPERA_P.sh /mathworks/home/application/v99 -d Sample_50_PadelDesc.csv -o predictions.txt -e logP BCF -v 1
 
 Use -h or --help for more info.
