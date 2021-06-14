@@ -4,10 +4,12 @@ The default fields are: Molecule ID, predicted value (pred), Applicability domai
 
 Additional options:
 
-    Separate files:          Separate output file for each endpoint. Recommended if high number of molecules are predicted.
+	Separate files:		Separate output file for each endpoint. Recommended if high number of molecules are predicted.
 	
-    Nearest neighbors:       Includes the (3 or 5) nearest neighbors from training set (CAS, InCHiKeys, Observed and predicted values).
+	Experimental values:	Include the experimental values based on provided CASRNs or DTXSID in the input file.
 	
-    Descriptors values:      Output file containing all prediction details and used descriptors (only if output is in csv format).
+	Nearest neighbors:	Includes the (3 or 5) nearest neighbors from training set (CAS, InCHiKeys, Observed and predicted values).
 	
-    Descriptors files:       Keep temporary descriptors files (generated during descriptor calculation).
+	Descriptors values:	Output file containing all prediction details and used descriptors (only if output is in csv format).
+	
+	Descriptors files:	Keep temporary descriptors files (generated during descriptor calculation).
