@@ -1,7 +1,7 @@
 function res=OPERA_par(varargin)
 
 Version='2.7';
-SubVersion='2.7-beta1';
+SubVersion='2.7-beta2';
 %%
 %
 %        _______________________________________________________________________
@@ -867,7 +867,11 @@ else
             end
             Xin.Properties.VariableNames{1}='Name';
             Xlabels=Xlabels(2:end);
-            Names=cellstr(Xin.Name);
+            if isnumeric(Xin.Name)
+                Names=cellstr(num2str(Xin.Name));
+            else
+                Names=cellstr(Xin.Name);
+            end
             if isnumeric(Names) && strcmpi(ext,'.txt')
                 
                 for i=1:size(Xin,1)

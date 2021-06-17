@@ -1,7 +1,7 @@
 function res=OPERA(varargin)
 
 Version='2.7';
-SubVersion='2.7-beta1';
+SubVersion='2.7-beta2';
 %%
 %
 %        _______________________________________________________________________
@@ -862,7 +862,11 @@ else
             end
             Xin.Properties.VariableNames{1}='Name';
             Xlabels=Xlabels(2:end);
-            Names=cellstr(Xin.Name);
+            if isnumeric(Xin.Name)
+                Names=cellstr(num2str(Xin.Name));
+            else
+                Names=cellstr(Xin.Name);
+            end
             if isnumeric(Names) && strcmpi(ext,'.txt')
                 
                 for i=1:size(Xin,1)
@@ -1484,10 +1488,10 @@ else
             end
         end
         
-        if sep==1 && strcmpi(ext,'.csv') && Lia(1)
-            
+        if sep==1 && Lia(1) %&& strcmpi(ext,'.csv')
+            res=rmfield(res,'MoleculeID');
             if nf>0
-                res=rmfield(res,'MoleculeID');
+                
                 T=struct2table(res);
 %                 T{end+1:end+nf,1:4}=nan(nf,4);
                 T{end+1:end+nf,4}=nan(nf,1);
@@ -1514,9 +1518,10 @@ else
                 res.Descriptors=Xtest;
             end
         
-            
-            writetable(T,FileOut{Locb(1)},'Delimiter',',');%,'QuoteStrings',true);
-            fclose(output(Locb(1)));
+            if strcmpi(ext,'.csv') 
+                writetable(T,FileOut{Locb(1)},'Delimiter',',');%,'QuoteStrings',true);
+                fclose(output(Locb(1)));
+            end
             clear('T');
             
         elseif sep==0 && printtDesc==1 && strcmpi(ext,'.csv') && Lia(1)
@@ -1822,9 +1827,10 @@ else
                 end
             end
         end
-        if sep==1 && strcmpi(ext,'.csv')
+        if sep==1 %&& strcmpi(ext,'.csv')
+            res=rmfield(res,'MoleculeID');
             if nf>0
-                res=rmfield(res,'MoleculeID');
+                
                 T=struct2table(res);
 %                 T{end+1:end+nf,1:4}=nan(nf,4);
                 T{end+1:end+nf,4}=nan(nf,1);
@@ -1850,8 +1856,10 @@ else
                 T=[T Xtest];
                 res.Descriptors=Xtest;
             end
-            writetable(T,FileOut{Locb},'Delimiter',',');%,'QuoteStrings',true);
-            fclose(output(Locb));
+            if strcmpi(ext,'.csv')
+                writetable(T,FileOut{Locb},'Delimiter',',');%,'QuoteStrings',true);
+                fclose(output(Locb));
+            end
             clear('T');
         elseif sep==0 && printtDesc==1 && strcmpi(ext,'.csv')  
             if nf>0
@@ -2091,9 +2099,10 @@ else
             end
         end
         
-        if sep==1 && strcmpi(ext,'.csv')
+        if sep==1 %&& strcmpi(ext,'.csv')
+            res=rmfield(res,'MoleculeID');
             if nf>0
-                res=rmfield(res,'MoleculeID');
+                
                 T=struct2table(res);
 %                 T{end+1:end+nf,1:4}=nan(nf,4);
                 T{end+1:end+nf,4}=nan(nf,1);
@@ -2119,8 +2128,10 @@ else
                 T=[T Xtest];
                 res.Descriptors=Xtest;
             end
-            writetable(T,FileOut{Locb},'Delimiter',',');%,'QuoteStrings',true);
-            fclose(output(Locb));
+            if strcmpi(ext,'.csv')
+                writetable(T,FileOut{Locb},'Delimiter',',');%,'QuoteStrings',true);
+                fclose(output(Locb));
+            end
             clear('T');
         elseif sep==0 && printtDesc==1 && strcmpi(ext,'.csv')
             if nf>0
@@ -2362,9 +2373,10 @@ else
             end
         end
         
-        if sep==1 && strcmpi(ext,'.csv')
+        if sep==1 %&& strcmpi(ext,'.csv')
+            res=rmfield(res,'MoleculeID');
             if nf>0
-                res=rmfield(res,'MoleculeID');
+                
                 T=struct2table(res);
 %                 T{end+1:end+nf,1:4}=nan(nf,4);
                 T{end+1:end+nf,4}=nan(nf,1);
@@ -2390,8 +2402,10 @@ else
                 T=[T Xtest];
                 res.Descriptors=Xtest;
             end
-            writetable(T,FileOut{Locb(find(Locb))},'Delimiter',',');%,'QuoteStrings',true);
-            fclose(output(Locb(find(Locb))));
+            if strcmpi(ext,'.csv')
+                writetable(T,FileOut{Locb(find(Locb))},'Delimiter',',');%,'QuoteStrings',true);
+                fclose(output(Locb(find(Locb))));
+            end
             clear('T');
         elseif sep==0 && printtDesc==1 && strcmpi(ext,'.csv')
             if nf>0
@@ -2635,9 +2649,10 @@ else
                 end
             end
         end
-        if sep==1 && strcmpi(ext,'.csv')
+        if sep==1 %&& strcmpi(ext,'.csv')
+            res=rmfield(res,'MoleculeID');
             if nf>0
-                res=rmfield(res,'MoleculeID');
+                
                 T=struct2table(res);
 %                 T{end+1:end+nf,1:4}=nan(nf,4);
                 T{end+1:end+nf,4}=nan(nf,1);
@@ -2663,8 +2678,10 @@ else
                 T=[T Xtest];
                 res.Descriptors=Xtest;
             end
-            writetable(T,FileOut{Locb(find(Locb))},'Delimiter',',');%,'QuoteStrings',true);
-            fclose(output(Locb(find(Locb))));
+            if strcmpi(ext,'.csv')
+                writetable(T,FileOut{Locb(find(Locb))},'Delimiter',',');%,'QuoteStrings',true);
+                fclose(output(Locb(find(Locb))));
+            end
             clear('T');
         elseif sep==0 && printtDesc==1 && strcmpi(ext,'.csv')       
             if nf>0
@@ -2907,9 +2924,10 @@ else
             end
         end
 
-        if sep==1 && strcmpi(ext,'.csv')
+        if sep==1 %&& strcmpi(ext,'.csv')
+            res=rmfield(res,'MoleculeID');
             if nf>0
-                res=rmfield(res,'MoleculeID');
+                
                 T=struct2table(res);
 %                 T{end+1:end+nf,1:4}=nan(nf,4);
                 T{end+1:end+nf,4}=nan(nf,1);
@@ -2935,8 +2953,10 @@ else
                 T=[T Xtest];
                 res.Descriptors=Xtest;
             end
-            writetable(T,FileOut{Locb(find(Locb))},'Delimiter',',');%,'QuoteStrings',true);
-            fclose(output(Locb(find(Locb))));
+            if strcmpi(ext,'.csv')
+                writetable(T,FileOut{Locb(find(Locb))},'Delimiter',',');%,'QuoteStrings',true);
+                fclose(output(Locb(find(Locb))));
+            end
             clear('T');
         elseif sep==0 && printtDesc==1 && strcmpi(ext,'.csv')
             if nf>0
@@ -3172,9 +3192,10 @@ else
                 end
             end
         end
-        if sep==1 && strcmpi(ext,'.csv')
+        if sep==1 %&& strcmpi(ext,'.csv')
+            res=rmfield(res,'MoleculeID');
             if nf>0
-                res=rmfield(res,'MoleculeID');
+                
                 T=struct2table(res);
 %                 T{end+1:end+nf,1:4}=nan(nf,4);
                 T{end+1:end+nf,4}=nan(nf,1);
@@ -3200,8 +3221,10 @@ else
                 T=[T Xtest];
                 res.Descriptors=Xtest;
             end
-            writetable(T,FileOut{Locb(find(Locb))},'Delimiter',',');%,'QuoteStrings',true);
-            fclose(output(Locb(find(Locb))));
+            if strcmpi(ext,'.csv')
+                writetable(T,FileOut{Locb(find(Locb))},'Delimiter',',');%,'QuoteStrings',true);
+                fclose(output(Locb(find(Locb))));
+            end
             clear('T');
         elseif sep==0 && printtDesc==1 && strcmpi(ext,'.csv')
             if nf>0
@@ -3443,9 +3466,10 @@ else
             end
         end
         
-        if sep==1 && strcmpi(ext,'.csv')
+        if sep==1 %&& strcmpi(ext,'.csv')
+            res=rmfield(res,'MoleculeID');
             if nf>0
-                res=rmfield(res,'MoleculeID');
+                
                 T=struct2table(res);
 %                 T{end+1:end+nf,1:4}=nan(nf,4);
                 T{end+1:end+nf,4}=nan(nf,1);
@@ -3471,8 +3495,10 @@ else
                 T=[T Xtest];
                 res.Descriptors=Xtest;
             end
-            writetable(T,FileOut{Locb(find(Locb))},'Delimiter',',');%,'QuoteStrings',true);
-            fclose(output(Locb(find(Locb))));
+            if strcmpi(ext,'.csv')
+                writetable(T,FileOut{Locb(find(Locb))},'Delimiter',',');%,'QuoteStrings',true);
+                fclose(output(Locb(find(Locb))));
+            end
             clear('T');
         elseif sep==0 && printtDesc==1 && strcmpi(ext,'.csv')
             if nf>0
@@ -3780,9 +3806,10 @@ else
             end
         end
    
-        if sep==1 && strcmpi(ext,'.csv') && Lia(1)
+        if sep==1  && Lia(1) %&& strcmpi(ext,'.csv')
+            res=rmfield(res,'MoleculeID');
             if nf>0
-                res=rmfield(res,'MoleculeID');
+                
                 T=struct2table(res);
 %                 T{end+1:end+nf,1:4}=nan(nf,4);
                 T{end+1:end+nf,4}=nan(nf,1);
@@ -3808,8 +3835,10 @@ else
                 T=[T Xtest];
                 res.Descriptors=Xtest;
             end
-            writetable(T,FileOut{Locb(1)},'Delimiter',',');%,'QuoteStrings',true);
-            fclose(output(Locb(1)));
+            if strcmpi(ext,'.csv')
+                writetable(T,FileOut{Locb(1)},'Delimiter',',');%,'QuoteStrings',true);
+                fclose(output(Locb(1)));
+            end
             clear('T');
         elseif sep==0 && printtDesc==1 && strcmpi(ext,'.csv') && Lia(1)
             if nf>0
@@ -3929,8 +3958,9 @@ else
                 end
             end
             if strcmpi(ext,'.csv')
+                res=rmfield(res,'MoleculeID');
                 if nf>0
-                    res=rmfield(res,'MoleculeID');
+                    
                     T=struct2table(res);
 %                     T{end+1:end+nf,1:4}=nan(nf,4);
                     T{end+1:end+nf,1}=nan(nf,1);
@@ -4248,9 +4278,10 @@ else
             end
         end
  
-        if sep==1 && strcmpi(ext,'.csv')
+        if sep==1 %&& strcmpi(ext,'.csv')
+            res=rmfield(res,'MoleculeID');
             if nf>0
-                res=rmfield(res,'MoleculeID');
+                
                 T=struct2table(res);
 %                 T{end+1:end+nf,1:4}=nan(nf,4);
                 T{end+1:end+nf,4}=nan(nf,1);
@@ -4276,8 +4307,10 @@ else
                 T=[T Xtest];
                 res.Descriptors=Xtest;
             end
-            writetable(T,FileOut{Locb(find(Locb))},'Delimiter',',');%,'QuoteStrings',true);
-            fclose(output(Locb(find(Locb))));
+            if strcmpi(ext,'.csv')
+                writetable(T,FileOut{Locb(find(Locb))},'Delimiter',',');%,'QuoteStrings',true);
+                fclose(output(Locb(find(Locb))));
+            end
             clear('T');
         elseif sep==0 && printtDesc==1 && strcmpi(ext,'.csv')           
             if nf>0
@@ -4521,9 +4554,10 @@ else
             end
         end
 
-        if sep==1 && strcmpi(ext,'.csv')
+        if sep==1 %&& strcmpi(ext,'.csv')
+            res=rmfield(res,'MoleculeID');
             if nf>0
-                res=rmfield(res,'MoleculeID');
+                
                 T=struct2table(res);
 %                 T{end+1:end+nf,1:4}=nan(nf,4);
                 T{end+1:end+nf,4}=nan(nf,1);
@@ -4549,8 +4583,10 @@ else
                 T=[T Xtest];
                 res.Descriptors=Xtest;
             end
-            writetable(T,FileOut{Locb(find(Locb))},'Delimiter',',');%,'QuoteStrings',true);
-            fclose(output(Locb(find(Locb))));
+            if strcmpi(ext,'.csv')
+                writetable(T,FileOut{Locb(find(Locb))},'Delimiter',',');%,'QuoteStrings',true);
+                fclose(output(Locb(find(Locb))));
+            end
             clear('T');
         elseif sep==0 && printtDesc==1 && strcmpi(ext,'.csv')
             if nf>0
@@ -4792,9 +4828,10 @@ else
             end
         end
 
-        if sep==1 && strcmpi(ext,'.csv')
+        if sep==1 %&& strcmpi(ext,'.csv')
+            res=rmfield(res,'MoleculeID');
             if nf>0
-                res=rmfield(res,'MoleculeID');
+                
                 T=struct2table(res);
 %                 T{end+1:end+nf,1:4}=nan(nf,4);
                 T{end+1:end+nf,4}=nan(nf,1);
@@ -4820,8 +4857,10 @@ else
                 T=[T Xtest];
                 res.Descriptors=Xtest;
             end
-            writetable(T,FileOut{Locb(find(Locb))},'Delimiter',',');%,'QuoteStrings',true);
-            fclose(output(Locb(find(Locb))));
+            if strcmpi(ext,'.csv')
+                writetable(T,FileOut{Locb(find(Locb))},'Delimiter',',');%,'QuoteStrings',true);
+                fclose(output(Locb(find(Locb))));
+            end
             clear('T');
         elseif sep==0 && printtDesc==1 && strcmpi(ext,'.csv')
             if nf>0
@@ -5045,9 +5084,10 @@ else
             end
         end
 
-        if sep==1 && strcmpi(ext,'.csv')
+        if sep==1 %&& strcmpi(ext,'.csv')
+            res=rmfield(res,'MoleculeID');
             if nf>0
-                res=rmfield(res,'MoleculeID');
+                
                 T=struct2table(res);
 %                 T{end+1:end+nf,1:4}=nan(nf,4);
                 T{end+1:end+nf,4}=nan(nf,1);
@@ -5073,8 +5113,10 @@ else
                 T=[T Xtest];
                 res.Descriptors=Xtest;
             end
-            writetable(T,FileOut{Locb(find(Locb))},'Delimiter',',');%,'QuoteStrings',true);
-            fclose(output(Locb(find(Locb))));
+            if strcmpi(ext,'.csv')
+                writetable(T,FileOut{Locb(find(Locb))},'Delimiter',',');%,'QuoteStrings',true);
+                fclose(output(Locb(find(Locb))));
+            end
             clear('T');
         elseif sep==0 && printtDesc==1 && strcmpi(ext,'.csv')
             if nf>0
@@ -5311,9 +5353,10 @@ else
                 end
             end
         end
-        if sep==1 && strcmpi(ext,'.csv')
+        if sep==1 %&& strcmpi(ext,'.csv')
+            res=rmfield(res,'MoleculeID');
             if nf>0
-                res=rmfield(res,'MoleculeID');
+                
                 T=struct2table(res);
 %                 T{end+1:end+nf,1:4}=nan(nf,4);
                 T{end+1:end+nf,4}=nan(nf,1);
@@ -5339,8 +5382,10 @@ else
                 T=[T Xtest];
                 res.Descriptors=Xtest;
             end
-            writetable(T,FileOut{Locb(find(Locb))},'Delimiter',',');%,'QuoteStrings',true);
-            fclose(output(Locb(find(Locb))));
+            if strcmpi(ext,'.csv')
+                writetable(T,FileOut{Locb(find(Locb))},'Delimiter',',');%,'QuoteStrings',true);
+                fclose(output(Locb(find(Locb))));
+            end
             clear('T');
         elseif sep==0 && printtDesc==1 && strcmpi(ext,'.csv')
             if nf>0
@@ -5580,9 +5625,10 @@ else
             end
         end
 
-        if sep==1 && strcmpi(ext,'.csv')
+        if sep==1 %&& strcmpi(ext,'.csv')
+            res=rmfield(res,'MoleculeID');
             if nf>0
-                res=rmfield(res,'MoleculeID');
+                
                 T=struct2table(res);
 %                 T{end+1:end+nf,1:4}=nan(nf,4);
                 T{end+1:end+nf,4}=nan(nf,1);
@@ -5608,8 +5654,10 @@ else
                 T=[T Xtest];
                 res.Descriptors=Xtest;
             end
-            writetable(T,FileOut{Locb(find(Locb))},'Delimiter',',');%,'QuoteStrings',true);
-            fclose(output(Locb(find(Locb))));
+            if strcmpi(ext,'.csv')
+                writetable(T,FileOut{Locb(find(Locb))},'Delimiter',',');%,'QuoteStrings',true);
+                fclose(output(Locb(find(Locb))));
+            end
             clear('T');
             
         elseif sep==0 && printtDesc==1 && strcmpi(ext,'.csv')
@@ -5855,9 +5903,10 @@ else
                 end
             end
         end
-        if sep==1 && strcmpi(ext,'.csv')
+        if sep==1 %&& strcmpi(ext,'.csv')
+            res=rmfield(res,'MoleculeID');
             if nf>0
-                res=rmfield(res,'MoleculeID');
+%                res=rmfield(res,'MoleculeID');
                 T=struct2table(res);
 %                 T{end+1:end+nf,1:4}=nan(nf,4);
                 T{end+1:end+nf,4}=nan(nf,1);
@@ -5883,8 +5932,10 @@ else
                 T=[T Xtest];
                 res.Descriptors=Xtest;
             end
-            writetable(T,FileOut{Locb(find(Locb))},'Delimiter',',');%,'QuoteStrings',true);
-            fclose(output(Locb(find(Locb))));
+            if strcmpi(ext,'.csv')
+                writetable(T,FileOut{Locb(find(Locb))},'Delimiter',',');%,'QuoteStrings',true);
+                fclose(output(Locb(find(Locb))));
+            end
             clear('T');
             
         elseif sep==0 && printtDesc==1 && strcmpi(ext,'.csv')
@@ -5920,7 +5971,7 @@ else
     [Lia,Locb] =ismember({'cl','clint'},lower(prop));
     if find(Lia)
         if verbose>0
-            disp('Predicting Clint values...');
+            disp('Predicting Clint values (ul/min/10^6 cells)...');
         end
         load ('OPERA_models.mat', '-mat','CLINT');
         Desc=CLINT.Descr;
@@ -6159,9 +6210,10 @@ else
                 end
             end
         end
-        if sep==1 && strcmpi(ext,'.csv')
+        if sep==1 %&& strcmpi(ext,'.csv')
+            res=rmfield(res,'MoleculeID');
             if nf>0
-                res=rmfield(res,'MoleculeID');
+%                 res=rmfield(res,'MoleculeID');
                 T=struct2table(res);
 %                 T{end+1:end+nf,1:4}=nan(nf,4);
                 T{end+1:end+nf,4}=nan(nf,1);
@@ -6187,8 +6239,10 @@ else
                 T=[T Xtest];
                 res.Descriptors=Xtest;
             end
-            writetable(T,FileOut{Locb(find(Locb))},'Delimiter',',');%,'QuoteStrings',true);
-            fclose(output(Locb(find(Locb))));
+            if strcmpi(ext,'.csv')
+                writetable(T,FileOut{Locb(find(Locb))},'Delimiter',',');%,'QuoteStrings',true);
+                fclose(output(Locb(find(Locb))));
+            end
             clear('T');
             
         elseif sep==0 && printtDesc==1 && strcmpi(ext,'.csv')
@@ -6621,9 +6675,10 @@ else
                 end
             end
         end
-        if sep==1 && strcmpi(ext,'.csv')
+        if sep==1 %&& strcmpi(ext,'.csv')
+            res=rmfield(res,'MoleculeID');
             if nf>0
-                res=rmfield(res,'MoleculeID');
+                
                 T=struct2table(res);
 %                 if exp
 %                     T{end+1:end+nf,2:5}=nan(nf,4);
@@ -6655,8 +6710,10 @@ else
                 T=[T Xtest];
                 res.Descriptors=Xtest;
             end
-            writetable(T,FileOut{Locb(find(Locb))},'Delimiter',',');%,'QuoteStrings',true);
-            fclose(output(Locb(find(Locb))));
+            if strcmpi(ext,'.csv')
+                writetable(T,FileOut{Locb(find(Locb))},'Delimiter',',');%,'QuoteStrings',true);
+                fclose(output(Locb(find(Locb))));
+            end
             clear('T');
             
         elseif sep==0 && printtDesc==1 && strcmpi(ext,'.csv')
@@ -7086,9 +7143,10 @@ else
                 end
             end
         end
-        if sep==1 && strcmpi(ext,'.csv')
+        if sep==1 %&& strcmpi(ext,'.csv')
+            res=rmfield(res,'MoleculeID');
             if nf>0
-                res=rmfield(res,'MoleculeID');
+                
                 T=struct2table(res);
 %                 if exp
 %                     T{end+1:end+nf,2:5}=nan(nf,4);
@@ -7119,8 +7177,10 @@ else
                 T=[T Xtest];
                 res.Descriptors=Xtest;
             end
-            writetable(T,FileOut{Locb(find(Locb))},'Delimiter',',');%,'QuoteStrings',true);
-            fclose(output(Locb(find(Locb))));
+            if strcmpi(ext,'.csv')
+                writetable(T,FileOut{Locb(find(Locb))},'Delimiter',',');%,'QuoteStrings',true);
+                fclose(output(Locb(find(Locb))));
+            end
             clear('T');
             
         elseif sep==0 && printtDesc==1 && strcmpi(ext,'.csv')
@@ -7633,9 +7693,10 @@ res=rmfield(res,{'AD_VT','AD_index_VT','Conf_index_VT','AD_NT','AD_index_NT','Co
                 end
             end
         end
-        if sep==1 && strcmpi(ext,'.csv')
+        if sep==1 %&& strcmpi(ext,'.csv')
+            res=rmfield(res,'MoleculeID');
             if nf>0
-                res=rmfield(res,'MoleculeID');
+                
                 T=struct2table(res);
 %                 T{end+1:end+nf,1:4}=nan(nf,4);
                 T{end+1:end+nf,4}=nan(nf,1);
@@ -7662,8 +7723,10 @@ res=rmfield(res,{'AD_VT','AD_index_VT','Conf_index_VT','AD_NT','AD_index_NT','Co
                 T=[T Xtest];
                 res.Descriptors=Xtest;
             end
-            writetable(T,FileOut{Locb(find(Locb))},'Delimiter',',');%,'QuoteStrings',true);
-            fclose(output(Locb(find(Locb))));
+            if strcmpi(ext,'.csv')
+                writetable(T,FileOut{Locb(find(Locb))},'Delimiter',',');%,'QuoteStrings',true);
+                fclose(output(Locb(find(Locb))));
+            end
             clear('T');
             
         elseif sep==0 && printtDesc==1 && strcmpi(ext,'.csv')
@@ -7700,11 +7763,11 @@ res=rmfield(res,{'AD_VT','AD_index_VT','Conf_index_VT','AD_NT','AD_index_NT','Co
         %end clean memory
     end
     %--------------------------------------------------------------------------
-    if isdeployed
-        resp=res;
-    end
+     if sep==0 &&  isdeployed
+         resp=res;
+     end
     
-    if sep==0 && strcmpi(ext,'.csv')
+    if sep==0 &&  strcmpi(ext,'.csv')
         if nf>0
             res=rmfield(res,'MoleculeID');
             res=struct2table(res);
@@ -7742,12 +7805,20 @@ res=rmfield(res,{'AD_VT','AD_index_VT','Conf_index_VT','AD_NT','AD_index_NT','Co
         %fclose('all');
     end
     
-    if sep==1 && isdeployed==0
+    if sep==1 %&& isdeployed==0
         res=resf;
+        res.MoleculeID=MoleculeNames;
+        if nf>0
+            res.FoundBy=FoundBy;
+        end
+        
         %res=0;
     end
-    if isdeployed
+    if sep==0 && isdeployed   
         res=resp;
+        if nf>0
+            res.FoundBy=FoundBy;
+        end
     end
     
     fclose('all');
