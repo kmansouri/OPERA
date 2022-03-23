@@ -27,8 +27,9 @@ Toxicity endpoints:
     AcuteTox v2.6 Collaborative Acute Toxicity Modeling Suite (CATMoS). 
 
 ADME endpoints:
-    FuB    v2.6 Human plasma fraction unbound 
-    Clint  v2.6 Human hepatic intrinsic clearance
+    FuB    v2.8 Human plasma fraction unbound 
+    Clint  v2.8 Human hepatic intrinsic clearance
+	Caco2  V2.8 Membrane permeability measured using Caco-2 cell line.
 
 	For more information:
 -----------------------------

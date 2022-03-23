@@ -3,7 +3,7 @@
        _______________________________________________________________________
       |                                                                       |
       |   OPERA models for physchem, environmental fate and tox properties.   |
-      |                 Version 2.7 (May 2021)                                |
+      |                 Version 2.8 (March 2022)                              |
       |_______________________________________________________________________|    
  
  
@@ -46,8 +46,8 @@
    -c, --Clean		Clean temporary files (generated during descriptor calculation.)
    -logP, -BCF...	List endpoints to be calculated (case insensitive). 'BCF'/'logBCF','BP','logP','MP',
 			'VP'/'logVP','WS', 'AOH', 'BioDeg', 'RB'/'ReadyBiodeg','HL'/'logHL','KM'/'logKM',
-			'KOA','Koc'/'logKoc', 'RT', 'pKa', 'logD', 'CERAPP'/'ER', 'CoMPARA'/'AR', 'CATMoS/AcuteTox', 'Fu/FuB', 'Cl/Clint'.
-   -PC, -EF, -Tox...	Groups of Endpoints: 'StrP' (Structural properties), 'PC'/'Physchem', 'EnvFate'/'EF', 'Tox' (ER, AR, AcuteTox), 'ADME' (FuB, Clint).
+			'KOA','Koc'/'logKoc', 'RT', 'pKa', 'logD', 'CERAPP'/'ER', 'CoMPARA'/'AR', 'CATMoS/AcuteTox', 'Fu/FuB', 'Cl/Clint','Caco2/logPapp'.
+   -PC, -EF, -Tox...	Groups of Endpoints: 'StrP' (Structural properties), 'PC'/'Physchem', 'EnvFate'/'EF', 'Tox' (ER, AR, AcuteTox), 'ADME' (FuB, Clint, Caco2).
    -e, --Endpoint	List of endpoints to be calculated.
    -exp			Get experimental values, when available. Requires CAS or DTXSID.
    -h, --Help		Display this help file and exit.
