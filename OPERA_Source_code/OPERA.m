@@ -1,13 +1,13 @@
 function res=OPERA(varargin)
 
-Version='2.7';
-SubVersion='2.7-beta2';
+Version='2.8';
+SubVersion='2.8.1';
 %%
 %
 %        _______________________________________________________________________
 %       |                                                                       |
 %       |   OPERA models for physchem, environmental fate and tox properties.   |
-%       |                 Version 2.7 (May 2021)                                |
+%       |                 Version 2.8 (March 2022)                              |
 %       |_______________________________________________________________________|
 %
 %
@@ -30,7 +30,7 @@ SubVersion='2.7-beta2';
 %  -t, --SaltInfo           Salt IDs to improve melting point predictions. List provided in Salts.xls
 %  -l, --Labels             Descriptor labels. Necessary if the descriptor file does not contain labels
 %                           or contains more than the 1444 PaDEL 2D descriptors.
-%  -st, --Standardize		Generate QSAR-ready structures from input structures.
+%  -st, --Standardize		Generate QSAR-ready structures from input structures: 0=no, 1=yes.
 %
 %Output:
 %  -o, --Output             Output file containing the predictions, applicability domain and accuracy
@@ -265,12 +265,12 @@ else
                 || strcmpi('KOC',varargin{i})|| strcmpi('LogKOC',varargin{i})|| strcmpi('LogKM',varargin{i})|| strcmpi('LogHL',varargin{i})|| strcmpi('BioDeg',varargin{i})|| strcmpi('AOH',varargin{i})...
                 || strcmpi('ReadyBiodeg',varargin{i})|| strcmpi('RT',varargin{i})|| strcmpi('Rbiodeg',varargin{i})||strcmpi('BioHL',varargin{i})||strcmpi('BioDegHL',varargin{i})||strcmpi('pka',varargin{i})||strcmpi('LogD',varargin{i})||strcmpi('EnvFate',varargin{i})||strcmpi('EF',varargin{i})...
                 ||strcmpi('ER',varargin{i})||strcmpi('CERAPP',varargin{i})||strcmpi('AR',varargin{i})||strcmpi('CoMPARA',varargin{i})||strcmpi('AcuteTox',varargin{i})||strcmpi('CATMoS',varargin{i})||strcmpi('Tox',varargin{i})||strcmpi('PhysChem',varargin{i})||strcmpi('PC',varargin{i})...
-                ||strcmpi('FuB',varargin{i})||strcmpi('FU',varargin{i})||strcmpi('ADME',varargin{i})||strcmpi('Clint',varargin{i})||strcmpi('Cl',varargin{i})
+                ||strcmpi('FuB',varargin{i})||strcmpi('FU',varargin{i})||strcmpi('ADME',varargin{i})||strcmpi('Clint',varargin{i})||strcmpi('Cl',varargin{i})||strcmpi('CACO2',varargin{i})||strcmpi('logPapp',varargin{i})
             if strcmpi('pka',varargin{i})||strcmpi('LogD',varargin{i})||strcmpi('PhysChem',varargin{i})||strcmpi('PC',varargin{i})
                 fp=1;
                 
             elseif strcmpi('ER',varargin{i})||strcmpi('CERAPP',varargin{i})||strcmpi('AR',varargin{i})||strcmpi('CoMPARA',varargin{i})||strcmpi('AcuteTox',varargin{i})||strcmpi('CATMoS',varargin{i})||strcmpi('Tox',varargin{i})...
-                    ||strcmpi('FuB',varargin{i})||strcmpi('FU',varargin{i})||strcmpi('ADME',varargin{i})||strcmpi('Clint',varargin{i})||strcmpi('Cl',varargin{i})
+                    ||strcmpi('FuB',varargin{i})||strcmpi('FU',varargin{i})||strcmpi('ADME',varargin{i})||strcmpi('Clint',varargin{i})||strcmpi('Cl',varargin{i})||strcmpi('CACO2',varargin{i})||strcmpi('logPapp',varargin{i})
                 cdk=1;
                 
             end
@@ -289,7 +289,7 @@ else
                     all=0;
                     ef=1;
                 elseif strcmpi('ADME',varargin{i})
-                    prop=[prop, 'FuB', 'Clint'];
+                    prop=[prop, 'FuB', 'Clint', 'Caco2'];
                     all=0;
                     adme=1;
                 else
@@ -308,12 +308,12 @@ else
                 || strcmpi('-KOC',varargin{i})|| strcmpi('-LogKOC',varargin{i})|| strcmpi('-LogKM',varargin{i})|| strcmpi('-LogHL',varargin{i})|| strcmpi('-BioDeg',varargin{i})|| strcmpi('-AOH',varargin{i})...
                 || strcmpi('-ReadyBiodeg',varargin{i})|| strcmpi('-RT',varargin{i})|| strcmpi('-Rbiodeg',varargin{i})||strcmpi('-BioHL',varargin{i})||strcmpi('-BioDegHL',varargin{i})||strcmpi('-pka',varargin{i})||strcmpi('-LogD',varargin{i})||strcmpi('-EnvFate',varargin{i})||strcmpi('-EF',varargin{i})...
                 ||strcmpi('-ER',varargin{i})||strcmpi('-CERAPP',varargin{i})||strcmpi('-AR',varargin{i})||strcmpi('-CoMPARA',varargin{i})||strcmpi('-AcuteTox',varargin{i})||strcmpi('-CATMoS',varargin{i})||strcmpi('-Tox',varargin{i})||strcmpi('-PhysChem',varargin{i})||strcmpi('-PC',varargin{i})...
-                ||strcmpi('-FuB',varargin{i})||strcmpi('-FU',varargin{i})||strcmpi('-ADME',varargin{i})||strcmpi('-Clint',varargin{i})||strcmpi('-Cl',varargin{i})
+                ||strcmpi('-FuB',varargin{i})||strcmpi('-FU',varargin{i})||strcmpi('-ADME',varargin{i})||strcmpi('-Clint',varargin{i})||strcmpi('-Cl',varargin{i})||strcmpi('-CACO2',varargin{i})||strcmpi('-logPapp',varargin{i})
             if  strcmpi('-pka',varargin{i})||strcmpi('-LogD',varargin{i})||strcmpi('-PhysChem',varargin{i})||strcmpi('-PC',varargin{i})
                 fp=1;
                 
             elseif strcmpi('-ER',varargin{i})||strcmpi('-CERAPP',varargin{i})||strcmpi('-AR',varargin{i})||strcmpi('-CoMPARA',varargin{i})||strcmpi('-AcuteTox',varargin{i})||strcmpi('-CATMoS',varargin{i})||strcmpi('-Tox',varargin{i})...
-                    ||strcmpi('-FuB',varargin{i})||strcmpi('-FU',varargin{i})||strcmpi('-ADME',varargin{i})||strcmpi('-Clint',varargin{i})||strcmpi('-Cl',varargin{i})
+                    ||strcmpi('-FuB',varargin{i})||strcmpi('-FU',varargin{i})||strcmpi('-ADME',varargin{i})||strcmpi('-Clint',varargin{i})||strcmpi('-Cl',varargin{i})||strcmpi('-CACO2',varargin{i})||strcmpi('-logPapp',varargin{i})
                 cdk=1;
                 
             end
@@ -330,7 +330,7 @@ else
                 all=0;
                 ef=1;
             elseif strcmpi('-ADME',varargin{i})
-                prop=[prop, 'FuB', 'Clint'];
+                prop=[prop, 'FuB', 'Clint', 'Caco2'];
                 all=0;
                 adme=1;
             else
@@ -427,7 +427,7 @@ else
     
     
     if all==1
-        prop= {'StrP','BCF','BP','LogP','MP','VP','WS', 'AOH', 'BioDeg', 'RBioDeg','HL','KM','KOA','KOC','RT','pKa', 'LogD', 'CERAPP', 'FuB','Clint', 'CoMPARA', 'CATMoS'};
+        prop= {'StrP','BCF','BP','LogP','MP','VP','WS', 'AOH', 'BioDeg', 'RBioDeg','HL','KM','KOA','KOC','RT','pKa', 'LogD', 'CERAPP', 'FuB','Clint','Caco2', 'CoMPARA', 'CATMoS'};
         if verbose >0
             fprintf(1,'\n All properties will be calculated: \nGeneral structural properties, Physchem, Env. fate, ADME and Tox Endpoints (CERAPP, CoMPARA and CATMoS)  \n');
             fprintf(1,'\n Initializing and loading models...\n');
@@ -659,14 +659,14 @@ else
                     end
                 end
                 fclose(fileID);
-                if nf>0
+                if nf>0 && f>0
                     FoundBy=[FoundBy; SearchError];
                 end
-                if verbose >0
+                if verbose >0 %&& f>0
                     fprintf(1,'Found structures based on provided IDs: %d.\n',f);
                 end
                 if f==0
-                    error('Check IDs in the input file.');
+                    error('No matching structures. Check IDs in the input file.');
                 end
                 numStruct=num2str(f);
 %                 if ismember('mp',lower(prop))
@@ -692,19 +692,19 @@ else
             end
             
         
-        %command=[strcat('"',fullfile('C:','Users','kmansouri','Downloads','knime_4.1.1','knime'),'"') ' -reset -nosplash -nosave -application org.knime.product.KNIME_BATCH_APPLICATION -workflowDir=' strcat('"',fullfile('C:\Users\kmansouri\Downloads','knime_4.1.1','knime-workspace','QSAR-ready_2.5.6'),'"') ' -workflow.variable=cmd_input,' strcat('"',char(StructureFile),'"') ',String']
-%         [statusKnime,cmdoutKnime] =system ([strcat('"',fullfile('C:','Users','kmansouri','Downloads','knime_4.1.1','knime'),'"')...
+        %command=[strcat('"',fullfile('C:','Users','kmansouri','Downloads','knime_4.5.1','knime'),'"') ' -reset -nosplash -nosave -application org.knime.product.KNIME_BATCH_APPLICATION -workflowDir=' strcat('"',fullfile('C:\Users\kmansouri\Downloads','knime_4.5.1','knime-workspace','QSAR-ready_2.5.6'),'"') ' -workflow.variable=cmd_input,' strcat('"',char(StructureFile),'"') ',String']
+%         [statusKnime,cmdoutKnime] =system ([strcat('"',fullfile('C:','Users','kmansouri','Downloads','knime_4.5.1','knime'),'"')...
 %             ' -reset -nosplash -nosave -application org.knime.product.KNIME_BATCH_APPLICATION -workflowDir='...
-%             strcat('"',fullfile('C:\Users\kmansouri\Downloads','knime_4.1.1','knime-workspace','QSAR-ready_2.5.6'),'"')...
+%             strcat('"',fullfile('C:\Users\kmansouri\Downloads','knime_4.5.1','knime-workspace','QSAR-ready_2.5.6'),'"')...
 %             ' -workflow.variable=cmd_input,' strcat('"',char(StructureFile),'"') ',String']);
         
         homedir = char(java.lang.System.getProperty('user.home'));
         if ~exist(fullfile(homedir,'knime-workspace'),'dir')
             mkdir(fullfile(homedir,'knime-workspace'));
         end
-        if ~exist(fullfile(homedir,'knime-workspace','QSAR-ready_2.5.7'),'dir')
-            mkdir(fullfile(homedir,'knime-workspace','QSAR-ready_2.5.7'));
-            [statusCp,messageCp] = copyfile(fullfile(installdir,'knime_4.1.1','knime-workspace','QSAR-ready_2.5.7'),fullfile(homedir,'knime-workspace','QSAR-ready_2.5.7'));
+        if ~exist(fullfile(homedir,'knime-workspace','QSAR-ready_2.5.8'),'dir')
+            mkdir(fullfile(homedir,'knime-workspace','QSAR-ready_2.5.8'));
+            [statusCp,messageCp] = copyfile(fullfile(installdir,'knime_4.5.1','knime-workspace','QSAR-ready_2.5.8'),fullfile(homedir,'knime-workspace','QSAR-ready_2.5.8'));
             if ~statusCp && ~isempty(messageCp)
                 error(messageCp);
             end
@@ -713,15 +713,15 @@ else
             mkdir(fullfile(homedir,'Sample_input'));
         end
         if ~exist(fullfile(homedir,'Sample_input','Sample_input.sdf'),'file')
-            [statusCp,messageCp] = copyfile(fullfile(installdir,'knime_4.1.1','Sample_input'),fullfile(homedir,'Sample_input'));
+            [statusCp,messageCp] = copyfile(fullfile(installdir,'knime_4.5.1','Sample_input'),fullfile(homedir,'Sample_input'));
             if ~statusCp && ~isempty(messageCp)
                 error(messageCp);
             end
         end
 
-        [statusKnime,cmdoutKnime] =system ([strcat('"',fullfile(installdir,'knime_4.1.1','knime'),'"')...
+        [statusKnime,cmdoutKnime] =system ([strcat('"',fullfile(installdir,'knime_4.5.1','knime'),'"')...
             ' -reset -nosplash -nosave -application org.knime.product.KNIME_BATCH_APPLICATION -workflowDir='...
-            strcat('"',fullfile(homedir,'knime-workspace','QSAR-ready_2.5.7'),'"')...
+            strcat('"',fullfile(homedir,'knime-workspace','QSAR-ready_2.5.8'),'"')...
             ' -workflow.variable=cmd_input,' strcat('"',char(StructureFile),'"') ',String']);
         
                     if statusKnime==0
@@ -5762,6 +5762,8 @@ else
             if exp && ~contains(MoleculeNames(i),'AUTOGEN_')
                 if regexp(MoleculeNames{i},'[0-9]+-[0-9]+-[0-9]')
                     [Li,Lo] = ismember(MoleculeNames(i),FUB.CAS);
+                elseif regexp(MoleculeNames{i},'CHEMBL[0-9]+')
+                    [Li,Lo] = ismember(MoleculeNames(i),FUB.CAS);
                 elseif regexp(MoleculeNames{i},'DTXSID[0-9]+')
                     [Li,Lo] = ismember(MoleculeNames{i},FUB.DTXSID);
                 end
@@ -6044,6 +6046,8 @@ else
             if exp && ~contains(MoleculeNames(i),'AUTOGEN_')
                 if regexp(MoleculeNames{i},'[0-9]+-[0-9]+-[0-9]')
                     [Li,Lo] = ismember(MoleculeNames(i),CLINT.CAS);
+                elseif regexp(MoleculeNames{i},'CHEMBL[0-9]+')
+                    [Li,Lo] = ismember(MoleculeNames(i),CLINT.CAS);
                 elseif regexp(MoleculeNames{i},'DTXSID[0-9]+')
                     [Li,Lo] = ismember(MoleculeNames{i},CLINT.DTXSID);
                 end
@@ -6273,6 +6277,269 @@ else
         clear('InChiKey');
 %         clear('CLINT_CAS');
 %         clear('CLINT_DTXSID');
+        %end clean memory
+    end
+    
+ 
+    %Predict CACO2 values
+    %case {'caco2','perm'}
+    [Lia,Locb] =ismember({'caco2','logPapp'},lower(prop));
+    if find(Lia)
+        if verbose>0
+            disp('Predicting Caco2 values (logPapp)...');
+        end
+        load ('OPERA_models.mat', '-mat','CACO2');
+        Desc=CACO2.Desc;
+    
+            if verbose>1
+                disp(['Weighted kNN model with ', num2str(length(Desc)),' descriptors']);
+            end
+
+        if strcmpi(ext,'.txt') && sep==0
+            fprintf(output,'\n\n\t\t\t\t\t Predicting caco2 values... \n\n			==============================================================  \n\n');
+        end
+        
+        
+        XinCDK_CACO2=XinCDK(:,CACO2.cdk_in);
+        Xtest=[Xin(:,train.PadelVarIn(CACO2.Padel_in)), XinCDK_CACO2];
+        
+        Xtest=Xtest(:,CACO2.Desc_i);
+        
+        pred = nnrpred(Xtest,CACO2.model.set.train,CACO2.model.set.y,CACO2.model.set.K,CACO2.model.set.dist_type,CACO2.model.set.param.pret_type);
+        pred.D=diag(pred.D);
+        %pred.D=[];
+        res.MoleculeID=MoleculeNames;
+        if exp
+            res.CACO2_exp=NaN(size(Xtest,1),1);
+        end
+        res.CACO2_pred(:,1)=round(pred.y_pred_weighted,2);
+        res.CACO2_predRange=cell(size(Xtest,1),1);
+        AD=classical_leverage(CACO2.model.set.train,Xtest,'auto');
+        res.AD_CACO2=abs(AD.inorout-1)';
+        res.AD_CACO2(round(pred.dc(:,1),3)==0)=1;
+        
+        res.AD_index_CACO2=zeros(size(Xtest,1),1);
+        res.Conf_index_CACO2=zeros(size(Xtest,1),1);
+        if neighbors
+            CACO2_CAS_neighbor=cell(size(Xtest,1),5);
+            CACO2_InChiKey_neighbor=cell(size(Xtest,1),5);
+            CACO2_DTXSID_neighbor=cell(size(Xtest,1),5);
+            %CACO2_DSSTOXMPID_neighbor=cell(size(Xtest,1),5);
+        end
+        CACO2_Exp_neighbor=nan(size(Xtest,1),5);
+        CACO2_pred_neighbor=nan(size(Xtest,1),5);
+        
+        CACO2_CAS=strrep(strrep(join(CACO2.CAS,'|',2),'|||',''),'||','');
+        CACO2_DTXSID=strrep(strrep(join(CACO2.DTXSID,'|',2),'|||',''),'||','');
+        
+        for i=1:size(Xtest,1)
+            Li=0;
+            if exp && ~contains(MoleculeNames(i),'AUTOGEN_')
+                if regexp(MoleculeNames{i},'[0-9]+-[0-9]+-[0-9]')
+                    [Li,Lo] = ismember(MoleculeNames(i),CACO2.CAS);
+                elseif regexp(MoleculeNames{i},'CHEMBL[0-9]+')
+                    [Li,Lo] = ismember(MoleculeNames(i),CACO2.CAS);
+                elseif regexp(MoleculeNames{i},'DTXSID[0-9]+')
+                    [Li,Lo] = ismember(MoleculeNames{i},CACO2.DTXSID);
+                end
+                if Li
+                    if Lo>size(CACO2.DTXSID,1)
+                        Lo=mod(Lo,size(CACO2.DTXSID,1));
+                    end
+                    res.CACO2_exp(i)=round(CACO2.model.set.y(Lo),2);
+                end
+            end
+            
+            CACO2_Exp_neighbor(i,:)=round(CACO2.model.set.y(pred.neighbors(i,:)),2);
+            CACO2_pred_neighbor(i,:)=round(CACO2.model.yc_weighted(pred.neighbors(i,:)),2);
+            
+            %                 rmse=calc_reg_param(res.CACO2_Exp_neighbor(i,:),res.CACO2_pred_neighbor(i,:));
+            %                 res.Conf_index(i,1)=1/(1+rmse.RMSEC);
+            
+            res.AD_index_CACO2(i,1)=1./(1+pred.dc(i,~isnan(pred.dc(i,:)))*pred.w(i,~isnan(pred.dc(i,:)))');
+%             res.Conf_index_CACO2(i,1)=((1/(1+sqrt(((CACO2_Exp_neighbor(i,:)-CACO2_pred_neighbor(i,:)).^2)*pred.w(i,:)')))+res.AD_index_CACO2(i,1))/2;
+            
+            if Li || (pred.dc(i,1)==0 && pred.w(i,1)==1)
+                res.AD_CACO2(i,1)=1;
+                res.AD_index_CACO2(i,1)=1;
+            end
+
+            SCACO2=std(CACO2_Exp_neighbor(i,:),pred.w(i,:));
+            res.CACO2_predRange{i,1}=strcat('[', num2str(round(max(res.CACO2_pred(i,1)-SCACO2,min(CACO2_Exp_neighbor(i,:))),2)),':',num2str(round(min(res.CACO2_pred(i,1)+SCACO2,max(CACO2_Exp_neighbor(i,:))),2)),']');
+                        
+            Std_index_CACO2=(1-(std(CACO2_Exp_neighbor(i,:),pred.w(i,:))/std(CACO2.model.set.y)));
+            res.Conf_index_CACO2(i,1)=max(((1/(1+sqrt(((CACO2_Exp_neighbor(i,:)-CACO2_pred_neighbor(i,:)).^2)*pred.w(i,:)')))+res.AD_index_CACO2(i,1)+Std_index_CACO2)/3,0.1); 
+            
+            if res.AD_index_CACO2(i,1)>=0.6 && res.Conf_index_CACO2(i,1)>=0.5
+                res.AD_CACO2(i,1)=1;
+            elseif res.AD_index_CACO2(i,1)<0.2 && res.Conf_index_CACO2(i,1)<0.5
+                res.AD_CACO2(i,1)=0;
+            end
+             if res.AD_index_CACO2(i,1)==0
+                res.Conf_index_CACO2(i,1)=0;
+            end
+            if isnan(res.AD_CACO2(i,1))
+                res.AD_CACO2(i,1)=0;
+            end
+            res.AD_index_CACO2(i,1)=round(res.AD_index_CACO2(i,1),3); 
+            res.Conf_index_CACO2(i,1)=round(res.Conf_index_CACO2(i,1),3);
+            
+            if isempty(find(~isnan(pred.dc(i,:)), 1)) || isnan(res.CACO2_pred(i,1))
+                res.CACO2_pred(i,1)=NaN;
+                res.CACO2_predRange{i,1}='NA';
+                res.AD_CACO2(i)=0;
+                res.AD_index_CACO2(i)=0;
+                res.Conf_index_CACO2(i,1)=0;
+            end
+            if Xin(i,12)==0
+                res.AD_CACO2(i)=0;
+                res.AD_index_CACO2(i)=res.AD_index_CACO2(i)/2;
+                res.Conf_index_CACO2(i,1)=res.Conf_index_CACO2(i,1)/2;
+            end
+            if neighbors==1
+%                 CACO2.CAS=strrep(strrep(join(CACO2.CAS,'|',2),'|||',''),'||','');
+%                 CACO2.DTXSID=strrep(strrep(join(CACO2.DTXSID,'|',2),'|||',''),'||','');
+                CACO2_CAS_neighbor(i,:)=CACO2_CAS(pred.neighbors(i,:));
+                CACO2_InChiKey_neighbor(i,:)=CACO2.InChiKey(pred.neighbors(i,:));
+                CACO2_DTXSID_neighbor(i,:)=CACO2_DTXSID(pred.neighbors(i,:));
+                %CACO2_DSSTOXMPID_neighbor(i,:)=CACO2.DSSTOXMPID(pred.neighbors(i,:));
+                if res.AD_index_CACO2(i)~=0
+                    res.CACO2_CAS_neighbor(i,:)=CACO2_CAS_neighbor(i,:);
+                    res.CACO2_InChiKey_neighbor(i,:)=CACO2_InChiKey_neighbor(i,:);
+                    res.CACO2_DTXSID_neighbor(i,:)=CACO2_DTXSID_neighbor(i,:);
+                    %res.CACO2_DSSTOXMPID_neighbor(i,:)=CACO2_DSSTOXMPID_neighbor(i,:);
+                    res.CACO2_Exp_neighbor(i,:)=CACO2_Exp_neighbor(i,:);
+                    res.CACO2_pred_neighbor(i,:)=CACO2_pred_neighbor(i,:);
+                else
+                    res.CACO2_CAS_neighbor(i,:)=cell(1,5);
+                    res.CACO2_InChiKey_neighbor(i,:)=cell(1,5);
+                    res.CACO2_DTXSID_neighbor(i,:)=cell(1,5);
+                    %res.CACO2_DSSTOXMPID_neighbor(i,:)=cell(1,5);
+                    res.CACO2_Exp_neighbor(i,:)=nan(1,5);
+                    res.CACO2_pred_neighbor(i,:)=nan(1,5);
+                end
+            end
+            
+            if strcmpi(ext,'.txt') && sep==1
+                %res.Xtest=Xtest;
+                fprintf(output(Locb(find(Locb))),'\t Molecule %s:\n', MoleculeNames{i});
+                if exp
+                    fprintf(output(Locb(find(Locb))),'CACO2 experimental= %.3f\n', res.CACO2_exp(i));
+                end
+                fprintf(output(Locb(find(Locb))),'CACO2 predicted= %.3f\n', res.CACO2_pred(i));
+                if res.AD_CACO2(i)==1
+                    fprintf(output(Locb(find(Locb))),'AD: inside\n');
+                else
+                    fprintf(output(Locb(find(Locb))),'AD: outside\n');
+                end
+                fprintf(output(Locb(find(Locb))),'AD_index= %.2f\n', res.AD_index_CACO2(i));
+                fprintf(output(Locb(find(Locb))),'Conf_index= %.2f\n', res.Conf_index_CACO2(i));
+                %CAS=strjoin(res.CACO2_CAS_neighbor(i,1:5),',\t');
+                %CAS=strrep([res.CAS_neighbors(i,1:5)],' ',', ');
+                if neighbors==1
+                    fprintf(output(Locb(find(Locb))),'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',CACO2.model.set.K, res.CACO2_CAS_neighbor{i,1:5});
+                    fprintf(output(Locb(find(Locb))),'Exp of the %i nearest neighbors:%15.3f,%15.3f,%15.3f,%15.3f,%15.3f\n',CACO2.model.set.K, res.CACO2_Exp_neighbor(i,1:5));
+                    fprintf(output(Locb(find(Locb))),'Pred of the %i nearest neighbors:%14.3f,%15.3f,%15.3f,%15.3f,%15.3f\n\n',CACO2.model.set.K, res.CACO2_pred_neighbor(i,1:5));
+                end
+                
+            elseif strcmpi(ext,'.txt') && sep==0
+                
+                %res.Xtest=Xtest;
+                fprintf(output,'\t Molecule %s:\n', MoleculeNames{i});
+                if exp
+                    fprintf(output,'CACO2 experimental= %.3f\n', res.CACO2_exp(i));
+                end
+                fprintf(output,'CACO2 predicted= %.3f\n', res.CACO2_pred(i));
+                if res.AD_CACO2(i)==1
+                    fprintf(output,'AD: inside\n');
+                else
+                    fprintf(output,'AD: outside\n');
+                end
+                fprintf(output,'AD_index= %.2f\n', res.AD_index_CACO2(i));
+                fprintf(output,'Conf_index= %.2f\n', res.Conf_index_CACO2(i));
+                %CAS=strjoin(res.CACO2_CAS_neighbor(i,1:5),',\t');
+                %CAS=strrep([res.CAS_neighbors(i,1:5)],' ',', ');
+                if neighbors==1
+                    fprintf(output,'CAS of the %i nearest neighbors:%15s,%15s,%15s,%15s,%15s\n',CACO2.model.set.K, res.CACO2_CAS_neighbor{i,1:5});
+                    fprintf(output,'Exp of the %i nearest neighbors:%15.3f,%15.3f,%15.3f,%15.3f,%15.3f\n',CACO2.model.set.K, res.CACO2_Exp_neighbor(i,1:5));
+                    fprintf(output,'Pred of the %i nearest neighbors:%14.3f,%15.3f,%15.3f,%15.3f,%15.3f\n\n',CACO2.model.set.K, res.CACO2_pred_neighbor(i,1:5));
+                end
+                
+            end
+        end
+        if nf>0 && strcmpi(ext,'.txt')
+            if sep==1
+                for i=(f+1):(f+nf)
+                    fprintf(output(Locb(find(Locb))),'\t Molecule %s:\n', res.MoleculeID{i});
+                    fprintf(output(Locb(find(Locb))),'\t FoundBy: %s\n\n', FoundBy{i});
+                end
+            elseif sep==0
+                for i=(f+1):(f+nf)
+                    fprintf(output,'\t Molecule %s:\n', res.MoleculeID{i});
+                    fprintf(output,'\t FoundBy: %s\n\n', FoundBy{i});
+                end
+            end
+        end
+        if sep==1 %&& strcmpi(ext,'.csv')
+            res=rmfield(res,'MoleculeID');
+            if nf>0
+%                res=rmfield(res,'MoleculeID');
+                T=struct2table(res);
+%                 T{end+1:end+nf,1:4}=nan(nf,4);
+                T{end+1:end+nf,4}=nan(nf,1);
+                for i=length(T{1:end-nf+1,1}):length(T{:,1})
+                    for j=1:size(T(1,:),2)
+                        if isnumeric(T{i,j})
+                            T{i,j}=nan;
+                        else
+                            T{i,j}={'NA'};
+                        end
+                    end
+                end
+                %T{end-nf:end,1:4}(T{end-nf:end,1:4}==0)=nan;
+                %T{end-nf:end,find(isnumeric(T{end-nf:end,:}))};
+                T=[array2table(MoleculeNames,'VariableNames',{'MoleculeID'}) array2table(FoundBy,'VariableNames',{'FoundBy'}) T]; 
+                Xtest(end+1:end+nf,:)=nan(nf,size(Xtest,2));
+            else
+                T=struct2table(res);
+            end
+            if printtDesc==1
+                Xtest=array2table(Xtest,'VariableNames',Desc);
+                
+                T=[T Xtest];
+                res.Descriptors=Xtest;
+            end
+            if strcmpi(ext,'.csv')
+                writetable(T,FileOut{Locb(find(Locb))},'Delimiter',',');%,'QuoteStrings',true);
+                fclose(output(Locb(find(Locb))));
+            end
+            clear('T');
+            
+        elseif sep==0 && printtDesc==1 && strcmpi(ext,'.csv')
+            if nf>0
+                Xtest(end+1:end+nf,:)=nan(nf,size(Xtest,2));
+            end
+            Xtest(:,ismember(Desc,DescNames))=[];
+            
+            Desc(ismember(Desc,DescNames))=[];
+            
+            DescNames=[DescNames Desc];
+            
+            DescMat=[DescMat Xtest];
+        end
+        
+        if sep==1
+            resf.CACO2=res;
+            clear('res');
+        end
+        % Clean memory
+        clear('XinCDK_CACO2');
+        clear('Xtest');
+        clear('pred');
+        clear('AD');
+        clear('CACO2');
+        clear('CACO2_CAS');
+        clear('CACO2_DTXSID');
         %end clean memory
     end
     
