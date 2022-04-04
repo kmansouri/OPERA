@@ -1,7 +1,7 @@
 function res=OPERA(varargin)
 
 Version='2.8';
-SubVersion='2.8.1';
+SubVersion='2.8.2';
 %%
 %
 %        _______________________________________________________________________
@@ -709,15 +709,15 @@ else
                 error(messageCp);
             end
         end
-        if ~exist(fullfile(homedir,'Sample_input'),'dir')
-            mkdir(fullfile(homedir,'Sample_input'));
-        end
-        if ~exist(fullfile(homedir,'Sample_input','Sample_input.sdf'),'file')
-            [statusCp,messageCp] = copyfile(fullfile(installdir,'knime_4.5.1','Sample_input'),fullfile(homedir,'Sample_input'));
-            if ~statusCp && ~isempty(messageCp)
-                error(messageCp);
-            end
-        end
+%         if ~exist(fullfile(homedir,'Sample_input'),'dir')
+%             mkdir(fullfile(homedir,'Sample_input'));
+%         end
+%         if ~exist(fullfile(homedir,'Sample_input','Sample_input.sdf'),'file')
+%             [statusCp,messageCp] = copyfile(fullfile(installdir,'knime_4.5.1','Sample_input'),fullfile(homedir,'Sample_input'));
+%             if ~statusCp && ~isempty(messageCp)
+%                 error(messageCp);
+%             end
+%         end
 
         [statusKnime,cmdoutKnime] =system ([strcat('"',fullfile(installdir,'knime_4.5.1','knime'),'"')...
             ' -reset -nosplash -nosave -application org.knime.product.KNIME_BATCH_APPLICATION -workflowDir='...
