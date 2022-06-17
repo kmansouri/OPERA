@@ -1,7 +1,7 @@
 function res=OPERA(varargin)
 
 Version='2.8';
-SubVersion='2.8.2';
+SubVersion='2.8.4';
 %%
 %
 %        _______________________________________________________________________
@@ -53,6 +53,8 @@ SubVersion='2.8.2';
 %  -e, --Endpoint      		List endpoints to be calculated.
 %  -h, --Help               Display this help file and exit.
 %  -V, --Version            Version of the application
+%  -vm, --VerModels         Versions of the models
+%  -m, --Models             List and versions of the different models
 %
 %
 %
@@ -169,6 +171,7 @@ else
     nf=0;
     f=0;
     standardize=0;
+    stdout=0;
     
     
     
@@ -231,6 +234,10 @@ else
             continue
         elseif strcmpi('--Clean',varargin{i})|| strcmp('-c',varargin{i})
             clean=1;
+            i=i+1;
+            continue
+        elseif strcmpi('--Models',varargin{i})|| strcmp('-m',varargin{i})
+            type('Endpoints.txt')
             i=i+1;
             continue
         elseif strcmpi('--Neighbors',varargin{i})|| strcmp('-n',varargin{i})
@@ -353,6 +360,11 @@ else
             help=1;
             i=i+1;
             continue
+        elseif strcmpi('-Vm',varargin{i})|| strcmpi('--verModels',varargin{i})
+            type('Endpoints.txt')
+            help=1;
+            i=i+1;
+            continue
         elseif strcmpi('-exp',varargin{i})
             exp=1;
             i=i+1;
@@ -363,6 +375,10 @@ else
             continue
         elseif strcmpi('-st',varargin{i})||strcmpi('--standardize',varargin{i})
             standardize=1;
+            i=i+1;
+            continue
+        elseif strcmpi('-stdout',varargin{i})||strcmpi('--stdoutput',varargin{i})
+            stdout=1;
             i=i+1;
             continue
 %         elseif strcmpi('-py_out',varargin{i})||strcmpi('--python_output',varargin{i})
@@ -513,30 +529,39 @@ else
         %---------Output file---------
     %errmsg='Cannot write to output file \n';
     ext=FileOut(length(FileOut)-3:end);
-    if sep==1
-        outputname=cell(size(prop));
-        %output=zeros(size(prop));
-        
-        FileOut=strrep(FileOut,ext,'');
-        
-        for i=1:length(prop)
-            %         FileOut(i)=[FileOut prop(i) ext]
-            outputname{i}=strrep(strjoin([FileOut '_' prop(i) ext]),' ', '');
-            [output(i),errmsg]=fopen(outputname{i},'w');
+    if ~stdout
+        if sep==1
+            outputname=cell(size(prop));
+            %output=zeros(size(prop));
+            
+            FileOut=strrep(FileOut,ext,'');
+            
+            for i=1:length(prop)
+                %         FileOut(i)=[FileOut prop(i) ext]
+                outputname{i}=strrep(strjoin([FileOut '_' prop(i) ext]),' ', '');
+                [output(i),errmsg]=fopen(outputname{i},'w');
+                if verbose>0 && ~isempty(errmsg)
+                    disp('Output file')
+                    error(errmsg)
+                    % disp(errmsg);
+                    %  return
+                end
+            end
+            FileOut=outputname;
+        else
+            
+            [output,errmsg]=fopen(FileOut,'w');
+            if verbose>0 && ~isempty(errmsg)
+                disp('Output file')
+                error(errmsg)
+                % disp(errmsg);
+                %  return
+            end
         end
-        FileOut=outputname;
-    else
-        
-        [output,errmsg]=fopen(FileOut,'w');
     end
     
     
-    if verbose>0 && ~isempty(errmsg)
-        disp('Output file')
-        error(errmsg)
-        % disp(errmsg);
-        %  return
-    end
+
     %-----------------------------
     
     
@@ -702,26 +727,26 @@ else
         if ~exist(fullfile(homedir,'knime-workspace'),'dir')
             mkdir(fullfile(homedir,'knime-workspace'));
         end
-        if ~exist(fullfile(homedir,'knime-workspace','QSAR-ready_2.5.8'),'dir')
-            mkdir(fullfile(homedir,'knime-workspace','QSAR-ready_2.5.8'));
-            [statusCp,messageCp] = copyfile(fullfile(installdir,'knime_4.5.1','knime-workspace','QSAR-ready_2.5.8'),fullfile(homedir,'knime-workspace','QSAR-ready_2.5.8'));
+        if ~exist(fullfile(homedir,'knime-workspace','QSAR-ready_2.5.10'),'dir')
+            mkdir(fullfile(homedir,'knime-workspace','QSAR-ready_2.5.10'));
+            [statusCp,messageCp] = copyfile(fullfile(installdir,'knime_4.5.1','knime-workspace','QSAR-ready_2.5.10'),fullfile(homedir,'knime-workspace','QSAR-ready_2.5.10'));
             if ~statusCp && ~isempty(messageCp)
                 error(messageCp);
             end
         end
-%         if ~exist(fullfile(homedir,'Sample_input'),'dir')
-%             mkdir(fullfile(homedir,'Sample_input'));
-%         end
-%         if ~exist(fullfile(homedir,'Sample_input','Sample_input.sdf'),'file')
-%             [statusCp,messageCp] = copyfile(fullfile(installdir,'knime_4.5.1','Sample_input'),fullfile(homedir,'Sample_input'));
-%             if ~statusCp && ~isempty(messageCp)
-%                 error(messageCp);
-%             end
-%         end
+        if ~exist(fullfile(homedir,'Sample_input'),'dir')
+            mkdir(fullfile(homedir,'Sample_input'));
+        end
+        if ~exist(fullfile(homedir,'Sample_input','Sample_50.sdf'),'file')
+            [statusCp,messageCp] = copyfile(fullfile(installdir,'knime_4.5.1','Sample_input'),fullfile(homedir,'Sample_input'));
+            if ~statusCp && ~isempty(messageCp)
+                error(messageCp);
+            end
+        end
 
         [statusKnime,cmdoutKnime] =system ([strcat('"',fullfile(installdir,'knime_4.5.1','knime'),'"')...
             ' -reset -nosplash -nosave -application org.knime.product.KNIME_BATCH_APPLICATION -workflowDir='...
-            strcat('"',fullfile(homedir,'knime-workspace','QSAR-ready_2.5.8'),'"')...
+            strcat('"',fullfile(homedir,'knime-workspace','QSAR-ready_2.5.10'),'"')...
             ' -workflow.variable=cmd_input,' strcat('"',char(StructureFile),'"') ',String']);
         
                     if statusKnime==0
@@ -729,6 +754,7 @@ else
                         FileSalt=strcat(StructureFile(1:length(StructureFile)-4),'_QSAR-ready_saltInfo.csv');
                         StructureFile=strcat(StructureFile(1:length(StructureFile)-4),'_QSAR-ready_smi.smi');
                         if ~exist(StructureFile,'file')
+                            %rmdir(fullfile(homedir,'knime-workspace','QSAR-ready_2.5.10'),'s');
                             error('No structures passed standardization. Check input file!');
                         end
                         if ispc
@@ -1159,7 +1185,7 @@ else
             T=[T(1:end-nf,:) Xtest];
         end
         %T=[T Xtest];
-        if sep==1
+        if sep==1 && ~stdout
             if strcmpi(ext,'.csv')
                 %T=struct2table(res);
                 %                     res.Descriptors=Xtest;
@@ -1423,7 +1449,17 @@ else
                 end
             end
             
-            
+            if stdout && Lia(1)
+                fprintf(1,'LogP predicted= %.3f\n', res.LogP_pred(i));
+                fprintf(1,'LogP_predRange: %s\n',res.LogP_predRange{i,1});
+                if res.AD_LogP(i)==1
+                    fprintf(1,'AD: inDomain\n');
+                else
+                    fprintf(1,'AD: outOfDomain\n');
+                end
+                fprintf(1,'AD_index= %.2f\n', res.AD_index_LogP(i));
+                fprintf(1,'Conf_index= %.2f\n', res.Conf_index_LogP(i));
+            end
             
             if strcmpi(ext,'.txt') && sep==1 && Lia(1)
                 %res.Xtest=Xtest;
@@ -1767,7 +1803,17 @@ else
                 end
             end
             
-            
+            if stdout
+                fprintf(1,'MP predicted= %.3f\n', res.MP_pred(i));
+                fprintf(1,'MP predRange: %s\n',res.MP_predRange{i,1});
+                if res.AD_MP(i)==1
+                    fprintf(1,'AD: inDomain\n');
+                else
+                    fprintf(1,'AD: outOfDomain\n');
+                end
+                fprintf(1,'AD_index= %.2f\n', res.AD_index_MP(i));
+                fprintf(1,'Conf_index= %.2f\n', res.Conf_index_MP(i));
+            end
             if strcmpi(ext,'.txt') && sep==1
                 
                 %res.Xtest=Xtest;
@@ -2036,7 +2082,17 @@ else
                     res.BP_pred_neighbor(i,:)=nan(1,5);
                 end
             end
-            
+            if stdout
+                fprintf(1,'BP predicted= %.3f\n', res.BP_pred(i));
+                fprintf(1,'BP predRange: %s\n',res.BP_predRange{i,1});
+                if res.AD_BP(i)==1
+                    fprintf(1,'AD: inDomain\n');
+                else
+                    fprintf(1,'AD: outOfDomain\n');
+                end
+                fprintf(1,'AD_index= %.2f\n', res.AD_index_BP(i));
+                fprintf(1,'Conf_index= %.2f\n', res.Conf_index_BP(i));
+            end
             if strcmpi(ext,'.txt') && sep==1
                 
                 %res.Xtest=Xtest;
@@ -2310,7 +2366,17 @@ else
                     res.LogVP_pred_neighbor(i,:)=nan(1,5);
                 end
             end
-            
+            if stdout
+                fprintf(1,'LogVP predicted= %.3f\n', res.LogVP_pred(i));
+                fprintf(1,'LogVP predRange: %s\n',res.VP_predRange{i,1});
+                if res.AD_VP(i)==1
+                    fprintf(1,'AD: inDomain\n');
+                else
+                    fprintf(1,'AD: outOfDomain\n');
+                end
+                fprintf(1,'AD_index= %.2f\n', res.AD_index_VP(i));
+                fprintf(1,'Conf_index= %.2f\n', res.Conf_index_VP(i));
+            end
             if strcmpi(ext,'.txt') && sep==1
                 %res.Xtest=Xtest;
                 fprintf(output(Locb(find(Locb))),'\t Molecule %s:\n', MoleculeNames{i});
@@ -2586,7 +2652,18 @@ else
                     res.LogWS_pred_neighbor(i,:)=nan(1,5);
                 end
             end
-            
+            if stdout
+                fprintf(1,'LogWS predicted= %.3f\n', res.LogWS_pred(i));
+                fprintf(1,'LogWS predRange: %s\n',res.WS_predRange{i,1});
+                if res.AD_WS(i)==1
+                    fprintf(1,'AD: inDomain\n');
+                else
+                    fprintf(1,'AD: outOfDomain\n');
+                end
+                fprintf(1,'AD_index= %.2f\n', res.AD_index_WS(i));
+                fprintf(1,'Conf_index= %.2f\n', res.Conf_index_WS(i));
+            end
+
             if strcmpi(ext,'.txt') && sep==1
                 
                 %res.Xtest=Xtest;
@@ -2861,7 +2938,17 @@ else
                     res.LogHL_pred_neighbor(i,:)=nan(1,5);
                 end
             end
-            
+            if stdout
+                fprintf(1,'LogHL predicted= %.3f\n', res.LogHL_pred(i));
+                fprintf(1,'LogHL predRange: %s\n',res.HL_predRange{i,1});
+                if res.AD_HL(i)==1
+                    fprintf(1,'AD: inDomain\n');
+                else
+                    fprintf(1,'AD: outOfDomain\n');
+                end
+                fprintf(1,'AD_index= %.2f\n', res.AD_index_HL(i));
+                fprintf(1,'Conf_index= %.2f\n', res.Conf_index_HL(i));
+            end
             if strcmpi(ext,'.txt') && sep==1
                 
                 %res.Xtest=Xtest;
@@ -3132,7 +3219,17 @@ else
                     res.RT_pred_neighbor(i,:)=nan(1,5);
                 end
             end
-            
+            if stdout
+                fprintf(1,'RT predicted= %.3f\n', res.RT_pred(i));
+                fprintf(1,'RT predRange: %s\n',res.RT_predRange{i,1});
+                if res.AD_RT(i)==1
+                    fprintf(1,'AD: inDomain\n');
+                else
+                    fprintf(1,'AD: outOfDomain\n');
+                end
+                fprintf(1,'AD_index= %.2f\n', res.AD_index_RT(i));
+                fprintf(1,'Conf_index= %.2f\n', res.Conf_index_RT(i));
+            end
             if strcmpi(ext,'.txt') && sep==1
                 %res.Xtest=Xtest;
                 fprintf(output(Locb(find(Locb))),'\t Molecule %s:\n', MoleculeNames{i});
@@ -3404,7 +3501,17 @@ else
                     res.LogKOA_pred_neighbor(i,:)=nan(1,5);
                 end
             end
-            
+            if stdout
+                fprintf(1,'LogKOA predicted= %.3f\n', res.LogKOA_pred(i));
+                fprintf(1,'LogKOA predRange: %s\n',res.KOA_predRange{i,1});
+                if res.AD_KOA(i)==1
+                    fprintf(1,'AD: inDomain\n');
+                else
+                    fprintf(1,'AD: outOfDomain\n');
+                end
+                fprintf(1,'AD_index= %.2f\n', res.AD_index_KOA(i));
+                fprintf(1,'Conf_index= %.2f\n', res.Conf_index_KOA(i));
+            end
             if strcmpi(ext,'.txt') && sep==1
                 %res.Xtest=Xtest;
                 fprintf(output(Locb(find(Locb))),'\t Molecule %s:\n', MoleculeNames{i});
@@ -3743,6 +3850,17 @@ else
                     res.pKa_pred_neighbor(i,:)=nan(1,3);
                 end
             end
+            if stdout && Lia(1)
+                fprintf(1,'pKa acidic and basic predicted= %.3f, %.3f\n', res.pKa_a_pred(i),res.pKa_b_pred(i));
+                fprintf(1,'pKa acidic and basic predRange: %s, %s\n',res.pKa_a_predRange{i,1},res.pKa_b_predRange{i,1});
+                if res.AD_pKa(i)==1
+                    fprintf(1,'AD: inDomain\n');
+                else
+                    fprintf(1,'AD: outOfDomain\n');
+                end
+                fprintf(1,'AD_index= %.2f\n', res.AD_index_pKa(i));
+                fprintf(1,'Conf_index= %.2f\n', res.Conf_index_pKa(i));
+            end
         
             if strcmpi(ext,'.txt') && sep==1 && Lia(1)
                 %res.Xtest=Xtest;
@@ -4029,6 +4147,19 @@ else
                     res.LogD55_predRange{i,1}=strcat('[', num2str(round(min(res.LogD55_pred(i,1)-SLogD55,res.LogD55_pred(i,1)+SLogD55),2)),':',num2str(round(max(res.LogD55_pred(i,1)-SLogD55,res.LogD55_pred(i,1)+SLogD55),2)),']');
                     res.LogD74_predRange{i,1}=strcat('[', num2str(round(min(res.LogD74_pred(i,1)-SLogD74,res.LogD74_pred(i,1)+SLogD74),2)),':',num2str(round(max(res.LogD74_pred(i,1)-SLogD74,res.LogD74_pred(i,1)+SLogD74),2)),']');
                 end
+                if stdout 
+                    fprintf(1,'LogD pH 5.5 predicted= %.3f\n', res.LogD55_pred(i));
+                    fprintf(1,'LogD pH 5.5 predRange: %s\n', res.LogD55_predRange{i,1});
+                    fprintf(1,'LogD pH 7.4 predicted= %.3f\n', res.LogD74_pred(i));
+                    fprintf(1,'LogD pH 7.4 predRange: %s\n', res.LogD74_predRange{i,1});
+                    if res.AD_LogD(i)==1
+                        fprintf(1,'AD: inDomain\n');
+                    else
+                        fprintf(1,'AD: outOfDomain\n');
+                    end
+                    fprintf(1,'AD_index= %.2f\n', res.AD_index_LogD(i));
+                    fprintf(1,'Conf_index= %.2f\n', res.Conf_index_LogD(i));
+                end
                 if strcmpi(ext,'.txt')
                     fprintf(output,'\t Molecule %s:\n',res.MoleculeID{i});
                     fprintf(output,'LogD pH 5.5 predicted= %.3f\n', res.LogD55_pred(i));
@@ -4214,7 +4345,17 @@ else
                     res.LogOH_pred_neighbor(i,:)=nan(1,5);
                 end
             end
-            
+            if stdout
+                fprintf(1,'LogOH predicted= %.3f\n', res.LogOH_pred(i));
+                fprintf(1,'LogOH predRange: %s\n',res.LogOH_predRange{i,1});
+                if res.AD_AOH(i)==1
+                    fprintf(1,'AD: inDomain\n');
+                else
+                    fprintf(1,'AD: outOfDomain\n');
+                end
+                fprintf(1,'AD_index= %.2f\n', res.AD_index_AOH(i));
+                fprintf(1,'Conf_index= %.2f\n', res.Conf_index_AOH(i));
+            end
             if strcmpi(ext,'.txt') && sep==1
                 
                 %res.Xtest=Xtest;
@@ -4492,6 +4633,17 @@ else
                     res.LogBCF_pred_neighbor(i,:)=nan(1,5);
                 end
             end
+            if stdout
+                fprintf(1,'LogBCF predicted= %.3f\n', res.LogBCF_pred(i));
+                fprintf(1,'LogBCF predRange: %s\n',res.BCF_predRange{i,1});
+                if res.AD_BCF(i)==1
+                    fprintf(1,'AD: inDomain\n');
+                else
+                    fprintf(1,'AD: outOfDomain\n');
+                end
+                fprintf(1,'AD_index= %.2f\n', res.AD_index_BCF(i));
+                fprintf(1,'Conf_index= %.2f\n', res.Conf_index_BCF(i));
+            end
 
             if strcmpi(ext,'.txt') && sep==1
                 
@@ -4766,7 +4918,17 @@ else
                     res.BioDeg_LogHalfLife_pred_neighbor(i,:)=nan(1,5);
                 end
             end
-            
+            if stdout
+                fprintf(1,'BioDeg_LogHalfLife predicted= %.3f\n', res.BioDeg_LogHalfLife_pred(i));
+                fprintf(1,'BioDeg_LogHalfLife predRange: %s\n',res.BioDeg_predRange{i,1});
+                if res.AD_BioDeg(i)==1
+                    fprintf(1,'AD: inDomain\n');
+                else
+                    fprintf(1,'AD: outOfDomain\n');
+                end
+                fprintf(1,'AD_index= %.2f\n', res.AD_index_BioDeg(i));
+                fprintf(1,'Conf_index= %.2f\n', res.Conf_index_BioDeg(i));
+            end
             if strcmpi(ext,'.txt') && sep==1
                 %res.Xtest=Xtest;
                 fprintf(output(Locb(find(Locb))),'\t Molecule %s:\n', MoleculeNames{i});
@@ -5021,7 +5183,21 @@ else
                     res.ReadyBiodeg_pred_neighbor(i,:)=nan(1,5);
                 end
             end
-            
+            if stdout
+                if res.ReadyBiodeg_pred(i)
+                    fprintf(1,'ReadyBiodeg predicted= %s\n','Active' );
+                else
+                    fprintf(1,'ReadyBiodeg predicted= %s\n','Inactive' );
+                end
+
+                if res.AD_ReadyBiodeg(i)==1
+                    fprintf(1,'AD: inDomain\n');
+                else
+                    fprintf(1,'AD: outOfDomain\n');
+                end
+                fprintf(1,'AD_index= %.2f\n', res.AD_index_ReadyBiodeg(i));
+                fprintf(1,'Conf_index= %.2f\n', res.Conf_index_ReadyBiodeg(i));
+            end
             if strcmpi(ext,'.txt') && sep==1
                 
                 %res.Xtest=Xtest;
@@ -5293,7 +5469,17 @@ else
                     res.LogKM_pred_neighbor(i,:)=nan(1,5);
                 end
             end
-            
+            if stdout
+                fprintf(1,'LogKM predicted= %.3f\n', res.LogKM_pred(i));
+                fprintf(1,'LogKM predRange: %s\n',res.KM_predRange{i,1});
+                if res.AD_KM(i)==1
+                    fprintf(1,'AD: inDomain\n');
+                else
+                    fprintf(1,'AD: outOfDomain\n');
+                end
+                fprintf(1,'AD_index= %.2f\n', res.AD_index_KM(i));
+                fprintf(1,'Conf_index= %.2f\n', res.Conf_index_KM(i));
+            end
             if strcmpi(ext,'.txt') && sep==1
                 %res.Xtest=Xtest;
                 fprintf(output(Locb(find(Locb))),'\t Molecule %s:\n', MoleculeNames{i});
@@ -5563,7 +5749,17 @@ else
                     res.LogKoc_pred_neighbor(i,:)=nan(1,5);
                 end
             end
-            
+            if stdout
+                fprintf(1,'LogKOC predicted= %.3f\n', res.LogKoc_pred(i));
+                fprintf(1,'LogKOC predRange: %s\n',res.Koc_predRange{i,1});
+                if res.AD_Koc(i)==1
+                    fprintf(1,'AD: inDomain\n');
+                else
+                    fprintf(1,'AD: outOfDomain\n');
+                end
+                fprintf(1,'AD_index= %.2f\n', res.AD_index_Koc(i));
+                fprintf(1,'Conf_index= %.2f\n', res.Conf_index_Koc(i));
+            end
             if strcmpi(ext,'.txt') && sep==1
                 %res.Xtest=Xtest;
                 fprintf(output(Locb(find(Locb))),'\t Molecule %s:\n', MoleculeNames{i});
@@ -5844,7 +6040,17 @@ else
                     res.FUB_pred_neighbor(i,:)=nan(1,5);
                 end
             end
-            
+            if stdout
+                fprintf(1,'FUB predicted= %.3f\n', res.FUB_pred(i));
+                fprintf(1,'FUB predRange: %s\n',res.FUB_predRange{i,1});
+                if res.AD_FUB(i)==1
+                    fprintf(1,'AD: inDomain\n');
+                else
+                    fprintf(1,'AD: outOfDomain\n');
+                end
+                fprintf(1,'AD_index= %.2f\n', res.AD_index_FUB(i));
+                fprintf(1,'Conf_index= %.2f\n', res.Conf_index_FUB(i));
+            end
             if strcmpi(ext,'.txt') && sep==1
                 %res.Xtest=Xtest;
                 fprintf(output(Locb(find(Locb))),'\t Molecule %s:\n', MoleculeNames{i});
@@ -6038,8 +6244,8 @@ else
 %         DTXSID=CLINT.DTXSID;
 %         InChiKey=CLINT.InChiKey;
         
-%         CLINT_CAS=strrep(strrep(join(CLINT.CAS,'|',2),'|||',''),'||','');
-%         CLINT_DTXSID=strrep(strrep(join(CLINT.DTXSID,'|',2),'|||',''),'||','');
+         CLINT_CAS=strrep(strrep(join(CLINT.CAS,'|',2),'|||',''),'||','');
+         CLINT_DTXSID=strrep(strrep(join(CLINT.DTXSID,'|',2),'|||',''),'||','');
         
         for i=1:size(Xtest,1)
             Li=0;
@@ -6066,8 +6272,8 @@ else
 %                 CLINT.CAS=CAS;
 %                 CLINT.DTXSID=DTXSID;
 %                 CLINT.InChiKey=InChiKey;
-                CAS=CLINT.CAS;
-                DTXSID=CLINT.DTXSID;
+                CAS=CLINT_CAS;
+                DTXSID=CLINT_DTXSID;
                 InChiKey=CLINT.InChiKey;
                 Clint_Exp_neighbor(i,:)=round(CLINT.modelc.y(predc.neighbors(i,:)),2);
                 Clint_pred_neighbor(i,:)=round(CLINT.modelc.yc_weighted(predc.neighbors(i,:)),2);
@@ -6081,9 +6287,9 @@ else
 %                 CLINT.CAS=CAS(224:end,1);
 %                 CLINT.DTXSID=DTXSID(224:end,1);
 %                 CLINT.InChiKey=InChiKey(224:end,1);
-                CAS=CLINT.CAS(224:end,1);
-                DTXSID=CLINT.DTXSID(224:end,1);
-                InChiKey=CLINT.InChiKey(224:end,1);
+                CAS=CLINT_CAS([157:1010 1064:end],1);
+                DTXSID=CLINT_DTXSID([157:1010 1064:end],1);
+                InChiKey=CLINT.InChiKey([157:1010 1064:end],1);
             end
             
             %                 rmse=calc_reg_param(res.Clint_Exp_neighbor(i,:),res.Clint_pred_neighbor(i,:));
@@ -6153,7 +6359,17 @@ else
                     res.Clint_pred_neighbor(i,:)=nan(1,5);
                 end
             end
-            
+            if stdout
+                fprintf(1,'Clint predicted= %.3f\n', res.Clint_pred(i));
+                fprintf(1,'Clint predRange: %s\n',res.Clint_predRange{i,1});
+                if res.AD_Clint(i)==1
+                    fprintf(1,'AD: inDomain\n');
+                else
+                    fprintf(1,'AD: outOfDomain\n');
+                end
+                fprintf(1,'AD_index= %.2f\n', res.AD_index_Clint(i));
+                fprintf(1,'Conf_index= %.2f\n', res.Conf_index_Clint(i));
+            end
             if strcmpi(ext,'.txt') && sep==1
                 %res.Xtest=Xtest;
                 fprintf(output(Locb(find(Locb))),'\t Molecule %s:\n', MoleculeNames{i});
@@ -6275,8 +6491,8 @@ else
         clear('CAS');
         clear('DTXSID');
         clear('InChiKey');
-%         clear('CLINT_CAS');
-%         clear('CLINT_DTXSID');
+         clear('CLINT_CAS');
+         clear('CLINT_DTXSID');
         %end clean memory
     end
     
@@ -6419,7 +6635,17 @@ else
                     res.CACO2_pred_neighbor(i,:)=nan(1,5);
                 end
             end
-            
+            if stdout
+                fprintf(1,'CACO2 predicted= %.3f\n', res.CACO2_pred(i));
+                fprintf(1,'CACO2 predRange: %s\n',res.CACO2_predRange{i,1});
+                if res.AD_CACO2(i)==1
+                    fprintf(1,'AD: inDomain\n');
+                else
+                    fprintf(1,'AD: outOfDomain\n');
+                end
+                fprintf(1,'AD_index= %.2f\n', res.AD_index_CACO2(i));
+                fprintf(1,'Conf_index= %.2f\n', res.Conf_index_CACO2(i));
+            end
             if strcmpi(ext,'.txt') && sep==1
                 %res.Xtest=Xtest;
                 fprintf(output(Locb(find(Locb))),'\t Molecule %s:\n', MoleculeNames{i});
@@ -6894,7 +7120,30 @@ else
                     res.CERAPP_Bind_pred_neighbor(i,:)=cell(1,5);
                 end
             end
-            
+            if stdout
+                if res.CERAPP_Ago_pred(i)
+                    fprintf(1,'Agonist category predicted= %s\n', 'Active');
+                else
+                    fprintf(1,'Agonist category predicted= %s\n', 'Inactive');
+                end
+                if res.CERAPP_Anta_pred(i)
+                    fprintf(1,'Antagonist category predicted= %s\n', 'Active');
+                else
+                    fprintf(1,'Antagonist category predicted= %s\n', 'Inactive');
+                end
+                if res.CERAPP_Bind_pred(i)
+                    fprintf(1,'Binding category predicted= %s\n', 'Active');
+                else
+                    fprintf(1,'Binding category predicted= %s\n', 'Inactive');
+                end
+                if (res.AD_CERAPP_Ago(i)+res.AD_CERAPP_Anta(i)+res.AD_CERAPP_Bind(i))>=2
+                    fprintf(1,'AD: inDomain\n');
+                else
+                    fprintf(1,'AD: outOfDomain\n');
+                end
+                fprintf(1,'AD_index= %.2f\n', mean([res.AD_index_CERAPP_Ago(i),res.AD_index_CERAPP_Anta(i),res.AD_index_CERAPP_Bind(i)]));
+                fprintf(1,'Conf_index= %.2f\n', mean([res.Conf_index_CERAPP_Ago(i),res.Conf_index_CERAPP_Anta(i),res.Conf_index_CERAPP_Bind(i)]));
+            end
             if strcmpi(ext,'.txt') && sep==1
                 %res.Xtest=Xtest;
                 fprintf(output(Locb(find(Locb))),'\t Molecule %s:\n', MoleculeNames{i});
@@ -7362,7 +7611,30 @@ else
                     res.CoMPARA_Bind_pred_neighbor(i,:)=cell(1,5);
                 end
             end
-            
+            if stdout
+                if res.CoMPARA_Ago_pred(i)
+                    fprintf(1,'Agonist category predicted= %s\n', 'Active');
+                else
+                    fprintf(1,'Agonist category predicted= %s\n', 'Inactive');
+                end
+                if res.CoMPARA_Anta_pred(i)
+                    fprintf(1,'Antagonist category predicted= %s\n', 'Active');
+                else
+                    fprintf(1,'Antagonist category predicted= %s\n', 'Inactive');
+                end
+                if res.CoMPARA_Bind_pred(i)
+                    fprintf(1,'Binding category predicted= %s\n', 'Active');
+                else
+                    fprintf(1,'Binding category predicted= %s\n', 'Inactive');
+                end
+                if (res.AD_CoMPARA_Ago(i)+res.AD_CoMPARA_Anta(i)+res.AD_CoMPARA_Bind(i))>=2
+                    fprintf(1,'AD: inDomain\n');
+                else
+                    fprintf(1,'AD: outOfDomain\n');
+                end
+                fprintf(1,'AD_index= %.2f\n', mean([res.AD_index_CoMPARA_Ago(i),res.AD_index_CoMPARA_Anta(i),res.AD_index_CoMPARA_Bind(i)]));
+                fprintf(1,'Conf_index= %.2f\n', mean([res.Conf_index_CoMPARA_Ago(i),res.Conf_index_CoMPARA_Anta(i),res.Conf_index_CoMPARA_Bind(i)]));
+            end
             if strcmpi(ext,'.txt') && sep==1
                 %res.Xtest=Xtest;
                 fprintf(output(Locb(find(Locb))),'\t Molecule %s:\n', MoleculeNames{i});
@@ -7893,6 +8165,17 @@ else
                     res.LD50_pred_neighbor(i,:)=nan(1,5);
                 end
             end
+            if stdout
+                fprintf(1,'EPA category predicted= %i, GHS category predicted= %i, LD50 predicted= %.2f\n',res.CATMoS_EPA_pred(i),res.CATMoS_GHS_pred(i),res.CATMoS_LD50_pred(i));
+                fprintf(1,'LD50 predRange: %s\n',res.CATMoS_LD50_predRange{i,1});
+                if res.AD_CATMoS(i)==1
+                    fprintf(1,'AD: inDomain\n');
+                else
+                    fprintf(1,'AD: outOfDomain\n');
+                end
+                fprintf(1,'AD_index= %.2f\n', res.AD_index_CATMoS(i));
+                fprintf(1,'Conf_index= %.2f\n', res.Conf_index_CATMoS(i));
+            end
 
             if strcmpi(ext,'.txt') && sep==1
                 %res.Xtest=Xtest;
@@ -8034,7 +8317,7 @@ res=rmfield(res,{'AD_VT','AD_index_VT','Conf_index_VT','AD_NT','AD_index_NT','Co
          resp=res;
      end
     
-    if sep==0 &&  strcmpi(ext,'.csv')
+    if sep==0 &&  strcmpi(ext,'.csv') && ~stdout
         if nf>0
             res=rmfield(res,'MoleculeID');
             res=struct2table(res);
@@ -8069,7 +8352,7 @@ res=rmfield(res,{'AD_VT','AD_index_VT','Conf_index_VT','AD_NT','AD_index_NT','Co
             res=[res DescMat];
         end
         writetable(res,FileOut,'Delimiter',',');%,'QuoteStrings',true);
-        %fclose('all');
+%         fclose('all');
     end
     
     if sep==1 %&& isdeployed==0
