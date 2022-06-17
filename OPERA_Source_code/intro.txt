@@ -6,7 +6,7 @@
       |_______________________________________________________________________|      
 
 
-  OPERA is a command line application developed in Matlab providing QSAR 
+  OPERA is a command line & GUI application developed in Matlab providing QSAR 
 models predictions as well as applicability domain and accuracy assessment. 
 
 Developed by:

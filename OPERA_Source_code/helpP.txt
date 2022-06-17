@@ -7,7 +7,7 @@
       |_______________________________________________________________________|    
  
  
- OPERA is a command line application developed in Matlab providing QSAR models predictions as well as 
+ OPERA is a command line & GUI application developed in Matlab providing QSAR models predictions as well as 
  applicability domain and accuracy assessment. All models are built on curated data from public domain. 
  Molecular descriptors are calculated using PaDEL and CDK software.
  
@@ -51,7 +51,8 @@
    -e, --Endpoint	List of endpoints to be calculated.
    -exp			Get experimental values, when available. Requires CAS or DTXSID.
    -h, --Help		Display this help file and exit.
-   -V, --Version        Version of the application
+   -V, --Version        Version of the application.
+   -vm, --VerModels	Versions of the models.
    -P, --Parallel	Number of cpus for the parallel session. If non specified the app will use all cpus available.   
  
  

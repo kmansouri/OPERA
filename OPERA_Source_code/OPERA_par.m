@@ -1,7 +1,7 @@
 function res=OPERA_par(varargin)
 
 Version='2.8';
-SubVersion='2.8.2';
+SubVersion='2.8.4';
 %%
 %
 %        _______________________________________________________________________
@@ -53,6 +53,7 @@ SubVersion='2.8.2';
 %  -e, --Endpoint      		List endpoints to be calculated.
 %  -h, --Help               Display this help file and exit.
 %  -V, --Version            Version of the application
+%  -vm, --VerModels         Versions of the models
 %  -P, --Parallel           Number of cpus for the parallel session
 %
 %
@@ -354,6 +355,11 @@ else
             help=1;
             i=i+1;
             continue
+        elseif strcmpi('-Vm',varargin{i})|| strcmpi('--verModels',varargin{i})
+            type('Endpoints.txt')
+            help=1;
+            i=i+1;
+            continue
         elseif strcmpi('-exp',varargin{i})
             exp=1;
             i=i+1;
@@ -540,14 +546,14 @@ else
     end
     %-----------------------------
     
-    poolobj = gcp('nocreate');
-    if cpus && (isempty(poolobj)||poolobj.NumWorkers<cpus)
-        delete(gcp('nocreate'))
-        poolobj=parpool(cpus);
-    elseif isempty(poolobj)
-        poolobj=parpool;
-    end
-    NumWorkers=poolobj.NumWorkers;
+%     poolobj = gcp('nocreate');
+%     if cpus && (isempty(poolobj)||poolobj.NumWorkers<cpus)
+%         delete(gcp('nocreate'))
+%         poolobj=parpool(cpus);
+%     elseif isempty(poolobj)
+%         poolobj=parpool;
+%     end
+%     NumWorkers=poolobj.NumWorkers;
     
     %Start input Matrix
     if InputMatrix==1
@@ -700,26 +706,26 @@ else
         if ~exist(fullfile(homedir,'knime-workspace'),'dir')
             mkdir(fullfile(homedir,'knime-workspace'));
         end
-        if ~exist(fullfile(homedir,'knime-workspace','QSAR-ready_2.5.8'),'dir')
-            mkdir(fullfile(homedir,'knime-workspace','QSAR-ready_2.5.8'));
-            [statusCp,messageCp] = copyfile(fullfile(installdir,'knime_4.5.1','knime-workspace','QSAR-ready_2.5.8'),fullfile(homedir,'knime-workspace','QSAR-ready_2.5.8'));
+        if ~exist(fullfile(homedir,'knime-workspace','QSAR-ready_2.5.10'),'dir')
+            mkdir(fullfile(homedir,'knime-workspace','QSAR-ready_2.5.10'));
+            [statusCp,messageCp] = copyfile(fullfile(installdir,'knime_4.5.1','knime-workspace','QSAR-ready_2.5.10'),fullfile(homedir,'knime-workspace','QSAR-ready_2.5.10'));
             if ~statusCp && ~isempty(messageCp)
                 error(messageCp);
             end
         end
-%         if ~exist(fullfile(homedir,'Sample_input'),'dir')
-%             mkdir(fullfile(homedir,'Sample_input'));
-%         end
-%         if ~exist(fullfile(homedir,'Sample_input','Sample_input.sdf'),'file')
-%             [statusCp,messageCp] = copyfile(fullfile(installdir,'knime_4.5.1','Sample_input'),fullfile(homedir,'Sample_input'));
-%             if ~statusCp && ~isempty(messageCp)
-%                 error(messageCp);
-%             end
-%         end
+        if ~exist(fullfile(homedir,'Sample_input'),'dir')
+            mkdir(fullfile(homedir,'Sample_input'));
+        end
+        if ~exist(fullfile(homedir,'Sample_input','Sample_50.sdf'),'file')
+            [statusCp,messageCp] = copyfile(fullfile(installdir,'knime_4.5.1','Sample_input'),fullfile(homedir,'Sample_input'));
+            if ~statusCp && ~isempty(messageCp)
+                error(messageCp);
+            end
+        end
 
         [statusKnime,cmdoutKnime] =system ([strcat('"',fullfile(installdir,'knime_4.5.1','knime'),'"')...
             ' -reset -nosplash -nosave -application org.knime.product.KNIME_BATCH_APPLICATION -workflowDir='...
-            strcat('"',fullfile(homedir,'knime-workspace','QSAR-ready_2.5.8'),'"')...
+            strcat('"',fullfile(homedir,'knime-workspace','QSAR-ready_2.5.10'),'"')...
             ' -workflow.variable=cmd_input,' strcat('"',char(StructureFile),'"') ',String']);
         
                     if statusKnime==0
@@ -925,6 +931,17 @@ else
         Xin=Temp;
         clear('Temp');
  
+        poolobj = gcp('nocreate');
+        if isempty(poolobj)||poolobj.NumWorkers<cpus
+            delete(gcp('nocreate'))
+            if cpus
+                poolobj=parpool(cpus);
+            else
+                poolobj=parpool;
+            end
+        end
+        NumWorkers=poolobj.NumWorkers;
+        
         if cdk==1
             if structure==1 && inputCDK==0
                 %Bond_HA_r=Xin(:,466)./Xin(:,9);
@@ -1352,10 +1369,19 @@ else
         Desc=model.LOGP.Desc;
         Xtest=Xin(:,model.LOGP.Desc_i);
         
-            if verbose>1
-                disp(['Weighted kNN model with ', num2str(length(Desc)),' descriptors']);
-            end
+        if verbose>1
+            disp(['Weighted kNN model with ', num2str(length(Desc)),' descriptors']);
+        end
 
+        poolobj = gcp('nocreate');
+        if isempty(poolobj)||poolobj.NumWorkers<cpus
+            delete(gcp('nocreate'))
+            if cpus
+                parpool(cpus);
+            else
+                parpool;
+            end
+        end
         if salt ==0
             SaltIndex=zeros(size(Xtest,1),1);
 
@@ -1419,11 +1445,11 @@ else
         Desc=[Desc,'SaltIndex'];
         pred_neighbors=nan(size(Xtest,1),5);
         pred_w=nan(size(Xtest,1),5);
-        poolobj = gcp('nocreate'); 
-        if cpus && (isempty(poolobj)||poolobj.NumWorkers<cpus)
-            delete(gcp('nocreate'))
-            parpool(cpus);
-        end
+%         poolobj = gcp('nocreate'); 
+%         if cpus && (isempty(poolobj)||poolobj.NumWorkers<cpus)
+%             delete(gcp('nocreate'))
+%             parpool(cpus);
+%         end
         parfor i=1:length(Xtest(:,1))
             pred = nnrpred(Xtest(i,:),model.LOGP.model.set.train,model.LOGP.model.set.y,model.LOGP.model.set.K,model.LOGP.model.set.dist_type,model.LOGP.model.set.param.pret_type);
             pred.D=diag(pred.D);
@@ -1563,8 +1589,6 @@ else
                     res.LogP_pred_neighbor(i,:)=nan(1,5);
                 end
             end
-            
-            
             
             if strcmpi(ext,'.txt') && sep==1 && Lia(1)
                 %res.Xtest=Xtest;
@@ -1718,6 +1742,16 @@ else
             fprintf(output,'\n\n\t\t\t\t\t Predicting MP values... \n\n			============================================================== \n\n');
         end
         
+        poolobj = gcp('nocreate');
+        if isempty(poolobj)||poolobj.NumWorkers<cpus
+            delete(gcp('nocreate'))
+            if cpus
+                parpool(cpus);
+            else
+                parpool;
+            end
+        end
+        
         %             Xtest=zeros(size(Xin,1),length(Desc));
         %
         %             for i=1:length(Desc)
@@ -1793,11 +1827,11 @@ else
         Desc=[Desc,'SaltIndex'];
         pred_neighbors=nan(size(Xtest,1),5);
         pred_w=nan(size(Xtest,1),5);
-        poolobj = gcp('nocreate'); 
-        if cpus && (isempty(poolobj)||poolobj.NumWorkers<cpus)
-            delete(gcp('nocreate'))
-            parpool(cpus);
-        end
+%         poolobj = gcp('nocreate'); 
+%         if cpus && (isempty(poolobj)||poolobj.NumWorkers<cpus)
+%             delete(gcp('nocreate'))
+%             parpool(cpus);
+%         end
         parfor i=1:length(Xtest(:,1))
             pred = nnrpred(Xtest(i,:),model.MP.model.set.train,model.MP.model.set.y,model.MP.model.set.K,model.MP.model.set.dist_type,model.MP.model.set.param.pret_type);
             pred.D=diag(pred.D);
@@ -2074,10 +2108,14 @@ else
         Xtest=Xin(:,model.BP.Desc_i);
         pred_neighbors=nan(size(Xtest,1),5);
         pred_w=nan(size(Xtest,1),5);
-        poolobj = gcp('nocreate'); 
-        if cpus && (isempty(poolobj)||poolobj.NumWorkers<cpus)
+        poolobj = gcp('nocreate');
+        if isempty(poolobj)||poolobj.NumWorkers<cpus
             delete(gcp('nocreate'))
-            parpool(cpus);
+            if cpus
+                parpool(cpus);
+            else
+                parpool;
+            end
         end
         parfor i=1:length(Xtest(:,1))
             pred = nnrpred(Xtest(i,:),model.BP.model.set.train,model.BP.model.set.y,model.BP.model.set.K,model.BP.model.set.dist_type,model.BP.model.set.param.pret_type);
@@ -2361,9 +2399,13 @@ else
         pred_neighbors=nan(size(Xtest,1),5);
         pred_w=nan(size(Xtest,1),5);
         poolobj = gcp('nocreate');
-        if cpus && (isempty(poolobj)||poolobj.NumWorkers<cpus)
+        if isempty(poolobj)||poolobj.NumWorkers<cpus
             delete(gcp('nocreate'))
-            parpool(cpus);
+            if cpus
+                parpool(cpus);
+            else
+                parpool;
+            end
         end
         parfor i=1:length(Xtest(:,1))
             pred = nnrpred(Xtest(i,:),model.VP.model.set.train,model.VP.model.set.y,model.VP.model.set.K,model.VP.model.set.dist_type,model.VP.model.set.param.pret_type);
@@ -2648,9 +2690,13 @@ else
         pred_neighbors=nan(size(Xtest,1),5);
         pred_w=nan(size(Xtest,1),5);
         poolobj = gcp('nocreate');
-        if cpus && (isempty(poolobj)||poolobj.NumWorkers<cpus)
+        if isempty(poolobj)||poolobj.NumWorkers<cpus
             delete(gcp('nocreate'))
-            parpool(cpus);
+            if cpus
+                parpool(cpus);
+            else
+                parpool;
+            end
         end
         parfor i=1:length(Xtest(:,1))
             pred = nnrpred(Xtest(i,:),model.WS.model.set.train,model.WS.model.set.y,model.WS.model.set.K,model.WS.model.set.dist_type,model.WS.model.set.param.pret_type);
@@ -2932,9 +2978,13 @@ else
         pred_neighbors=nan(size(Xtest,1),5);
         pred_w=nan(size(Xtest,1),5);
         poolobj = gcp('nocreate');
-        if cpus && (isempty(poolobj)||poolobj.NumWorkers<cpus)
+        if isempty(poolobj)||poolobj.NumWorkers<cpus
             delete(gcp('nocreate'))
-            parpool(cpus);
+            if cpus
+                parpool(cpus);
+            else
+                parpool;
+            end
         end
         parfor i=1:length(Xtest(:,1))
             pred = nnrpred(Xtest(i,:),model.HL.model.set.train,model.HL.model.set.y,model.HL.model.set.K,model.HL.model.set.dist_type,model.HL.model.set.param.pret_type);
@@ -3218,9 +3268,13 @@ else
         pred_neighbors=nan(size(Xtest,1),5);
         pred_w=nan(size(Xtest,1),5);
         poolobj = gcp('nocreate');
-        if cpus && (isempty(poolobj)||poolobj.NumWorkers<cpus)
+        if isempty(poolobj)||poolobj.NumWorkers<cpus
             delete(gcp('nocreate'))
-            parpool(cpus);
+            if cpus
+                parpool(cpus);
+            else
+                parpool;
+            end
         end
         parfor i=1:length(Xtest(:,1))
             pred = nnrpred(Xtest(i,:),model.RT.model.set.train,model.RT.model.set.y,model.RT.model.set.K,model.RT.model.set.dist_type,model.RT.model.set.scal);
@@ -3498,9 +3552,13 @@ else
         pred_neighbors=nan(size(Xtest,1),5);
         pred_w=nan(size(Xtest,1),5);
         poolobj = gcp('nocreate');
-        if cpus && (isempty(poolobj)||poolobj.NumWorkers<cpus)
+        if isempty(poolobj)||poolobj.NumWorkers<cpus
             delete(gcp('nocreate'))
-            parpool(cpus);
+            if cpus
+                parpool(cpus);
+            else
+                parpool;
+            end
         end
         parfor i=1:length(Xtest(:,1))
             pred = nnrpred(Xtest(i,:),model.KOA.model.set.train,model.KOA.model.set.y,model.KOA.model.set.K,model.KOA.model.set.dist_type,model.KOA.model.set.param.pret_type);
@@ -3813,9 +3871,13 @@ else
         pred_dc=nan(size(Xtest,1),3);
         pred_w=nan(size(Xtest,1),3);
         poolobj = gcp('nocreate');
-        if cpus && (isempty(poolobj)||poolobj.NumWorkers<cpus)
+        if isempty(poolobj)||poolobj.NumWorkers<cpus
             delete(gcp('nocreate'))
-            parpool(cpus);
+            if cpus
+                parpool(cpus);
+            else
+                parpool;
+            end
         end
         parfor i=1:length(Xtest(:,1))
             pred = knnpred(Xtest(i,:),model.PKA.model.set.train,model.PKA.model.set.class,model.PKA.model.set.K,model.PKA.model.set.dist_type,model.PKA.model.set.param.pret_type);
@@ -4331,9 +4393,13 @@ else
         pred_dc=nan(size(Xtest,1),5);
         pred_w=nan(size(Xtest,1),5);
         poolobj = gcp('nocreate');
-        if cpus && (isempty(poolobj)||poolobj.NumWorkers<cpus)
+        if isempty(poolobj)||poolobj.NumWorkers<cpus
             delete(gcp('nocreate'))
-            parpool(cpus);
+            if cpus
+                parpool(cpus);
+            else
+                parpool;
+            end
         end
         parfor i=1:length(Xtest(:,1))
             pred = nnrpred(Xtest(i,:),model.AOH.model.set.train,model.AOH.model.set.y,model.AOH.model.set.K,model.AOH.model.set.dist_type,model.AOH.model.set.param.pret_type);
@@ -4617,9 +4683,13 @@ else
         pred_neighbors=nan(size(Xtest,1),5);
         pred_w=nan(size(Xtest,1),5);
         poolobj = gcp('nocreate');
-        if cpus && (isempty(poolobj)||poolobj.NumWorkers<cpus)
+        if isempty(poolobj)||poolobj.NumWorkers<cpus
             delete(gcp('nocreate'))
-            parpool(cpus);
+            if cpus
+                parpool(cpus);
+            else
+                parpool;
+            end
         end
         parfor i=1:length(Xtest(:,1))
             pred = nnrpred(Xtest(i,:),model.BCF.model.set.train,model.BCF.model.set.y,model.BCF.model.set.K,model.BCF.model.set.dist_type,model.BCF.model.set.param.pret_type);
@@ -4903,9 +4973,13 @@ else
         pred_neighbors=nan(size(Xtest,1),5);
         pred_w=nan(size(Xtest,1),5);
         poolobj = gcp('nocreate');
-        if cpus && (isempty(poolobj)||poolobj.NumWorkers<cpus)
+        if isempty(poolobj)||poolobj.NumWorkers<cpus
             delete(gcp('nocreate'))
-            parpool(cpus);
+            if cpus
+                parpool(cpus);
+            else
+                parpool;
+            end
         end
         parfor i=1:length(Xtest(:,1))
             pred = nnrpred(Xtest(i,:),model.BIODEG.model.set.train,model.BIODEG.model.set.y,model.BIODEG.model.set.K,model.BIODEG.model.set.dist_type,model.BIODEG.model.set.param.pret_type);
@@ -5186,9 +5260,13 @@ else
         pred_neighbors=nan(size(Xtest,1),5);
         pred_w=nan(size(Xtest,1),5);
         poolobj = gcp('nocreate');
-        if cpus && (isempty(poolobj)||poolobj.NumWorkers<cpus)
+        if isempty(poolobj)||poolobj.NumWorkers<cpus
             delete(gcp('nocreate'))
-            parpool(cpus);
+            if cpus
+                parpool(cpus);
+            else
+                parpool;
+            end
         end
         parfor i=1:length(Xtest(:,1))
             pred = knnpred(Xtest(i,:),model.RBIODEG.model.set.train,model.RBIODEG.model.set.class,model.RBIODEG.model.set.K,model.RBIODEG.model.set.dist_type,model.RBIODEG.model.set.param.pret_type);
@@ -5453,9 +5531,13 @@ else
         pred_neighbors=nan(size(Xtest,1),5);
         pred_w=nan(size(Xtest,1),5);
         poolobj = gcp('nocreate');
-        if cpus && (isempty(poolobj)||poolobj.NumWorkers<cpus)
+        if isempty(poolobj)||poolobj.NumWorkers<cpus
             delete(gcp('nocreate'))
-            parpool(cpus);
+            if cpus
+                parpool(cpus);
+            else
+                parpool;
+            end
         end
         parfor i=1:length(Xtest(:,1))
             pred = nnrpred(Xtest(i,:),model.KM.model.set.train,model.KM.model.set.y,model.KM.model.set.K,model.KM.model.set.dist_type,model.KM.model.set.param.pret_type);
@@ -5733,9 +5815,13 @@ else
         pred_neighbors=nan(size(Xtest,1),5);
         pred_w=nan(size(Xtest,1),5);
         poolobj = gcp('nocreate');
-        if cpus && (isempty(poolobj)||poolobj.NumWorkers<cpus)
+        if isempty(poolobj)||poolobj.NumWorkers<cpus
             delete(gcp('nocreate'))
-            parpool(cpus);
+            if cpus
+                parpool(cpus);
+            else
+                parpool;
+            end
         end
         parfor i=1:length(Xtest(:,1))
             pred = nnrpred(Xtest(i,:),model.KOC.model.set.train,model.KOC.model.set.y,model.KOC.model.set.K,model.KOC.model.set.dist_type,model.KOC.model.set.param.pret_type);
@@ -6028,9 +6114,13 @@ else
         pred_neighbors=nan(size(Xtest,1),5);
         pred_w=nan(size(Xtest,1),5);
         poolobj = gcp('nocreate');
-        if cpus && (isempty(poolobj)||poolobj.NumWorkers<cpus)
+        if isempty(poolobj)||poolobj.NumWorkers<cpus
             delete(gcp('nocreate'))
-            parpool(cpus);
+            if cpus
+                parpool(cpus);
+            else
+                parpool;
+            end
         end
         parfor i=1:length(Xtest(:,1))
             pred = nnrpred(Xtest(i,:),model.FUB.model.set.train,model.FUB.model.set.y,model.FUB.model.set.K,model.FUB.model.set.dist_type,model.FUB.model.set.param.pret_type);
@@ -6312,9 +6402,13 @@ else
         pred_neighbors=nan(size(Xtest,1),5);
         pred_w=nan(size(Xtest,1),5);
         poolobj = gcp('nocreate');
-        if cpus && (isempty(poolobj)||poolobj.NumWorkers<cpus)
+        if isempty(poolobj)||poolobj.NumWorkers<cpus
             delete(gcp('nocreate'))
-            parpool(cpus);
+            if cpus
+                parpool(cpus);
+            else
+                parpool;
+            end
         end
         parfor i=1:length(Xtest(:,1))
             predc = knnpred(Xtestc(i,:),model.CLINT.modelc.set.train,model.CLINT.modelc.set.class,model.CLINT.modelc.set.K,model.CLINT.modelc.set.dist_type,model.CLINT.modelc.set.param.pret_type);
@@ -6363,8 +6457,8 @@ else
 %         DTXSID=model.CLINT.DTXSID;
 %         InChiKey=model.CLINT.InChiKey;
 %         
-%         CLINT_CAS=strrep(strrep(join(model.CLINT.CAS,'|',2),'|||',''),'||','');
-%         CLINT_DTXSID=strrep(strrep(join(model.CLINT.DTXSID,'|',2),'|||',''),'||','');
+         CLINT_CAS=strrep(strrep(join(model.CLINT.CAS,'|',2),'|||',''),'||','');
+         CLINT_DTXSID=strrep(strrep(join(model.CLINT.DTXSID,'|',2),'|||',''),'||','');
         
         for i=1:size(Xtest,1)
             Li=0;
@@ -6389,8 +6483,8 @@ else
 %                 model.CLINT.CAS=CAS;
 %                 model.CLINT.DTXSID=DTXSID;
 %                 model.CLINT.InChiKey=InChiKey;
-                CAS=model.CLINT.CAS;
-                DTXSID=model.CLINT.DTXSID;
+                CAS=CLINT_CAS;
+                DTXSID=CLINT_DTXSID;
                 InChiKey=model.CLINT.InChiKey;
                 Clint_Exp_neighbor(i,:)=round(model.CLINT.modelc.y(predc_neighbors(i,:)),2);
                 Clint_pred_neighbor(i,:)=round(model.CLINT.modelc.yc_weighted(predc_neighbors(i,:)),2);
@@ -6403,9 +6497,9 @@ else
 %                 model.CLINT.CAS=CAS(224:end,1);
 %                 model.CLINT.DTXSID=DTXSID(224:end,1);
 %                 model.CLINT.InChiKey=InChiKey(224:end,1);
-                CAS=model.CLINT.CAS(224:end,1);
-                DTXSID=model.CLINT.DTXSID(224:end,1);
-                InChiKey=model.CLINT.InChiKey(224:end,1);
+                CAS=CLINT_CAS([157:1010 1064:end],1);
+                DTXSID=CLINT_DTXSID([157:1010 1064:end],1);
+                InChiKey=model.CLINT.InChiKey([157:1010 1064:end],1);
             end
             %                 rmse=calc_reg_param(res.Clint_Exp_neighbor(i,:),res.Clint_pred_neighbor(i,:));
             %                 res.Conf_index(i,1)=1/(1+rmse.RMSEC);
@@ -6592,8 +6686,8 @@ else
         clear('CAS');
         clear('DTXSID');
         clear('InChiKey');
-%         clear('CLINT_CAS');
-%         clear('CLINT_DTXSID');
+         clear('CLINT_CAS');
+         clear('CLINT_DTXSID');
         %end clean memory
     end
     
@@ -6634,9 +6728,13 @@ else
         pred_neighbors=nan(size(Xtest,1),5);
         pred_w=nan(size(Xtest,1),5);
         poolobj = gcp('nocreate');
-        if cpus && (isempty(poolobj)||poolobj.NumWorkers<cpus)
+        if isempty(poolobj)||poolobj.NumWorkers<cpus
             delete(gcp('nocreate'))
-            parpool(cpus);
+            if cpus
+                parpool(cpus);
+            else
+                parpool;
+            end
         end
         parfor i=1:length(Xtest(:,1))
             pred = nnrpred(Xtest(i,:),model.CACO2.model.set.train,model.CACO2.model.set.y,model.CACO2.model.set.K,model.CACO2.model.set.dist_type,model.CACO2.model.set.param.pret_type);
@@ -6928,9 +7026,13 @@ else
         XtestBD=Xtest(:,model.CERAPP.model_BD.DescBD_i);
         %tic
         poolobj = gcp('nocreate');
-        if cpus && (isempty(poolobj)||poolobj.NumWorkers<cpus)
+        if isempty(poolobj)||poolobj.NumWorkers<cpus
             delete(gcp('nocreate'))
-            parpool(cpus);
+            if cpus
+                parpool(cpus);
+            else
+                parpool;
+            end
         end
         parfor i=1:length(Xtest(:,1))
             predAG = knnpred2(XtestAG(i,:),model.CERAPP.model_AG.set.train,model.CERAPP.model_AG.set.class,model.CERAPP.model_AG.set.class_Exp_N,model.CERAPP.model_AG.set.K,model.CERAPP.model_AG.set.dist_type,model.CERAPP.model_AG.set.param.pret_type);
@@ -7421,9 +7523,13 @@ else
         XtestAN=Xtest(:,model.COMPARA.model_AN.DescAN_i);
         XtestBD=Xtest(:,model.COMPARA.model_BD.DescBD_i);
         poolobj = gcp('nocreate');
-        if cpus && (isempty(poolobj)||poolobj.NumWorkers<cpus)
+        if isempty(poolobj)||poolobj.NumWorkers<cpus
             delete(gcp('nocreate'))
-            parpool(cpus);
+            if cpus
+                parpool(cpus);
+            else
+                parpool;
+            end
         end
         parfor i=1:length(Xtest(:,1))       
             predAG = knnpred2(XtestAG(i,:),model.COMPARA.model_AG.set.train,model.COMPARA.model_AG.set.class,model.COMPARA.model_AG.set.class_Exp_N,model.COMPARA.model_AG.set.K,model.COMPARA.model_AG.set.dist_type,model.COMPARA.model_AG.set.param.pret_type);
@@ -7927,9 +8033,13 @@ else
 
         %new data temp end
         poolobj = gcp('nocreate');
-        if cpus && (isempty(poolobj)||poolobj.NumWorkers<cpus)
+        if isempty(poolobj)||poolobj.NumWorkers<cpus
             delete(gcp('nocreate'))
-            parpool(cpus);
+            if cpus
+                parpool(cpus);
+            else
+                parpool;
+            end
         end
         parfor i=1:length(Xtest(:,1))
             predVT = knnpred2(XtestVT(i,:),model.CATMOS.model_VT.set.train,model.CATMOS.model_VT.set.class,model.CATMOS.model_VT.set.class_Exp+1,model.CATMOS.model_VT.set.K,model.CATMOS.model_VT.set.dist_type,model.CATMOS.model_VT.set.param.pret_type);

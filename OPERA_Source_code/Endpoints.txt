@@ -1,35 +1,36 @@
+OPERA v2.8
 Structural properties:
-    StrP v2.5     MW, nAtoms, nHeavyAtoms, nC, nO, nN, nAromAtom, nRing, nHeteroRing, Sp3Sp2HybRatio, nRotBd, nHBdAcc, nHBdDon, LipinskiFails, ToPolSurf, MRefract, Polarizability
-	
+	StrP	v2.5	MW, nAtoms, nHeavyAtoms, nC, nO, nN, nAromAtom, nRing, nHeteroRing, Sp3Sp2HybRatio, nRotBd, nHBdAcc, nHBdDon, LipinskiFails, ToPolSurf, MRefract, Polarizability
+
 Physicochemical properties:
-    LogP v2.6  Octanol-water partition coefficient
-    MP   v2.6  Melting Point
-    BP   v2.6  Boiling Point at 760 mm Hg
-    VP   v2.6  Vapor Pressure
-    WS   v2.6  Water solubility at 25C
-    HL   v2.6  Henrys Law constant (air/water partition coefficient)
-    KOA  v2.6  The octanol/air partition coefficient.
-    RT   v2.6  HPLC retention time.
-    pKa  v2.6  Logarithmic (acid) dissociation constant
-    LogD v2.6  Octanol-water distribution coefficient
+    LogP	v2.6	Octanol-water partition coefficient.	QMRF:Q17-16-0016
+    MP	v2.6	Melting Point C.	QMRF:Q17-11-0015
+    BP	v2.6	Boiling Point C at 760 mm Hg.	QMRF:Q17-12-0021
+    VP	v2.6	Vapor Pressure mmHg.	QMRF:Q17-14-0013
+    WS	v2.6	Water solubility Mol/L at 25C.	QMRF:Q17-13-0012
+    HL	v2.6	Henrys Law constant atm-m3/mole.	QMRF:Q17-19-0020
+    KOA	v2.6	The octanol/air partition coefficient.	QMRF:Q17-18-0018
+    RT	v2.6	HPLC retention time min.
+    pKa	v2.6	Logarithmic (acid) dissociation constant.
+    LogD	v2.6	Octanol-water distribution coefficient.
 
 Environmental fate:
-    LogBCF  v2.6 Fish bioconcentration factor
-    AOH     v2.6 OH rate constant for atmospheric gas-phase reactions
-    BioDeg  v2.6 Biodegradation half-life in days 
-    RBioDeg v2.6 Ready biodegradability of organic chemicals
-    KM      v2.6 Whole body primary biotransformation rate constant.
-    KOC     v2.6 Soil adsorption coefficient of organic compounds.
+    LogBCF	v2.6	Fish bioconcentration factor.	QMRF:Q17-24a-0023
+    AOH	v2.6	OH rate constant for atmospheric gas-phase reactions cm3/mol-sec.	QMRF:Q17-22b-0024
+    BioDeg	v2.6	Biodegradation half-life in days.	Q17-23b-0022 
+    RBioDeg	v2.6	Ready biodegradability of organic chemicals.	QMRF:Q17-23a-0014
+    KM	v2.6	Wholebody primary biotransformation rate constant days.	QMRF:Q17-66-0019
+    KOC	v2.6	Soil adsorption coefficient of organic compounds L/Kg.	QMRF:Q17-26-0017
 
 Toxicity endpoints:
-    ER 	     v2.6 Collaborative Estrogen Receptor Activity Prediction Project (CERAPP). 
-    AR	     v2.6 Collaborative Modeling Project for Androgen Receptor Activity (CoMPARA). 	
-    AcuteTox v2.6 Collaborative Acute Toxicity Modeling Suite (CATMoS). 
+    ER	v2.6	Collaborative Estrogen Receptor Activity Prediction Project (CERAPP). 
+    AR	v2.6	Collaborative Modeling Project for Androgen Receptor Activity (CoMPARA). 
+    AcuteTox	v2.6	Collaborative Acute Toxicity Modeling Suite (CATMoS). 
 
 ADME endpoints:
-    FuB    v2.8 Human plasma fraction unbound 
-    Clint  v2.8 Human hepatic intrinsic clearance
-	Caco2  V2.8 Membrane permeability measured using Caco-2 cell line.
+    FuB	v2.8	Human plasma fraction unbound  
+    Clint	v2.8	Human hepatic intrinsic clearance ul/min/10^6 cells.
+    Caco2	v2.8	Membrane permeability measured using Caco-2 cell line log(10-6 cm/s).
 
 	For more information:
 -----------------------------
