@@ -25,37 +25,34 @@ References:
 
 
 Models:
----------
+----
 
-
+  
           + Molecular descriptors:  
     - PaDEL (2.21) (https://doi.org/10.1002/jcc.21707 )
     - CDK (2.0) (https://doi.org/10.1186/s13321-017-0220-4)
  
 
-          + New models (since v2.0):
+          + List of models:
    
-
-    - FuB: Plasma fraction unbound (human)
+    - Caco-2 permeability (logPapp) model
     
-    - Clint: hepatic intrinsic clearance (human)
+    - FuB: Plasma fraction unbound (human, fraction)
+    
+    - Clint: hepatic intrinsic clearance (human, ul/min/10^6 cells)
     
     - pKa: acid dissociation constant
 
-    - LogD: Octanol-water distribution constant. LogD is equivalent to logP for non-ionisable compounds.
+    - LogD: Octanol-water distribution constant. LogD is equivalent to logP for non-ionizable compounds.
 
-    - CERAPP: Collaborative Estrogen Receptor Activity Prediction Project. Binding, Agonist and Antagonist Estrogen Receptor activity (https://ehp.niehs.nih.gov/15-10267/)
+    - CERAPP: Collaborative Estrogen Receptor Activity Prediction Project. Binding, Agonist, and Antagonist Estrogen Receptor activity (https://ehp.niehs.nih.gov/15-10267/)
 
-    - CoMPARA: Collaborative Modeling Project for Androgen Receptor Activity. Binding, Agonist and Antagonist Androgen Receptor activity (https://doi.org/10.13140/RG.2.2.19612.80009, https://doi.org/10.13140/RG.2.2.21850.03520)
+    - CoMPARA: Collaborative Modeling Project for Androgen Receptor Activity. Binding, Agonist, and Antagonist Androgen Receptor activity (https://doi.org/10.13140/RG.2.2.19612.80009, https://doi.org/10.13140/RG.2.2.21850.03520)
 
     - CATMoS: Collaborative Acute Toxicity Modeling Suite. Very-Toxic, Non-Toxic, EPA categories, GHS categories, LD50 (Log mg/kg) (https://doi.org/10.1016/j.comtox.2018.08.002)
     
     - Structural Properties: MolWeight, nbAtoms, nbHeavyAtoms, nbC, nbO, nbN, nbAromAtom, nbRing, nbHeteroRing, Sp3Sp2HybRatio, nbRotBd, nbHBdAcc, ndHBdDon, nbLipinskiFailures, TopoPolSurfAir, MolarRefract, CombDipolPolarizability.
     
-
-          + Previous models (since v1.5):
-
-   
     - OH (LogOH) in cm3/molecule-sec: The OH rate constant for the atmospheric, gas-phase reaction between photochemically produced hydroxyl radicals and organic chemicals.
 
     - BCF (Log): Fish bioconcentration factor
