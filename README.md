@@ -53,7 +53,6 @@ Models:
     
     - Structural Properties: MolWeight, nbAtoms, nbHeavyAtoms, nbC, nbO, nbN, nbAromAtom, nbRing, nbHeteroRing, Sp3Sp2HybRatio, nbRotBd, nbHBdAcc, ndHBdDon, nbLipinskiFailures, TopoPolSurfAir, MolarRefract, CombDipolPolarizability.
     
-
     - OH (LogOH) in cm3/molecule-sec: The OH rate constant for the atmospheric, gas-phase reaction between photochemically produced hydroxyl radicals and organic chemicals.
 
     - BCF (Log): Fish bioconcentration factor
