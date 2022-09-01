@@ -4,15 +4,15 @@ Structural properties:
 
 Physicochemical properties:
     LogP	v2.6	Octanol-water partition coefficient.	QMRF:Q17-16-0016
-    MP	v2.6	Melting Point C.	QMRF:Q17-11-0015
-    BP	v2.6	Boiling Point C at 760 mm Hg.	QMRF:Q17-12-0021
-    VP	v2.6	Vapor Pressure mmHg.	QMRF:Q17-14-0013
-    WS	v2.6	Water solubility Mol/L at 25C.	QMRF:Q17-13-0012
-    HL	v2.6	Henrys Law constant atm-m3/mole.	QMRF:Q17-19-0020
+    MP	v2.9	Melting Point C.	QMRF:Q17-11-0015
+    BP	v2.9	Boiling Point C at 760 mm Hg.	QMRF:Q17-12-0021
+    VP	v2.9	Vapor Pressure mmHg.	QMRF:Q17-14-0013
+    WS	v2.9	Water solubility Mol/L at 25C.	QMRF:Q17-13-0012
+    HL	v2.9	Henrys Law constant atm-m3/mole.	QMRF:Q17-19-0020
     KOA	v2.6	The octanol/air partition coefficient.	QMRF:Q17-18-0018
     RT	v2.6	HPLC retention time min.
     pKa	v2.6	Logarithmic (acid) dissociation constant.
-    LogD	v2.6	Octanol-water distribution coefficient.
+    LogD	v2.9	Octanol-water distribution coefficient.
 
 Environmental fate:
     LogBCF	v2.6	Fish bioconcentration factor.	QMRF:Q17-24a-0023
@@ -30,7 +30,7 @@ Toxicity endpoints:
 ADME endpoints:
     FuB	v2.8	Human plasma fraction unbound  
     Clint	v2.8	Human hepatic intrinsic clearance ul/min/10^6 cells.
-    Caco2	v2.8	Membrane permeability measured using Caco-2 cell line log(10-6 cm/s).
+    Caco2	v2.8	Membrane permeability measured using Caco-2 cell line log(cm/s).
 
 	For more information:
 -----------------------------
