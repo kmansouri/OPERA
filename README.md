@@ -22,6 +22,9 @@ References:
 
 [9] Mansouri, K. et al. EHP (2021) https://doi.org/10.1289/EHP8495
 
+[10] Mansouri, K. et al. J Cheminform (2024) https://doi.org/10.1186/s13321-024-00814-3
+
+
 
 
 Models:
