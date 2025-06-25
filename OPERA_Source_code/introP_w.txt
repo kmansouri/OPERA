@@ -2,7 +2,7 @@
        _______________________________________________________________________
       |                                                                       |
       |   OPERA models for physchem, environmental fate and tox properties.   |
-      |                 Version 2.9 Parallel (August 2022)                    |
+      |                 Version 2.9 Parallel (June 2025)                      |
       |_______________________________________________________________________|      
 
 

@@ -1,13 +1,13 @@
 function res=OPERA(varargin)
 
 Version='2.9';
-SubVersion='2.9.1';
+SubVersion='2.9.2';
 %%
 %
 %        _______________________________________________________________________
 %       |                                                                       |
 %       |   OPERA models for physchem, environmental fate and tox properties.   |
-%       |                 Version 2.9 (August 2022)                             |
+%       |                 Version 2.9 (June 2025)                               |
 %       |_______________________________________________________________________|
 %
 %
