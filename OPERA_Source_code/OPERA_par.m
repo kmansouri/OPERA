@@ -1,13 +1,13 @@
 function res=OPERA_par(varargin)
 
 Version='2.9';
-SubVersion='2.9.2';
+SubVersion='2.9.5';
 %%
 %
 %        _______________________________________________________________________
 %       |                                                                       |
 %       |   OPERA models for physchem, environmental fate and tox properties.   |
-%       |                 Version 2.9 (June 2025)                               |
+%       |                 Version 2.9 (June 2026)                               |
 %       |_______________________________________________________________________|
 %
 %
@@ -86,21 +86,21 @@ SubVersion='2.9.2';
 
 
 if nargin==0
-    %
-    % % % Read in your GIF file. Don't forget to read in the colour map as it is
-    % required for display.
-    [I, map]=imread('Splash5_OPERA.gif','Frames','all');
-    
-    % Create a figure to hold your splashscreen
-    hfig=figure;
-    set(hfig,'Menubar', 'none');
-    set(hfig,'name','Please wait. Loading...','numbertitle','off');
-    
-    % Set a timer to dynamically update the plot every 0.1 sec
-    t=timer('TimerFcn', {@timerCallbackFcn, hfig, I, map},'ExecutionMode','FixedRate','Period',0.1);
-    
-    % Start the timer
-    start(t);
+    % %
+    % % % % Read in your GIF file. Don't forget to read in the colour map as it is
+    % % required for display.
+    % [I, map]=imread('Splash5_OPERA.gif','Frames','all');
+    % 
+    % % Create a figure to hold your splashscreen
+    % hfig=figure;
+    % set(hfig,'Menubar', 'none');
+    % set(hfig,'name','Please wait. Loading...','numbertitle','off');
+    % 
+    % % Set a timer to dynamically update the plot every 0.1 sec
+    % t=timer('TimerFcn', {@timerCallbackFcn, hfig, I, map},'ExecutionMode','FixedRate','Period',0.1);
+    % 
+    % % Start the timer
+    % start(t);
     
     % Check path variable on Windows
     % if isdeployed
@@ -115,16 +115,20 @@ if nargin==0
     %     end
     % end
     
+    % Graphics-free startup message
+    fprintf('Please wait. Loading');
+    
     % Do your stuff here
     for j=1:5
         pause(0.5);
+        fprintf('.');
     end
     %train=load ('OPERA_models.mat', '-mat');
     
     % Clean-up
-    stop(t);
-    delete(t);
-    delete(hfig);
+    % stop(t);
+    % delete(t);
+    % delete(hfig);
     %
     if ispc
         type('introP_w.txt')
@@ -148,7 +152,7 @@ else
     clean=0;
     printtDesc=0;
     sep=0;
-    all=1;
+    calcAll=1;
     prop={};
     salt=0;
     help=0;
@@ -249,7 +253,7 @@ else
             i=i+1;
             continue
         elseif strcmpi('-All',varargin{i})|| strcmp('-a',varargin{i})
-            all=1;
+            calcAll=1;
             fp=1;
             %InputDescFP='PadelFP.csv';
             cdk=1;
@@ -257,7 +261,7 @@ else
             i=i+1;
             continue
         elseif strcmp('-e',varargin{i})|| strcmpi('--endpoint',varargin{i})
-            all=0;
+            calcAll=0;
             e=1;
             i=i+1;
             continue
@@ -280,23 +284,23 @@ else
             if e==1
                 if strcmpi('Tox',varargin{i})
                     prop=[prop, 'CERAPP','CoMPARA', 'CATMoS'];
-                    all=0;
+                    calcAll=0;
                     tox=1;
                 elseif strcmpi('PhysChem',varargin{i})||strcmpi('PC',varargin{i})
                     prop=[prop, 'BP','LogP','MP','VP','WS', 'HL', 'KOA', 'RT','pKa', 'LogD'];
-                    all=0;
+                    calcAll=0;
                     pc=1;
                 elseif strcmpi('EnvFate',varargin{i})||strcmpi('EF',varargin{i})
                     prop=[prop, 'BCF', 'AOH', 'BioDeg', 'RBioDeg','KM','KOC'];
-                    all=0;
+                    calcAll=0;
                     ef=1;
                 elseif strcmpi('ADME',varargin{i})
                     prop=[prop, 'FuB', 'Clint', 'Caco2'];
-                    all=0;
+                    calcAll=0;
                     adme=1;
                 else
                     prop=[prop varargin{i}];
-                    all=0;
+                    calcAll=0;
                 end
             else
                 error('Check input arguments or type -h, --help for more info.')
@@ -321,22 +325,22 @@ else
             end
             if strcmpi('-Tox',varargin{i})
                 prop=[prop, 'CERAPP', 'CoMPARA','CATMoS'];
-                all=0;
+                calcAll=0;
                 tox=1;
             elseif strcmpi('-PhysChem',varargin{i})||strcmpi('-PC',varargin{i})
                 prop=[prop, 'BP','LogP','MP','VP','WS', 'HL','KOA','RT','pKa', 'LogD'];
-                all=0;
+                calcAll=0;
                 pc=1;
             elseif strcmpi('-EnvFate',varargin{i})||strcmpi('-EF',varargin{i})
                 prop=[prop, 'BCF', 'AOH', 'BioDeg', 'RBioDeg','KM','KOC'];
-                all=0;
+                calcAll=0;
                 ef=1;
             elseif strcmpi('-ADME',varargin{i})
                 prop=[prop, 'FuB', 'Clint', 'Caco2'];
-                all=0;
+                calcAll=0;
                 adme=1;
             else
-                all=0;
+                calcAll=0;
                 prop=[prop strrep(varargin{i},'-','')];
             end
             i=i+1;
@@ -435,7 +439,7 @@ else
     end
     
     
-    if all==1
+    if calcAll==1
         prop= {'StrP','BCF','BP','LogP','MP','VP','WS', 'AOH', 'BioDeg', 'RBioDeg','HL','KM','KOA','KOC','RT','pKa', 'LogD', 'CERAPP', 'FuB','Clint','Caco2', 'CoMPARA', 'CATMoS'};
         if verbose >0
             fprintf(1,'\n All properties will be calculated: \nGeneral structural properties, Physchem, Env. fate, ADME and Tox Endpoints (CERAPP, CoMPARA and CATMoS)  \n');
@@ -645,7 +649,7 @@ else
                         FoundBy{f,1}=SearchID;
                         inputStructure{f,1}=train.DSSToxQSARr{Lb(i),1};
                         fprintf(fileID,'%s\t%s\n',train.DSSToxQSARr{Lb(i),1},strings{i});
-                        if (ismember('mp',lower(prop))||ismember('logp',lower(prop))||ismember('logd',lower(prop))) && isempty(FileSalt)
+                        if (ismember('logp',lower(prop))||ismember('mp',lower(prop))||ismember('Bp',lower(prop))||ismember('vp',lower(prop))||ismember('ws',lower(prop))||ismember('logd',lower(prop))||ismember('catmos',lower(prop))) && isempty(FileSalt)
                             salt=1;
                             %SaltInfo(f,1)=train.DSSToxQSARr.SaltInfo(Lb(i));
                             SaltIndex(f,1)=train.DSSToxQSARr.SaltInfo(Lb(i));
@@ -1219,7 +1223,7 @@ else
         end
         
         %Start SaltInfo
-        if salt==1 && ~isempty(FileSalt) && (ismember('mp',lower(prop))||ismember('logp',lower(prop))||ismember('logd',lower(prop)))
+        if salt==1 && ~isempty(FileSalt) && (ismember('logp',lower(prop))||ismember('mp',lower(prop))||ismember('bp',lower(prop))||ismember('vp',lower(prop))||ismember('ws',lower(prop))||ismember('logd',lower(prop))||ismember('catmos',lower(prop)))
             if verbose> 0
                 disp('Reading file with salt information.');
             end
@@ -1353,7 +1357,7 @@ else
     %for j=1:length(prop)
     %switch lower(prop{j})
     
-    if verbose> 0 && (pc||all)
+    if verbose> 0 && (pc||calcAll)
         fprintf(1,'---------- PhysChem properties ----------\n');
     end
     
@@ -1385,8 +1389,8 @@ else
         if salt ==0
             SaltIndex=zeros(size(Xtest,1),1);
 
-            La=zeros(length(MoleculeNames));
-            Lb=zeros(length(MoleculeNames));
+            La=zeros(length(MoleculeNames),1);
+            Lb=zeros(length(MoleculeNames),1);
             CAS=train.DSSToxQSARr{:,2};
             DTXSID=train.DSSToxQSARr{:,3};
             DTXCID=train.DSSToxQSARr{:,4};
@@ -1420,8 +1424,12 @@ else
                 disp('The provided salt info. used in the predictions');
             elseif salt==1 && isempty(FileSalt)
                 disp('Salt info. was retrieved using the provided IDs');
+                if any(~La)
+                    disp('WARNING: Some IDs were not found. May affect predictions');
+                end
+            elseif salt==0
+                disp('No salt info found. May affect predictions. Use standardize or provide IDs');
             end
-            
         end
         
         if strcmpi(ext,'.txt') && sep==0 && Lia(1)
@@ -1438,9 +1446,17 @@ else
         %                 end
         %             end
         
-
+                %%% Check for NaN        
+        idx = all(isnan(Xtest), 1);
+        if any(idx)
+            error('Some LogP descriptors failed. Check input and repeat calculation.');
+        end
+        if any(any(isnan(Xtest)))
+            disp('WARNING: Seems like some compounds failed LogP calculations. Check input and repeat calculation.');
+            Xtest(isnan(Xtest(:,3)),3)=5.2043;
+        end
+        %%%
         
-        Xtest(isnan(Xtest(:,3)),3)=5.2043;
 
         Xtest=[Xtest SaltIndex];
         Desc=[Desc,'SaltIndex'];
@@ -1553,6 +1569,12 @@ else
                 res.AD_LogP(i)=0;
                 res.AD_index_LogP(i)=0;
                 res.Conf_index_LogP(i,1)=0;
+            end
+            if salt==1 && isempty(FileSalt)
+                if La(i)==0
+                    res.AD_index_LogP(i)=0.75*res.AD_index_LogP(i);
+                    res.Conf_index_LogP(i,1)=0.75*res.Conf_index_LogP(i,1);
+                end
             end
             if Xin(i,12)==0
                 res.AD_LogP(i)=0;
@@ -1722,6 +1744,7 @@ else
         clear('LOGP_DTXSID');
         %end clean memory
     end
+
     %Predict MP values
     [Lia,Locb] =ismember('mp',lower(prop));
     if find(Lia)
@@ -1780,8 +1803,8 @@ else
             %pred.D=diag(pred.D);
             %AD=classical_leverage(train.MP.model.set.train,Xtest,'auto');
 
-            La=zeros(length(MoleculeNames));
-            Lb=zeros(length(MoleculeNames));
+            La=zeros(length(MoleculeNames),1);
+            Lb=zeros(length(MoleculeNames),1);
             CAS=train.DSSToxQSARr{:,2};
             DTXSID=train.DSSToxQSARr{:,3};
             DTXCID=train.DSSToxQSARr{:,4};
@@ -1818,13 +1841,29 @@ else
                 disp('The provided salt info. used in the predictions');
             elseif salt==1 && isempty(FileSalt)
                 disp('Salt info. was retrieved using the provided IDs');
+                if any(~La)
+                    disp('WARNING: Some IDs were not found. May affect predictions');
+                end
+            elseif salt==0
+                disp('No salt info found. May affect predictions. Use standardize or provide IDs');
             end
             
         end
-            
+                       %%% Check for NaN
+        idx = all(isnan(Xtest), 1);
+        if any(idx)
+            error('Some MP descriptors failed. Check input and repeat calculation.');
+        end
+        if any(any(isnan(Xtest)))
+            disp('WARNING: Seems like some compounds failed MP calculations. Check input and repeat calculation.');
+            Xtest(find(isnan(Xtest(:,9))),9)=2.9492;
+            Xtest(find(isnan(Xtest(:,15))),15)=10.7431;
+        end
+        %%%
+
         %AD=classical_leverage(MP.model.set.train(:,1:end-1),Xtest,'auto');
-        Xtest(find(isnan(Xtest(:,9))),9)=2.9492;
-        Xtest(find(isnan(Xtest(:,15))),15)=10.7431;
+        % Xtest(find(isnan(Xtest(:,9))),9)=2.9492;
+        % Xtest(find(isnan(Xtest(:,15))),15)=10.7431;
         Xtest=[Xtest SaltIndex];
         Desc=[Desc,'SaltIndex'];
         pred_neighbors=nan(size(Xtest,1),5);
@@ -1907,7 +1946,7 @@ else
             end
 
             SMP=std(MP_Exp_neighbor(i,:),pred_w(i,:));
-            res.MP_predRange{i,1}=strcat('[', num2str(round(max(res.MP_pred(i,1)-SMP,min(MP_Exp_neighbor(i,:))),2)),':',num2str(round(min(res.MP_pred(i,1)+SMP,max(MP_Exp_neighbor(i,:))),2)),']');
+            res.MP_predRange{i,1}=strcat('[', num2str(round(max(res.MP_pred(i,1)-SMP,min(MP_Exp_neighbor(i,:))))),':',num2str(round(min(res.MP_pred(i,1)+SMP,max(MP_Exp_neighbor(i,:))))),']');
                         
             Std_index_MP=(1-(std(MP_Exp_neighbor(i,:),pred_w(i,:))/std(model.MP.model.set.y)));
             res.Conf_index_MP(i,1)=max(((1/(1+sqrt(((MP_Exp_neighbor(i,:)-MP_pred_neighbor(i,:)).^2)*pred_w(i,:)')/50))+res.AD_index_MP(i,1)+Std_index_MP)/3,0.1); 
@@ -1917,7 +1956,7 @@ else
             elseif res.AD_index_MP(i,1)<0.2 && res.Conf_index_MP(i,1)<0.5
                 res.AD_MP(i,1)=0;
             end
-             if res.AD_index_MP(i,1)==0
+            if res.AD_index_MP(i,1)==0
                 res.Conf_index_MP(i,1)=0;
             end
             if isnan(res.AD_MP(i,1))
@@ -1932,6 +1971,12 @@ else
                 res.AD_MP(i)=0;
                 res.AD_index_MP(i)=0;
                 res.Conf_index_MP(i,1)=0;
+            end
+            if salt==1 && isempty(FileSalt)
+                if La(i)==0
+                    res.AD_index_MP(i)=0.75*res.AD_index_MP(i);
+                    res.Conf_index_MP(i,1)=0.75*res.Conf_index_MP(i,1);
+                end
             end
             if Xin(i,12)==0
                 res.AD_MP(i)=0;
@@ -2108,8 +2153,19 @@ else
         %                 end
         %             end
         Xtest=Xin(:,model.BP.Desc_i);
+                %%% Check for NaN
+        idx = all(isnan(Xtest), 1);
+        if any(idx)
+            error('Some BP descriptors failed. Check input and repeat calculation.');
+        end
+        if any(any(isnan(Xtest)))
+            disp('WARNING: Seems like some compounds failed BP calculations. Check input and repeat calculation.');
+        end
+        %%%
+
         pred_neighbors=nan(size(Xtest,1),5);
         pred_w=nan(size(Xtest,1),5);
+
         poolobj = gcp('nocreate');
         if isempty(poolobj)||poolobj.NumWorkers<cpus
             delete(gcp('nocreate'))
@@ -2119,11 +2175,59 @@ else
                 parpool;
             end
         end
+
+        if salt ==0
+            SaltIndex=zeros(size(Xtest,1),1);
+
+            La=zeros(length(MoleculeNames),1);
+            Lb=zeros(length(MoleculeNames),1);
+            CAS=train.DSSToxQSARr{:,2};
+            DTXSID=train.DSSToxQSARr{:,3};
+            DTXCID=train.DSSToxQSARr{:,4};
+            InChiKey=train.DSSToxQSARr{:,5};
+            SaltInfo=train.DSSToxQSARr.SaltInfo;
+            parfor i=1:length(MoleculeNames)
+                if ~contains(MoleculeNames(i),'AUTOGEN_')
+                    if regexp(MoleculeNames{i},'[0-9]+-[0-9]+-[0-9]')
+                        [La(i),Lb(i)] = ismember(MoleculeNames{i},CAS);
+                    elseif regexp(MoleculeNames{i},'DTXSID[0-9]+')
+                        [La(i),Lb(i)] = ismember(MoleculeNames{i},DTXSID);
+                    elseif regexp(MoleculeNames{i},'DTXCID[0-9]+')
+                        [La(i),Lb(i)] = ismember(MoleculeNames{i},DTXCID);
+                    elseif regexp(MoleculeNames{i},'[A-Z]+-[A-Z]+-[A-Z]')
+                        [La(i),Lb(i)] = ismember(MoleculeNames{i},InChiKey);
+                    end
+                    if La(i)
+                        %salt=1;
+                        SaltIndex(i,1)=SaltInfo(Lb(i));
+                    end
+                end
+            end
+            if any(La)
+                salt=1;
+            end
+        end
+        
+        if verbose>0
+            if salt==1 && ~isempty(FileSalt)
+                disp('The provided salt info. used in the predictions');
+            elseif salt==1 && isempty(FileSalt)
+                disp('Salt info. was retrieved using the provided IDs');
+                if any(~La)
+                    disp('WARNING: Some IDs were not found. May affect predictions');
+                end
+            elseif salt==0
+                disp('No salt info found. May affect predictions. Use standardize or provide IDs');
+            end
+            
+        end
+        Xtest=[Xtest SaltIndex];
+        Desc=[Desc,'SaltIndex'];
         parfor i=1:length(Xtest(:,1))
             pred = nnrpred(Xtest(i,:),model.BP.model.set.train,model.BP.model.set.y,model.BP.model.set.K,model.BP.model.set.dist_type,model.BP.model.set.param.pret_type);
             pred.D=diag(pred.D);
             y_pred_weighted(i,1)=pred.y_pred_weighted;
-            AD=classical_leverage(model.BP.model.set.train,Xtest(i,:),'auto');
+            AD=classical_leverage(model.BP.model.set.train(:,1:end-1),Xtest(i,1:end-1),'auto');
             AD_BP(i)=AD.inorout;
             pred_dc(i,:)=pred.dc;
             pred_neighbors(i,:)=pred.neighbors;
@@ -2191,7 +2295,7 @@ else
             end
 
             SBP=std(BP_Exp_neighbor(i,:),pred_w(i,:));
-            res.BP_predRange{i,1}=strcat('[', num2str(round(max(res.BP_pred(i,1)-SBP,min(BP_Exp_neighbor(i,:))),2)),':',num2str(round(min(res.BP_pred(i,1)+SBP,max(BP_Exp_neighbor(i,:))),2)),']');
+            res.BP_predRange{i,1}=strcat('[', num2str(round(max(res.BP_pred(i,1)-SBP,min(BP_Exp_neighbor(i,:))))),':',num2str(round(min(res.BP_pred(i,1)+SBP,max(BP_Exp_neighbor(i,:))))),']');
                         
             Std_index_BP=(1-(std(BP_Exp_neighbor(i,:),pred_w(i,:))/std(model.BP.model.set.y)));
             res.Conf_index_BP(i,1)=max(((1/(1+sqrt(((BP_Exp_neighbor(i,:)-BP_pred_neighbor(i,:)).^2)*pred_w(i,:)')/50))+res.AD_index_BP(i,1)+Std_index_BP)/3,0.1); 
@@ -2216,6 +2320,12 @@ else
                 res.AD_BP(i)=0;
                 res.AD_index_BP(i)=0;
                 res.Conf_index_BP(i,1)=0;
+            end
+            if salt==1 && isempty(FileSalt)
+                if La(i)==0
+                    res.AD_index_BP(i)=0.75*res.AD_index_BP(i);
+                    res.Conf_index_BP(i,1)=0.75*res.Conf_index_BP(i,1);
+                end
             end
             if Xin(i,12)==0
                 res.AD_BP(i)=0;
@@ -2398,8 +2508,17 @@ else
         %                 end
         %             end
         Xtest=Xin(:,model.VP.Desc_i);
+                %%% Check for NaN
+        idx = all(isnan(Xtest), 1);
+        if any(idx)
+            error('Some VP descriptors failed. Check input and repeat calculation.');
+        end
+        if any(any(isnan(Xtest)))
+            disp('WARNING: Seems like some compounds failed VP calculations. Check input and repeat calculation.');
+            Xtest(isnan(Xtest(:,12)),12)=85.0430;
+        end
+        %%%
         
-        Xtest(isnan(Xtest(:,12)),12)=85.0430;
 
         pred_neighbors=nan(size(Xtest,1),5);
         pred_w=nan(size(Xtest,1),5);
@@ -2412,11 +2531,60 @@ else
                 parpool;
             end
         end
+
+        if salt ==0
+            SaltIndex=zeros(size(Xtest,1),1);
+
+            La=zeros(length(MoleculeNames),1);
+            Lb=zeros(length(MoleculeNames),1);
+            CAS=train.DSSToxQSARr{:,2};
+            DTXSID=train.DSSToxQSARr{:,3};
+            DTXCID=train.DSSToxQSARr{:,4};
+            InChiKey=train.DSSToxQSARr{:,5};
+            SaltInfo=train.DSSToxQSARr.SaltInfo;
+            parfor i=1:length(MoleculeNames)
+                if ~contains(MoleculeNames(i),'AUTOGEN_')
+                    if regexp(MoleculeNames{i},'[0-9]+-[0-9]+-[0-9]')
+                        [La(i),Lb(i)] = ismember(MoleculeNames{i},CAS);
+                    elseif regexp(MoleculeNames{i},'DTXSID[0-9]+')
+                        [La(i),Lb(i)] = ismember(MoleculeNames{i},DTXSID);
+                    elseif regexp(MoleculeNames{i},'DTXCID[0-9]+')
+                        [La(i),Lb(i)] = ismember(MoleculeNames{i},DTXCID);
+                    elseif regexp(MoleculeNames{i},'[A-Z]+-[A-Z]+-[A-Z]')
+                        [La(i),Lb(i)] = ismember(MoleculeNames{i},InChiKey);
+                    end
+                    if La(i)
+                        %salt=1;
+                        SaltIndex(i,1)=SaltInfo(Lb(i));
+                    end
+                end
+            end
+            if any(La)
+                salt=1;
+            end
+        end
+        
+        if verbose>0
+            if salt==1 && ~isempty(FileSalt)
+                disp('The provided salt info. used in the predictions');
+            elseif salt==1 && isempty(FileSalt)
+                disp('Salt info. was retrieved using the provided IDs');
+                if any(~La)
+                    disp('WARNING: Some IDs were not found. May affect predictions');
+                end
+            elseif salt==0
+                disp('No salt info found. May affect predictions. Use standardize or provide IDs');
+            end
+            
+        end
+        Xtest=[Xtest SaltIndex];
+        Desc=[Desc,'SaltIndex'];
+
         parfor i=1:length(Xtest(:,1))
             pred = nnrpred(Xtest(i,:),model.VP.model.set.train,model.VP.model.set.y,model.VP.model.set.K,model.VP.model.set.dist_type,model.VP.model.set.param.pret_type);
             pred.D=diag(pred.D);
             y_pred_weighted(i,1)=pred.y_pred_weighted;
-            AD=classical_leverage(model.VP.model.set.train,Xtest(i,:),'auto');
+            AD=classical_leverage(model.VP.model.set.train(:,1:end-1),Xtest(i,1:end-1),'auto');
             AD_VP(i)=AD.inorout;
             pred_dc(i,:)=pred.dc;
             pred_neighbors(i,:)=pred.neighbors;
@@ -2510,6 +2678,12 @@ else
                 res.AD_VP(i)=0;
                 res.AD_index_VP(i)=0;
                 res.Conf_index_VP(i,1)=0;
+            end
+            if salt==1 && isempty(FileSalt)
+                if La(i)==0
+                    res.AD_index_VP(i)=0.75*res.AD_index_VP(i);
+                    res.Conf_index_VP(i,1)=0.75*res.Conf_index_VP(i,1);
+                end
             end
             if Xin(i,12)==0
                 res.AD_VP(i)=0;
@@ -2693,13 +2867,22 @@ else
         %             end
         Xtest=Xin(:,model.WS.Desc_i);
 
-        Xtest(find(isnan(Xtest(:,2))),2)=2;
-        Xtest(find(isnan(Xtest(:,3))),3)=3.4533;
-        Xtest(find(isnan(Xtest(:,4))),4)=0.0690;
-        Xtest(find(isnan(Xtest(:,6))),6)=2.0732;
-        Xtest(find(isnan(Xtest(:,7))),7)=1.2410;
-        Xtest(find(isnan(Xtest(:,8))),8)=0;
-        Xtest(find(isnan(Xtest(:,11))),11)=0;
+        %%% Check for NaN
+        idx = all(isnan(Xtest), 1);
+        if any(idx)
+            error('Some WS descriptors failed. Check input and repeat calculation.');
+        end
+        if any(any(isnan(Xtest)))
+            disp('WARNING: Seems like some compounds failed WS calculations. Check input and repeat calculation.');
+            Xtest(find(isnan(Xtest(:,2))),2)=2;
+            Xtest(find(isnan(Xtest(:,3))),3)=3.4533;
+            Xtest(find(isnan(Xtest(:,4))),4)=0.0690;
+            Xtest(find(isnan(Xtest(:,6))),6)=2.0732;
+            Xtest(find(isnan(Xtest(:,7))),7)=1.2410;
+            Xtest(find(isnan(Xtest(:,8))),8)=0;
+            Xtest(find(isnan(Xtest(:,11))),11)=0;
+        end
+        %%%
 
         pred_neighbors=nan(size(Xtest,1),5);
         pred_w=nan(size(Xtest,1),5);
@@ -2712,11 +2895,58 @@ else
                 parpool;
             end
         end
+        if salt ==0
+            SaltIndex=zeros(size(Xtest,1),1);
+
+            La=zeros(length(MoleculeNames),1);
+            Lb=zeros(length(MoleculeNames),1);
+            CAS=train.DSSToxQSARr{:,2};
+            DTXSID=train.DSSToxQSARr{:,3};
+            DTXCID=train.DSSToxQSARr{:,4};
+            InChiKey=train.DSSToxQSARr{:,5};
+            SaltInfo=train.DSSToxQSARr.SaltInfo;
+            parfor i=1:length(MoleculeNames)
+                if ~contains(MoleculeNames(i),'AUTOGEN_')
+                    if regexp(MoleculeNames{i},'[0-9]+-[0-9]+-[0-9]')
+                        [La(i),Lb(i)] = ismember(MoleculeNames{i},CAS);
+                    elseif regexp(MoleculeNames{i},'DTXSID[0-9]+')
+                        [La(i),Lb(i)] = ismember(MoleculeNames{i},DTXSID);
+                    elseif regexp(MoleculeNames{i},'DTXCID[0-9]+')
+                        [La(i),Lb(i)] = ismember(MoleculeNames{i},DTXCID);
+                    elseif regexp(MoleculeNames{i},'[A-Z]+-[A-Z]+-[A-Z]')
+                        [La(i),Lb(i)] = ismember(MoleculeNames{i},InChiKey);
+                    end
+                    if La(i)
+                        %salt=1;
+                        SaltIndex(i,1)=SaltInfo(Lb(i));
+                    end
+                end
+            end
+            if any(La)
+                salt=1;
+            end
+        end
+        
+        if verbose>0
+            if salt==1 && ~isempty(FileSalt)
+                disp('The provided salt info. used in the predictions');
+            elseif salt==1 && isempty(FileSalt)
+                disp('Salt info. was retrieved using the provided IDs');
+                if any(~La)
+                    disp('WARNING: Some IDs were not found. May affect predictions');
+                end
+            elseif salt==0
+                disp('No salt info found. May affect predictions. Use standardize or provide IDs');
+            end
+            
+        end
+        Xtest=[Xtest SaltIndex];
+        Desc=[Desc,'SaltIndex'];
         parfor i=1:length(Xtest(:,1))
             pred = nnrpred(Xtest(i,:),model.WS.model.set.train,model.WS.model.set.y,model.WS.model.set.K,model.WS.model.set.dist_type,model.WS.model.set.param.pret_type);
             pred.D=diag(pred.D);
             y_pred_weighted(i,1)=pred.y_pred_weighted;
-            AD=classical_leverage(model.WS.model.set.train,Xtest(i,:),'auto');
+            AD=classical_leverage(model.WS.model.set.train(:,1:end-1),Xtest(i,1:end-1),'auto');
             AD_WS(i)=AD.inorout;
             pred_dc(i,:)=pred.dc;
             pred_neighbors(i,:)=pred.neighbors;
@@ -2810,6 +3040,12 @@ else
                 res.AD_WS(i)=0;
                 res.AD_index_WS(i)=0;
                 res.Conf_index_WS(i,1)=0;
+            end
+            if salt==1 && isempty(FileSalt)
+                if La(i)==0
+                    res.AD_index_WS(i)=0.75*res.AD_index_WS(i);
+                    res.Conf_index_WS(i,1)=0.75*res.Conf_index_WS(i,1);
+                end
             end
             if Xin(i,12)==0
                 res.AD_WS(i)=0;
@@ -2990,9 +3226,18 @@ else
         %             end
         Xtest=Xin(:,model.HL.Desc_i);
 
-        Xtest(find(isnan(Xtest(:,4))),4)=0;
-        Xtest(find(isnan(Xtest(:,6))),6)=0;
-        Xtest(find(isnan(Xtest(:,9))),9)=57.1303;
+        %%% Check for NaN
+        idx = all(isnan(Xtest), 1);
+        if any(idx)
+            error('Some HL descriptors failed. Check input and repeat calculation.');
+        end
+        if any(any(isnan(Xtest)))
+            disp('WARNING: Seems like some compounds failed HL calculations. Check input and repeat calculation.');
+            Xtest(find(isnan(Xtest(:,4))),4)=0;
+            Xtest(find(isnan(Xtest(:,6))),6)=0;
+            Xtest(find(isnan(Xtest(:,9))),9)=57.1303;
+        end
+        %%%
 
         pred_neighbors=nan(size(Xtest,1),5);
         pred_w=nan(size(Xtest,1),5);
@@ -3284,6 +3529,17 @@ else
         %                 end
         %             end
         Xtest=Xin(:,model.RT.Desc_i);
+
+                %%% Check for NaN
+        idx = all(isnan(Xtest), 1);
+        if any(idx)
+            error('Some RT descriptors failed. Check input and repeat calculation.');
+        end
+        if any(any(isnan(Xtest)))
+            disp('WARNING: Seems like some compounds failed RT calculations. Check input and repeat calculation.');
+        end
+        %%%
+
         pred_neighbors=nan(size(Xtest,1),5);
         pred_w=nan(size(Xtest,1),5);
         poolobj = gcp('nocreate');
@@ -3568,6 +3824,17 @@ else
         %                 end
         %             end
         Xtest=Xin(:,model.KOA.Desc_i);
+
+        %%% Check for NaN
+        idx = all(isnan(Xtest), 1);
+        if any(idx)
+            error('Some KOA descriptors failed. Check input and repeat calculation.');
+        end
+        if any(any(isnan(Xtest)))
+            disp('WARNING: Seems like some compounds failed KOA calculations. Check input and repeat calculation.');
+        end
+        %%%
+
         pred_neighbors=nan(size(Xtest,1),5);
         pred_w=nan(size(Xtest,1),5);
         poolobj = gcp('nocreate');
@@ -3886,6 +4153,15 @@ else
         Xtest=Xin(:,model.PKA.Desc_i);
         Xtest_a=table2array(XinFP(:,model.PKA.Desc_ai));
         Xtest_b=table2array(XinFP(:,model.PKA.Desc_bi));
+        %%% Check for NaN
+        idx = all(isnan(Xtest), 1);
+        if any(idx)
+            error('Some pKa descriptors failed. Check input and repeat calculation.');
+        end
+        if any(any(isnan(Xtest)))
+            disp('WARNING: Seems like some compounds failed pKa calculations. Check input and repeat calculation.');
+        end
+        %%%
         pred_neighbors=nan(size(Xtest,1),3);
         pred_dc=nan(size(Xtest,1),3);
         pred_w=nan(size(Xtest,1),3);
@@ -4376,7 +4652,7 @@ else
     
     %  Env. Fate Endpoints
     
-    if verbose> 0 && (ef||all)
+    if verbose> 0 && (ef||calcAll)
         fprintf(1,'---------- Env. Fate Endpoints ----------\n');
     end
     %Predict AOH values
@@ -4408,6 +4684,17 @@ else
         %                 end
         %             end
         Xtest=Xin(:,model.AOH.Desc_i);
+
+                %%% Check for NaN
+        idx = all(isnan(Xtest), 1);
+        if any(idx)
+            error('Some AOH descriptors failed. Check input and repeat calculation.');
+        end
+        if any(any(isnan(Xtest)))
+            disp('WARNING: Seems like some compounds failed AOH calculations. Check input and repeat calculation.');
+        end
+        %%%
+
         pred_neighbors=nan(size(Xtest,1),5);
         pred_dc=nan(size(Xtest,1),5);
         pred_w=nan(size(Xtest,1),5);
@@ -4699,6 +4986,17 @@ else
         %                 end
         %             end
         Xtest=Xin(:,model.BCF.Desc_i);
+
+                %%% Check for NaN
+        idx = all(isnan(Xtest), 1);
+        if any(idx)
+            error('Some BCF descriptors failed. Check input and repeat calculation.');
+        end
+        if any(any(isnan(Xtest)))
+            disp('WARNING: Seems like some compounds failed BCF calculations. Check input and repeat calculation.');
+        end
+        %%%
+
         pred_neighbors=nan(size(Xtest,1),5);
         pred_w=nan(size(Xtest,1),5);
         poolobj = gcp('nocreate');
@@ -4989,6 +5287,17 @@ else
         %                 end
         %             end
         Xtest=Xin(:,model.BIODEG.Desc_i);
+
+                %%% Check for NaN
+        idx = all(isnan(Xtest), 1);
+        if any(idx)
+            error('Some Biodeg descriptors failed. Check input and repeat calculation.');
+        end
+        if any(any(isnan(Xtest)))
+            disp('WARNING: Seems like some compounds failed Biodeg calculations. Check input and repeat calculation.');
+        end
+        %%%
+
         pred_neighbors=nan(size(Xtest,1),5);
         pred_w=nan(size(Xtest,1),5);
         poolobj = gcp('nocreate');
@@ -5276,6 +5585,17 @@ else
         %                 end
         %             end
         Xtest=Xin(:,model.RBIODEG.Desc_i);
+
+                %%% Check for NaN
+        idx = all(isnan(Xtest), 1);
+        if any(idx)
+            error('Some RBiodeg descriptors failed. Check input and repeat calculation.');
+        end
+        if any(any(isnan(Xtest)))
+            disp('WARNING: Seems like some compounds failed RBiodeg calculations. Check input and repeat calculation.');
+        end
+        %%%
+
         pred_neighbors=nan(size(Xtest,1),5);
         pred_w=nan(size(Xtest,1),5);
         poolobj = gcp('nocreate');
@@ -5547,6 +5867,17 @@ else
         %                 end
         %             end
         Xtest=Xin(:,model.KM.Desc_i);
+
+                %%% Check for NaN
+        idx = all(isnan(Xtest), 1);
+        if any(idx)
+            error('Some KM descriptors failed. Check input and repeat calculation.');
+        end
+        if any(any(isnan(Xtest)))
+            disp('WARNING: Seems like some compounds failed KM calculations. Check input and repeat calculation.');
+        end
+        %%%
+
         pred_neighbors=nan(size(Xtest,1),5);
         pred_w=nan(size(Xtest,1),5);
         poolobj = gcp('nocreate');
@@ -5831,6 +6162,17 @@ else
         %                 end
         %             end
         Xtest=Xin(:,model.KOC.Desc_i);
+
+                %%% Check for NaN
+        idx = all(isnan(Xtest), 1);
+        if any(idx)
+            error('Some KOC descriptors failed. Check input and repeat calculation.');
+        end
+        if any(any(isnan(Xtest)))
+            disp('WARNING: Seems like some compounds failed KOC calculations. Check input and repeat calculation.');
+        end
+        %%%
+
         pred_neighbors=nan(size(Xtest,1),5);
         pred_w=nan(size(Xtest,1),5);
         poolobj = gcp('nocreate');
@@ -6091,7 +6433,7 @@ else
     end
     
     % ADME
-    if verbose> 0 && (adme||all)
+    if verbose> 0 && (adme||calcAll)
         fprintf(1,'---------- ADME Endpoints ----------\n');
     end
     
@@ -6130,6 +6472,17 @@ else
         Xtest=[Xin(:,train.PadelVarIn(model.FUB.Padel_in)), XinCDK_FUB];
         
         Xtest=Xtest(:,model.FUB.Desc_i);
+
+                %%% Check for NaN
+        idx = all(isnan(Xtest), 1);
+        if any(idx)
+            error('Some FUB descriptors failed. Check input and repeat calculation.');
+        end
+        if any(any(isnan(Xtest)))
+            disp('WARNING: Seems like some compounds failed FUB calculations. Check input and repeat calculation.');
+        end
+        %%%
+
         pred_neighbors=nan(size(Xtest,1),5);
         pred_w=nan(size(Xtest,1),5);
         poolobj = gcp('nocreate');
@@ -6166,7 +6519,7 @@ else
         res.Conf_index_FUB=zeros(size(Xtest,1),1);
         if neighbors
             FUB_CAS_neighbor=cell(size(Xtest,1),5);
-            %FUB_InChiKey_neighbor=cell(size(Xtest,1),5);
+            FUB_InChiKey_neighbor=cell(size(Xtest,1),5);
             FUB_DTXSID_neighbor=cell(size(Xtest,1),5);
             %FUB_DSSTOXMPID_neighbor=cell(size(Xtest,1),5);
         end
@@ -6242,19 +6595,19 @@ else
 %                 model.FUB.CAS=strrep(strrep(join(model.FUB.CAS,'|',2),'|||',''),'||','');
 %                 model.FUB.DTXSID=strrep(strrep(join(model.FUB.DTXSID,'|',2),'|||',''),'||','');
                 FUB_CAS_neighbor(i,:)=FUB_CAS(pred_neighbors(i,:));
-                %FUB_InChiKey_neighbor(i,:)=model.FUB.InChiKey(pred_neighbors(i,:));
+                FUB_InChiKey_neighbor(i,:)=model.FUB.InChiKey(pred_neighbors(i,:));
                 FUB_DTXSID_neighbor(i,:)=FUB_DTXSID(pred_neighbors(i,:));
                 %FUB_DSSTOXMPID_neighbor(i,:)=model.FUB.DSSTOXMPID(pred_neighbors(i,:));
                 if res.AD_index_FUB(i)~=0
                     res.FUB_CAS_neighbor(i,:)=FUB_CAS_neighbor(i,:);
-                    %res.FUB_InChiKey_neighbor(i,:)=FUB_InChiKey_neighbor(i,:);
+                    res.FUB_InChiKey_neighbor(i,:)=FUB_InChiKey_neighbor(i,:);
                     res.FUB_DTXSID_neighbor(i,:)=FUB_DTXSID_neighbor(i,:);
                     %res.FUB_DSSTOXMPID_neighbor(i,:)=FUB_DSSTOXMPID_neighbor(i,:);
                     res.FUB_Exp_neighbor(i,:)=FUB_Exp_neighbor(i,:);
                     res.FUB_pred_neighbor(i,:)=FUB_pred_neighbor(i,:);
                 else
                     res.FUB_CAS_neighbor(i,:)=cell(1,5);
-                    %res.FUB_InChiKey_neighbor(i,:)=cell(1,5);
+                    res.FUB_InChiKey_neighbor(i,:)=cell(1,5);
                     res.FUB_DTXSID_neighbor(i,:)=cell(1,5);
                     %res.FUB_DSSTOXMPID_neighbor(i,:)=cell(1,5);
                     res.FUB_Exp_neighbor(i,:)=nan(1,5);
@@ -6414,9 +6767,19 @@ else
         
         XinCDK_Clint=XinCDK(:,model.CLINT.cdk_in);
         Xtest=[Xin(:,train.PadelVarIn(model.CLINT.Padel_in)), XinCDK_Clint];
-        
         Xtestc=Xtest(:,model.CLINT.Desc_ic);
         Xtest=Xtest(:,model.CLINT.Desc_ir);
+                %%% Check for NaN
+        idx = all(isnan([Xtest Xtestc]), 1);
+        if any(idx)
+            error('Some Clint descriptors failed. Check input and repeat calculation.');
+        end
+        if any(any(isnan([Xtest Xtestc])))
+            disp('WARNING: Seems like some compounds failed Clint calculations. Check input and repeat calculation.');
+        end
+        %%%
+        
+        
         %Xtest=Xtest(:,model.CLINT.Desc_i);
         pred_neighbors=nan(size(Xtest,1),5);
         pred_w=nan(size(Xtest,1),5);
@@ -6432,13 +6795,13 @@ else
         parfor i=1:length(Xtest(:,1))
             predc = knnpred(Xtestc(i,:),model.CLINT.modelc.set.train,model.CLINT.modelc.set.class,model.CLINT.modelc.set.K,model.CLINT.modelc.set.dist_type,model.CLINT.modelc.set.param.pret_type);
             predc.D=diag(predc.D);
-            predc_class_pred_w(i,1)=predc.class_pred_w;
+            predc_class_pred(i,1)=predc.class_pred;
             predc_dc(i,:)=predc.dc;
             predc_neighbors(i,:)=predc.neighbors;
             predc_w(i,:)=predc.w;
             pred = nnrpred(Xtest(i,:),model.CLINT.model.set.train,model.CLINT.model.set.y,model.CLINT.model.set.K,model.CLINT.model.set.dist_type,model.CLINT.model.set.param.pret_type);
             pred.D=diag(pred.D);
-            if predc.class_pred_w==2
+            if predc.class_pred==2
                 y_pred_weighted(i,1)=10^pred.y_pred_weighted;
             else
                 y_pred_weighted(i,1)=0;
@@ -6484,6 +6847,8 @@ else
             if exp && ~contains(MoleculeNames(i),'AUTOGEN_')
                 if regexp(MoleculeNames{i},'[0-9]+-[0-9]+-[0-9]')
                     [Li,Lo] = ismember(MoleculeNames(i),model.CLINT.CAS);
+                elseif regexp(MoleculeNames{i},'CHEMBL[0-9]+')
+                    [Li,Lo] = ismember(MoleculeNames{i},model.CLINT.CAS);    
                 elseif regexp(MoleculeNames{i},'DTXSID[0-9]+')
                     [Li,Lo] = ismember(MoleculeNames{i},model.CLINT.DTXSID);
                 end
@@ -6495,7 +6860,7 @@ else
                 end
             end
             
-            if predc_class_pred_w(i)==1  
+            if predc_class_pred(i)==1  
                 pred_neighbors(i,:)=predc_neighbors(i,:);
                 pred_dc(i,:)=predc_dc(i,:);
                 pred_w(i,:)=predc_w(i,:);
@@ -6744,6 +7109,17 @@ else
         Xtest=[Xin(:,train.PadelVarIn(model.CACO2.Padel_in)), XinCDK_CACO2];
         
         Xtest=Xtest(:,model.CACO2.Desc_i);
+
+                %%% Check for NaN
+        idx = all(isnan(Xtest), 1);
+        if any(idx)
+            error('Some CACO2 descriptors failed. Check input and repeat calculation.');
+        end
+        if any(any(isnan(Xtest)))
+            disp('WARNING: Seems like some compounds failed CACO2 calculations. Check input and repeat calculation.');
+        end
+        %%%
+        
         pred_neighbors=nan(size(Xtest,1),5);
         pred_w=nan(size(Xtest,1),5);
         poolobj = gcp('nocreate');
@@ -6780,7 +7156,7 @@ else
         res.Conf_index_CACO2=zeros(size(Xtest,1),1);
         if neighbors
             CACO2_CAS_neighbor=cell(size(Xtest,1),5);
-            %CACO2_InChiKey_neighbor=cell(size(Xtest,1),5);
+            CACO2_InChiKey_neighbor=cell(size(Xtest,1),5);
             CACO2_DTXSID_neighbor=cell(size(Xtest,1),5);
             %CACO2_DSSTOXMPID_neighbor=cell(size(Xtest,1),5);
         end
@@ -6795,6 +7171,8 @@ else
             if exp && ~contains(MoleculeNames(i),'AUTOGEN_')
                 if regexp(MoleculeNames{i},'[0-9]+-[0-9]+-[0-9]')
                     [Li,Lo] = ismember(MoleculeNames(i),model.CACO2.CAS);
+                elseif regexp(MoleculeNames{i},'CHEMBL[0-9]+')
+                    [Li,Lo] = ismember(MoleculeNames{i},model.CACO2.CAS);    
                 elseif regexp(MoleculeNames{i},'DTXSID[0-9]+')
                     [Li,Lo] = ismember(MoleculeNames{i},model.CACO2.DTXSID);
                 end
@@ -6856,19 +7234,19 @@ else
 %                 model.CACO2.CAS=strrep(strrep(join(model.CACO2.CAS,'|',2),'|||',''),'||','');
 %                 model.CACO2.DTXSID=strrep(strrep(join(model.CACO2.DTXSID,'|',2),'|||',''),'||','');
                 CACO2_CAS_neighbor(i,:)=CACO2_CAS(pred_neighbors(i,:));
-                %CACO2_InChiKey_neighbor(i,:)=model.CACO2.InChiKey(pred_neighbors(i,:));
+                CACO2_InChiKey_neighbor(i,:)=model.CACO2.InChiKey(pred_neighbors(i,:));
                 CACO2_DTXSID_neighbor(i,:)=CACO2_DTXSID(pred_neighbors(i,:));
                 %CACO2_DSSTOXMPID_neighbor(i,:)=model.CACO2.DSSTOXMPID(pred_neighbors(i,:));
                 if res.AD_index_CACO2(i)~=0
                     res.CACO2_CAS_neighbor(i,:)=CACO2_CAS_neighbor(i,:);
-                    %res.CACO2_InChiKey_neighbor(i,:)=CACO2_InChiKey_neighbor(i,:);
+                    res.CACO2_InChiKey_neighbor(i,:)=CACO2_InChiKey_neighbor(i,:);
                     res.CACO2_DTXSID_neighbor(i,:)=CACO2_DTXSID_neighbor(i,:);
                     %res.CACO2_DSSTOXMPID_neighbor(i,:)=CACO2_DSSTOXMPID_neighbor(i,:);
                     res.CACO2_Exp_neighbor(i,:)=CACO2_Exp_neighbor(i,:);
                     res.CACO2_pred_neighbor(i,:)=CACO2_pred_neighbor(i,:);
                 else
                     res.CACO2_CAS_neighbor(i,:)=cell(1,5);
-                    %res.CACO2_InChiKey_neighbor(i,:)=cell(1,5);
+                    res.CACO2_InChiKey_neighbor(i,:)=cell(1,5);
                     res.CACO2_DTXSID_neighbor(i,:)=cell(1,5);
                     %res.CACO2_DSSTOXMPID_neighbor(i,:)=cell(1,5);
                     res.CACO2_Exp_neighbor(i,:)=nan(1,5);
@@ -6998,7 +7376,7 @@ else
     
     % Tox properties
     
-    if verbose> 0 && (tox||all)
+    if verbose> 0 && (tox||calcAll)
         fprintf(1,'---------- Toxcity Endpoints ----------\n');
     end
     
@@ -7039,6 +7417,16 @@ else
         
         XinCDK_CERAPP=XinCDK(:,model.CERAPP.cdk_in);
         Xtest=[Xin(:,train.PadelVarIn(model.CERAPP.Padel_in)), XinCDK_CERAPP];
+
+                %%% Check for NaN
+        idx = all(isnan(Xtest), 1);
+        if any(idx)
+            error('Some CERAPP descriptors failed. Check input and repeat calculation.');
+        end
+        if any(any(isnan(Xtest)))
+            disp('WARNING: Seems like some compounds failed CERAPP calculations. Check input and repeat calculation.');
+        end
+        %%%
         
         XtestAG=Xtest(:,model.CERAPP.model_AG.DescAG_i);
         XtestAN=Xtest(:,model.CERAPP.model_AN.DescAN_i);
@@ -7318,7 +7706,26 @@ else
             end
             res.AD_index_CERAPP_Bind(i,1)=round(res.AD_index_CERAPP_Bind(i,1),3); 
             res.Conf_index_CERAPP_Bind(i,1)=round(res.Conf_index_CERAPP_Bind(i,1),3);
-            
+
+            if isempty(find(~isnan(predAG_dc(i,:)), 1)) || isnan(res.CERAPP_Ago_pred(i,1))
+                res.CERAPP_Ago_pred(i,1)=NaN;
+                res.AD_CERAPP_Ago(i)=0;
+                res.AD_index_CERAPP_Ago(i)=0;
+                res.Conf_index_CERAPP_Ago(i,1)=0;
+            end
+            if isempty(find(~isnan(predAN_dc(i,:)), 1)) || isnan(res.CERAPP_Anta_pred(i,1))
+                res.CERAPP_Anta_pred(i,1)=NaN;
+                res.AD_CERAPP_Anta(i)=0;
+                res.AD_index_CERAPP_Anta(i)=0;
+                res.Conf_index_CERAPP_Anta(i,1)=0;
+            end
+            if isempty(find(~isnan(predBD_dc(i,:)), 1)) || isnan(res.CERAPP_Bind_pred(i,1))
+                res.CERAPP_Bind_pred(i,1)=NaN;
+                res.AD_CERAPP_Bind(i)=0;
+                res.AD_index_CERAPP_Bind(i)=0;
+                res.Conf_index_CERAPP_Bind(i,1)=0;
+            end
+
             if Xin(i,12)==0
                 res.AD_CERAPP_Ago(i)=0;
                 res.AD_index_CERAPP_Ago(i)=res.AD_index_CERAPP_Ago(i)/2;
@@ -7537,6 +7944,16 @@ else
         %XlabelsCDK
         XinCDK_CoMPARA=XinCDK(:,model.COMPARA.cdk_in);
         Xtest=[Xin(:,train.PadelVarIn(model.COMPARA.Padel_in)), XinCDK_CoMPARA];
+
+                %%% Check for NaN
+        idx = all(isnan(Xtest), 1);
+        if any(idx)
+            error('Some CoMPARA descriptors failed. Check input and repeat calculation.');
+        end
+        if any(any(isnan(Xtest)))
+            disp('WARNING: Seems like some compounds failed CoMPARA calculations. Check input and repeat calculation.');
+        end
+        %%%
         
         XtestAG=Xtest(:,model.COMPARA.model_AG.DescAG_i);
         XtestAN=Xtest(:,model.COMPARA.model_AN.DescAN_i);
@@ -7813,6 +8230,25 @@ else
             end
             res.AD_index_CoMPARA_Bind(i,1)=round(res.AD_index_CoMPARA_Bind(i,1),3); 
             res.Conf_index_CoMPARA_Bind(i,1)=round(res.Conf_index_CoMPARA_Bind(i,1),3);
+
+            if isempty(find(~isnan(predAG_dc(i,:)), 1)) || isnan(res.CoMPARA_Ago_pred(i,1))
+                res.CoMPARA_Ago_pred(i,1)=NaN;
+                res.AD_CoMPARA_Ago(i)=0;
+                res.AD_index_CoMPARA_Ago(i)=0;
+                res.Conf_index_CoMPARA_Ago(i,1)=0;
+            end
+            if isempty(find(~isnan(predAN_dc(i,:)), 1)) || isnan(res.CoMPARA_Anta_pred(i,1))
+                res.CoMPARA_Anta_pred(i,1)=NaN;
+                res.AD_CoMPARA_Anta(i)=0;
+                res.AD_index_CoMPARA_Anta(i)=0;
+                res.Conf_index_CoMPARA_Anta(i,1)=0;
+            end
+            if isempty(find(~isnan(predBD_dc(i,:)), 1)) || isnan(res.CoMPARA_Bind_pred(i,1))
+                res.CoMPARA_Bind_pred(i,1)=NaN;
+                res.AD_CoMPARA_Bind(i)=0;
+                res.AD_index_CoMPARA_Bind(i)=0;
+                res.Conf_index_CoMPARA_Bind(i,1)=0;
+            end
             
             if Xin(i,12)==0
                 res.AD_CoMPARA_Ago(i)=0;
@@ -8030,6 +8466,16 @@ else
         %XlabelsCDK
         XinCDK_CATMoS=XinCDK(:,model.CATMOS.cdk_in);
         Xtest=[Xin(:,train.PadelVarIn(model.CATMOS.Padel_in)), XinCDK_CATMoS];
+
+                %%% Check for NaN
+        idx = all(isnan(Xtest), 1);
+        if any(idx)
+            error('Some CATMoS descriptors failed. Check input and repeat calculation.');
+        end
+        if any(any(isnan(Xtest)))
+            disp('WARNING: Seems like some compounds failed CATMoS calculations. Check input and repeat calculation.');
+        end
+        %%%
         
         XtestVT=Xtest(:,model.CATMOS.model_VT.DescVT_i);
         XtestNT=Xtest(:,model.CATMOS.model_NT.DescNT_i);
@@ -8060,54 +8506,106 @@ else
                 parpool;
             end
         end
+        if salt ==0
+            SaltIndex=zeros(size(Xtest,1),1);
+
+            La=zeros(length(MoleculeNames),1);
+            Lb=zeros(length(MoleculeNames),1);
+            CAS=train.DSSToxQSARr{:,2};
+            DTXSID=train.DSSToxQSARr{:,3};
+            DTXCID=train.DSSToxQSARr{:,4};
+            InChiKey=train.DSSToxQSARr{:,5};
+            SaltInfo=train.DSSToxQSARr.SaltInfo;
+            parfor i=1:length(MoleculeNames)
+                if ~contains(MoleculeNames(i),'AUTOGEN_')
+                    if regexp(MoleculeNames{i},'[0-9]+-[0-9]+-[0-9]')
+                        [La(i),Lb(i)] = ismember(MoleculeNames{i},CAS);
+                    elseif regexp(MoleculeNames{i},'DTXSID[0-9]+')
+                        [La(i),Lb(i)] = ismember(MoleculeNames{i},DTXSID);
+                    elseif regexp(MoleculeNames{i},'DTXCID[0-9]+')
+                        [La(i),Lb(i)] = ismember(MoleculeNames{i},DTXCID);
+                    elseif regexp(MoleculeNames{i},'[A-Z]+-[A-Z]+-[A-Z]')
+                        [La(i),Lb(i)] = ismember(MoleculeNames{i},InChiKey);
+                    end
+                    if La(i)
+                        %salt=1;
+                        SaltIndex(i,1)=SaltInfo(Lb(i));
+                    end
+                end
+            end
+            if any(La)
+                salt=1;
+            end
+        end
+        
+        if verbose>0
+            if salt==1 && ~isempty(FileSalt)
+                disp('The provided salt info. used in the predictions');
+            elseif salt==1 && isempty(FileSalt)
+                disp('Salt info. was retrieved using the provided IDs');
+                if any(~La)
+                    disp('WARNING: Some IDs were not found. May affect predictions');
+                end
+            elseif salt==0
+                disp('No salt info found. May affect predictions. Use standardize or provide IDs');
+            end
+            
+        end
+        Xtest=[Xtest SaltIndex];
+        Desc=[Desc,'SaltIndex'];
         parfor i=1:length(Xtest(:,1))
-            predVT = knnpred2(XtestVT(i,:),model.CATMOS.model_VT.set.train,model.CATMOS.model_VT.set.class,model.CATMOS.model_VT.set.class_Exp+1,model.CATMOS.model_VT.set.K,model.CATMOS.model_VT.set.dist_type,model.CATMOS.model_VT.set.param.pret_type);
+            predVT = knnpred2([XtestVT(i,:) SaltIndex(i,:)],model.CATMOS.model_VT.set.train,model.CATMOS.model_VT.set.class,model.CATMOS.model_VT.set.class_Exp+1,model.CATMOS.model_VT.set.K,model.CATMOS.model_VT.set.dist_type,model.CATMOS.model_VT.set.param.pret_type);
             %predVT.D=diag(predVT.D);
+            predVTD(i,:)=single(predVT.D);
             predVT.D=[];
             predVT_neighbors(i,:)=predVT.neighbors;
             predVT_w(i,:)=predVT.w;
             VT_class_pred(i,:)=predVT.class_pred;
-            AD=classical_leverage(model.CATMOS.model_VT.set.train,XtestVT(i,:),'auto');
+            AD=classical_leverage(model.CATMOS.model_VT.set.train(:,1:end-1),XtestVT(i,:),'auto');
             AD_VT(i)=AD.inorout;
             predVT_dc(i,:)=predVT.dc;
             
-            predNT = knnpred2(XtestNT(i,:),model.CATMOS.model_NT.set.train,model.CATMOS.model_NT.set.class,model.CATMOS.model_NT.set.class_Exp+1,model.CATMOS.model_NT.set.K,model.CATMOS.model_NT.set.dist_type,model.CATMOS.model_NT.set.param.pret_type);
+            predNT = knnpred2([XtestNT(i,:) SaltIndex(i,:)],model.CATMOS.model_NT.set.train,model.CATMOS.model_NT.set.class,model.CATMOS.model_NT.set.class_Exp+1,model.CATMOS.model_NT.set.K,model.CATMOS.model_NT.set.dist_type,model.CATMOS.model_NT.set.param.pret_type);
             %predNT.D=diag(predNT.D);
+            predNTD(i,:)=single(predNT.D);
             predNT.D=[];
             predNT_neighbors(i,:)=predNT.neighbors;
             predNT_w(i,:)=predNT.w;
             NT_class_pred(i,:)=predNT.class_pred;
-            AD=classical_leverage(model.CATMOS.model_NT.set.train,XtestNT(i,:),'auto');
+            AD=classical_leverage(model.CATMOS.model_NT.set.train(:,1:end-1),XtestNT(i,:),'auto');
             AD_NT(i)=AD.inorout;
             predNT_dc(i,:)=predNT.dc;
             
-            predEPA = knnpred2(XtestEPA(i,:),model.CATMOS.model_EPA.set.train,model.CATMOS.model_EPA.set.class,model.CATMOS.model_EPA.set.class_Exp,model.CATMOS.model_EPA.set.K,model.CATMOS.model_EPA.set.dist_type,model.CATMOS.model_EPA.set.param.pret_type);
+            predEPA = knnpred2([XtestEPA(i,:) SaltIndex(i,:)],model.CATMOS.model_EPA.set.train,model.CATMOS.model_EPA.set.class,model.CATMOS.model_EPA.set.class_Exp,model.CATMOS.model_EPA.set.K,model.CATMOS.model_EPA.set.dist_type,model.CATMOS.model_EPA.set.param.pret_type);
             %predEPA.D=diag(predEPA.D);
+            predEPAD(i,:)=single(predEPA.D);
             predEPA.D=[];
             predEPA_neighbors(i,:)=predEPA.neighbors;
             predEPA_w(i,:)=predEPA.w;
             EPA_class_pred(i,:)=predEPA.class_pred;
-            AD=classical_leverage(model.CATMOS.model_EPA.set.train,XtestEPA(i,:),'auto');
+            AD=classical_leverage(model.CATMOS.model_EPA.set.train(:,1:end-1),XtestEPA(i,:),'auto');
             AD_EPA(i)=AD.inorout;
             predEPA_dc(i,:)=predEPA.dc;
             
-            predGHS = knnpred2(XtestGHS(i,:),model.CATMOS.model_GHS.set.train,model.CATMOS.model_GHS.set.class,model.CATMOS.model_GHS.set.class_Exp,model.CATMOS.model_GHS.set.K,model.CATMOS.model_GHS.set.dist_type,model.CATMOS.model_GHS.set.param.pret_type);
+            predGHS = knnpred2([XtestGHS(i,:) SaltIndex(i,:)],model.CATMOS.model_GHS.set.train,model.CATMOS.model_GHS.set.class,model.CATMOS.model_GHS.set.class_Exp,model.CATMOS.model_GHS.set.K,model.CATMOS.model_GHS.set.dist_type,model.CATMOS.model_GHS.set.param.pret_type);
             %predGHS.D=diag(predGHS.D);
+            predGHSD(i,:)=single(predGHS.D);
             predGHS.D=[];
             predGHS_neighbors(i,:)=predGHS.neighbors;
             predGHS_w(i,:)=predGHS.w;
             GHS_class_pred(i,:)=predGHS.class_pred;
-            AD=classical_leverage(model.CATMOS.model_GHS.set.train,XtestGHS(i,:),'auto');
+            AD=classical_leverage(model.CATMOS.model_GHS.set.train(:,1:end-1),XtestGHS(i,:),'auto');
             AD_GHS(i)=AD.inorout;
             predGHS_dc(i,:)=predGHS.dc;
             
-            predLD50 = nnrpred2(XtestLD50(i,:),model.CATMOS.model_LD50.set.train,model.CATMOS.model_LD50.set.y,model.CATMOS.model_LD50.set.y_Exp_nAll,model.CATMOS.model_LD50.set.K,model.CATMOS.model_LD50.set.dist_type,model.CATMOS.model_LD50.set.param.pret_type);
+            predLD50 = nnrpred2([XtestLD50(i,:) SaltIndex(i,:)],model.CATMOS.model_LD50.set.train,model.CATMOS.model_LD50.set.y,model.CATMOS.model_LD50.set.y_Exp_nAll,model.CATMOS.model_LD50.set.K,model.CATMOS.model_LD50.set.dist_type,model.CATMOS.model_LD50.set.param.pret_type);
             %predLD50.D=diag(predLD50.D);
+            predLD50D(i,:)=single(predLD50.D);
             predLD50.D=[];
             predLD50_neighbors(i,:)=predLD50.neighbors;
             predLD50_w(i,:)=predLD50.w;
             LD50_pred_weighted(i,:)=predLD50.y_pred_weighted;
-            AD=classical_leverage(model.CATMOS.model_LD50.set.train,XtestLD50(i,:),'auto');
+            AD=classical_leverage(model.CATMOS.model_LD50.set.train(:,1:end-1),XtestLD50(i,:),'auto');
             AD_LD50(i)=AD.inorout;
             predLD50_dc(i,:)=predLD50.dc;
             
@@ -8117,6 +8615,13 @@ else
         clear('predEPA');
         clear('predGHS');
         clear('predLD50');
+
+        predVT = pack_pred_struct(predVTD, predVT_neighbors, predVT_w, predVT_dc, VT_class_pred);
+        predNT = pack_pred_struct(predNTD, predNT_neighbors, predNT_w, predNT_dc, NT_class_pred);
+        predEPA = pack_pred_struct(predEPAD, predEPA_neighbors, predEPA_w, predEPA_dc, EPA_class_pred);
+        predGHS = pack_pred_struct(predGHSD, predGHS_neighbors, predGHS_w, predGHS_dc, GHS_class_pred);
+        predLD50 = pack_pred_struct(predLD50D, predLD50_neighbors, predLD50_w, predLD50_dc, [], LD50_pred_weighted);
+        
         %AD=classical_leverage(CATMOS.model.set.train,Xtest,'auto');
         
         res.MoleculeID=MoleculeNames;
@@ -8215,7 +8720,10 @@ else
 %             Li_epa=0;
 %             Li_ghs=0;
             Li_ld50=0;
-            if ~contains(MoleculeNames(i),'AUTOGEN_')
+            Lo_ld50=0;
+            if exp 
+            res.CATMoS_LD50_exp(i,1)={'NA'};
+                if ~contains(MoleculeNames(i),'AUTOGEN_')
                 if regexp(MoleculeNames{i},'[0-9]+-[0-9]+-[0-9]')
 %                     [Li_vt,Lo_vt] = ismember(MoleculeNames(i),train.CATMOS.model_VT.CAS);
 %                     [Li_nt,Lo_nt] = ismember(MoleculeNames(i),train.CATMOS.model_NT.CAS);
@@ -8242,28 +8750,29 @@ else
 %                     res.CATMoS_GHS_exp(i,1)=train.CATMOS.model_GHS.set.class_Exp(Lo_ghs);
 %                 end
                 if Li_ld50
-                    res.AD_VT(i)=1;
-                    res.AD_index_VT(i,1)=1;
-                    res.CATMoS_VT_pred(i,1)=model.CATMOS.model_VT.set.class(Lo_ld50)-1;
-                    res.AD_NT(i)=1;
-                    res.AD_index_NT(i,1)=1;
-                    res.CATMoS_NT_pred(i,1)=model.CATMOS.model_NT.set.class(Lo_ld50)-1;
-                    res.AD_EPA(i)=1;
-                    res.AD_index_EPA(i,1)=1;
-                    res.CATMoS_EPA_pred(i,1)=model.CATMOS.model_EPA.set.class(Lo_ld50);
-                    res.AD_GHS(i)=1;
-                    res.AD_index_GHS(i,1)=1;
-                    res.CATMoS_GHS_pred(i,1)=model.CATMOS.model_GHS.set.class(Lo_ld50);
-                    res.AD_LD50(i)=1;
-                    res.AD_index_LD50(i,1)=1;
-                    res.CATMoS_LD50_pred(i,1)=model.CATMOS.model_LD50.set.y(Lo_ld50);
-                    if exp
+                    % res.AD_VT(i)=1;
+                    % res.AD_index_VT(i,1)=1;
+                    % %res.CATMoS_VT_pred(i,1)=model.CATMOS.model_VT.set.class(Lo_ld50)-1;
+                    % res.AD_NT(i)=1;
+                    % res.AD_index_NT(i,1)=1;
+                    % %res.CATMoS_NT_pred(i,1)=model.CATMOS.model_NT.set.class(Lo_ld50)-1;
+                    % res.AD_EPA(i)=1;
+                    % res.AD_index_EPA(i,1)=1;
+                    % %res.CATMoS_EPA_pred(i,1)=model.CATMOS.model_EPA.set.class(Lo_ld50);
+                    % res.AD_GHS(i)=1;
+                    % res.AD_index_GHS(i,1)=1;
+                    % %res.CATMoS_GHS_pred(i,1)=model.CATMOS.model_GHS.set.class(Lo_ld50);
+                    % res.AD_LD50(i)=1;
+                    % res.AD_index_LD50(i,1)=1;
+                    % %res.CATMoS_LD50_pred(i,1)=model.CATMOS.model_LD50.set.y(Lo_ld50);
+                    %if exp
                         res.CATMoS_LD50_exp(i,1)=model.CATMOS.model_LD50.set.y_Exp(Lo_ld50);
-                    end
-                else
-                    if exp
-                        res.CATMoS_LD50_exp(i,1)={'NA'};
-                    end
+                    %end
+                % else
+                %     if exp
+                %         res.CATMoS_LD50_exp(i,1)={'NA'};
+                %     end
+                end
                 end
             end
             %res.AD_index_VT(i,1)=1./(1+predVT.dc(i,1)*predVT.w(i,~isnan(predVT.dc(i,1)))');
@@ -8289,10 +8798,44 @@ else
                 res.Conf_index_LD50(i,1)=0;
             end
             
+            %----Pre-WoE endpoint confidence coverage adjustment----
+            % [res, endpointConfCovDiag] = conf_index_adjust(res, i, CATMOS, predVT, predNT, predEPA, predGHS, predLD50, ...
+            %     'BonusThreshold', 3, 'BonusMax', 0.1, 'PenaltyMax', 0.1, 'EffectPower', 1.0);
+            [res, endpointConfCovDiag] = conf_index_adjustv2(res, i, model.CATMOS, predVT, predNT, predEPA, predGHS, predLD50, ...
+                'EffectMode', 'blend','BlendStrength', 0.25,'BonusThreshold', 3, 'EffectPower', 1.0);
+
             %WOE corrections
             %res.CATMoS_LD50_pred_i(i,1)=10^res.CATMoS_LD50_pred(i);
             %res.CATMoS_LD50_range{i,1}='';
-            res=woe_corr(res,i);
+            res=woe_corrV76(res,i);
+            
+            
+            %----Identify nearest neighbors----
+            neighborsIDs = [];
+            neighborsW  = [];
+            neighborsSrc = {};
+
+            winModels = res.CATMoS_winning_model_names{i,1};
+
+            if ismember('LD50',winModels)
+
+                neighborsIDs = predLD50.neighbors(i,:);
+                neighborsW  = predLD50.w(i,:);
+                neighborsSrc = repmat({'LD50'},1,numel(neighborsIDs));
+                neighborsScore = neighborsW;
+                neighborsDC = predLD50.dc(i,:);
+
+            else
+                [neighborsIDs, neighborsSrc, neighborsScore, neighborsDC, neighborsW] = catmos_consensus_neighbors_with_weights(res,i,predVT,predNT,predEPA,predGHS,predLD50);
+            end
+
+            %res.CATMoS_consensus_neighbors_source{i,1} = neighborsSrc;
+
+            res=rmfield(res,{'CATMoS_winning_model_names','CATMoS_winning_model_idx'});
+
+            %-----------------------
+            
+            
             %res.CATMoS_LD50_predRange{i,1}=strcat('[',num2str(floor(10^(res.CATMoS_LD50_pred(i)-0.3))),'-',num2str(ceil(10^(res.CATMoS_LD50_pred(i)+0.3))),']');
             if  res.CATMoS_LD50_pred(i)<=2.3
                 res.CATMoS_LD50_predRange{i,1}=strcat('[',num2str(round(10^(res.CATMoS_LD50_pred(i)-0.25),1,'significant')),':',num2str(round(10^(res.CATMoS_LD50_pred(i)+0.25),2,'significant')),']');
@@ -8302,32 +8845,40 @@ else
             if 10^(res.CATMoS_LD50_pred(i))>=5
                 res.CATMoS_LD50_pred(i)=round(10^res.CATMoS_LD50_pred(i));
             else
-                res.CATMoS_LD50_pred(i)=round(10^res.CATMoS_LD50_pred(i),2);
+                res.CATMoS_LD50_pred(i)=round(10^res.CATMoS_LD50_pred(i),1);
             end
             
                        
-            if Li_ld50 || (predLD50_dc(i,1)==0 && predLD50_w(i,1)==1)
-                res.AD_CATMoS(i,1)=1;
-                res.AD_index_CATMoS(i,1)=1;
-            end
-
-            if predLD50_w(i,1)==1 && ~isnan(model.CATMOS.model_LD50.set.y_Exp_nAll(predLD50_neighbors(i,1)))  
-                Std_index_CATMoS=1;
-            elseif isnan(model.CATMOS.model_LD50.set.y_Exp_nAll(predLD50_neighbors(i,1))) && length(find(~isnan(model.CATMOS.model_LD50.set.y_Exp_nAll(predLD50_neighbors(i,:))))) <= 1
-                Std_index_CATMoS=0;
-            elseif ~isnan(model.CATMOS.model_LD50.set.y_Exp_nAll(predLD50_neighbors(i,1))) && length(find(~isnan(model.CATMOS.model_LD50.set.y_Exp_nAll(predLD50_neighbors(i,:))))) <= 1
-                Std_index_CATMoS=1-(std([log10(res.CATMoS_LD50_pred(i)), model.CATMOS.model_LD50.set.y_Exp_nAll(predLD50_neighbors(i,1))],[1,predLD50_w(i,1)]))/std(model.CATMOS.model_LD50.set.y_Exp_nAll(find(~isnan(model.CATMOS.model_LD50.set.y_Exp_nAll))));
-            elseif sum(predLD50_w(i,find(~isnan(model.CATMOS.model_LD50.set.y_Exp_nAll(predLD50_neighbors(i,:))))))==0
-                Std_index_CATMoS=(1-(std(model.CATMOS.model_LD50.set.y_Exp_nAll(predLD50_neighbors(i,find(~isnan(model.CATMOS.model_LD50.set.y_Exp_nAll(predLD50_neighbors(i,:)))))))/std(model.CATMOS.model_LD50.set.y_Exp_nAll(find(~isnan(model.CATMOS.model_LD50.set.y_Exp_nAll))))));
-            else                
-                Std_index_CATMoS=(1-(std(model.CATMOS.model_LD50.set.y_Exp_nAll(predLD50_neighbors(i,find(~isnan(model.CATMOS.model_LD50.set.y_Exp_nAll(predLD50_neighbors(i,:)))))),predLD50_w(i,find(~isnan(model.CATMOS.model_LD50.set.y_Exp_nAll(predLD50_neighbors(i,:))))))/std(model.CATMOS.model_LD50.set.y_Exp_nAll(find(~isnan(model.CATMOS.model_LD50.set.y_Exp_nAll))))));
-            end
-            
-%             if res.AD_index_CATMoS(i,1)==1
-%                 res.Conf_index_CATMoS(i,1)=max(0.6*res.Conf_index_CATMoS(i,1)+0.4*(1-(std(CATMOS.model_LD50.set.y(predLD50_neighbors(i,:)),predLD50_w(i,:))/std(CATMOS.model_LD50.set.y))),0.1);
-%             else
-                res.Conf_index_CATMoS(i,1)=max(0.5*res.Conf_index_CATMoS(i,1)+0.3*Std_index_CATMoS+0.2*(1-(std(model.CATMOS.model_LD50.set.y(predLD50_neighbors(i,:)),predLD50_w(i,:))/std(model.CATMOS.model_LD50.set.y))),0.1);
+            % if Li_ld50 || (predLD50_dc(i,1)==0 && predLD50_w(i,1)==1)
+            %     res.AD_CATMoS(i,1)=1;
+            %     res.AD_index_CATMoS(i,1)=1;
+            % end
+% %%%%%%%%%%---Alter Conf_index
+%             %old formula V2.9.2
+%             if predLD50_w(i,1)==1 && ~isnan(model.CATMOS.model_LD50.set.y_Exp_nAll(predLD50_neighbors(i,1)))  
+%                 Std_index_CATMoS=1;
+%             elseif isnan(model.CATMOS.model_LD50.set.y_Exp_nAll(predLD50_neighbors(i,1))) && length(find(~isnan(model.CATMOS.model_LD50.set.y_Exp_nAll(predLD50_neighbors(i,:))))) <= 1
+%                 Std_index_CATMoS=0;
+%             elseif ~isnan(model.CATMOS.model_LD50.set.y_Exp_nAll(predLD50_neighbors(i,1))) && length(find(~isnan(model.CATMOS.model_LD50.set.y_Exp_nAll(predLD50_neighbors(i,:))))) <= 1
+%                 Std_index_CATMoS=1-(std([log10(res.CATMoS_LD50_pred(i)), model.CATMOS.model_LD50.set.y_Exp_nAll(predLD50_neighbors(i,1))],[1,predLD50_w(i,1)]))/std(model.CATMOS.model_LD50.set.y_Exp_nAll(find(~isnan(model.CATMOS.model_LD50.set.y_Exp_nAll))));
+%             elseif sum(predLD50_w(i,find(~isnan(model.CATMOS.model_LD50.set.y_Exp_nAll(predLD50_neighbors(i,:))))))==0
+%                 Std_index_CATMoS=(1-(std(model.CATMOS.model_LD50.set.y_Exp_nAll(predLD50_neighbors(i,find(~isnan(model.CATMOS.model_LD50.set.y_Exp_nAll(predLD50_neighbors(i,:)))))))/std(model.CATMOS.model_LD50.set.y_Exp_nAll(find(~isnan(model.CATMOS.model_LD50.set.y_Exp_nAll))))));
+%             else                
+%                 Std_index_CATMoS=(1-(std(model.CATMOS.model_LD50.set.y_Exp_nAll(predLD50_neighbors(i,find(~isnan(model.CATMOS.model_LD50.set.y_Exp_nAll(predLD50_neighbors(i,:)))))),predLD50_w(i,find(~isnan(model.CATMOS.model_LD50.set.y_Exp_nAll(predLD50_neighbors(i,:))))))/std(model.CATMOS.model_LD50.set.y_Exp_nAll(find(~isnan(model.CATMOS.model_LD50.set.y_Exp_nAll))))));
 %             end
+% 
+% %             if res.AD_index_CATMoS(i,1)==1
+% %                 res.Conf_index_CATMoS(i,1)=max(0.6*res.Conf_index_CATMoS(i,1)+0.4*(1-(std(CATMOS.model_LD50.set.y(predLD50_neighbors(i,:)),predLD50_w(i,:))/std(CATMOS.model_LD50.set.y))),0.1);
+% %             else
+%                 res.Conf_index_CATMoS(i,1)=max(0.5*res.Conf_index_CATMoS(i,1)+0.3*Std_index_CATMoS+0.2*(1-(std(model.CATMOS.model_LD50.set.y(predLD50_neighbors(i,:)),predLD50_w(i,:))/std(model.CATMOS.model_LD50.set.y))),0.1);
+% %             end
+
+            %[res, Std_index_CATMoS, localY_index_CATMoS, nnConfDiag] = catmos_neighbor_conf_adjust(res,i,CATMOS,neighborsIDs,neighborsW,'UseCoverageWeight', true, 'CoverageMode', 'bonus', 'CoverageBonusStrength', 0.05);
+            %[res, nnConfDiag] = catmos_conf_index_adjuster_v2(res, i, CATMOS, neighborsIDs, neighborsW,'NeighborScore', neighborsScore); %,'UsePredExpAgreement', true,'PredExpWeight', 0.10);
+            %[res, nnConfDiag] = catmos_conf_index_adjuster_v8( res, i, CATMOS, neighborsIDs, neighborsW, 'NeighborScore', neighborsScore, 'WeightMode', 'auto', 'UsePredExpAgreement', true);
+            [res, nnConfDiag] = catmos_conf_index_adjuster_v10(res, i, model.CATMOS, neighborsIDs, neighborsW, 'NeighborScore', neighborsScore, 'WeightMode', 'auto', 'UsePredExpAgreement', true,'PredExpMode', 'bin_overlap');
+            [res, adDiag] = catmos_ad_index_adjuster(res, i,predVT, predNT, predEPA, predGHS, predLD50, neighborsIDs, neighborsSrc,'NeighborScore', neighborsScore,'NeighborsDC', neighborsDC);
+
 
             if res.AD_index_CATMoS(i,1)>=0.6 && res.Conf_index_CATMoS(i,1)>=0.5
                 res.AD_CATMoS(i,1)=1;
@@ -8339,13 +8890,23 @@ else
             end
             res.AD_index_CATMoS(i,1)=round(res.AD_index_CATMoS(i,1),3); 
             res.Conf_index_CATMoS(i,1)=round(res.Conf_index_CATMoS(i,1),3);
-            
+            if salt==1 && isempty(FileSalt)
+                if La(i)==0
+                    res.AD_index_CATMoS(i)=0.75*res.AD_index_CATMoS(i);
+                    res.Conf_index_CATMoS(i,1)=0.75*res.Conf_index_CATMoS(i,1);
+                end
+            end
             if Xin(i,12)==0
                 res.AD_CATMoS(i)=0;
                 res.AD_index_CATMoS(i)=res.AD_index_CATMoS(i)/2;
                 res.Conf_index_CATMoS(i,1)=res.Conf_index_CATMoS(i,1)/2;
             end
-            if  isnan(res.CATMoS_LD50_pred(i))
+            if  isnan(res.CATMoS_LD50_pred(i)) || isempty(find(~isnan(predVT_dc(i,:)), 1)) || isempty(find(~isnan(predNT_dc(i,:)), 1)) || isempty(find(~isnan(predEPA_dc(i,:)), 1)) || isempty(find(~isnan(predGHS_dc(i,:)), 1)) || isempty(find(~isnan(predLD50_dc(i,:)), 1))
+                res.CATMoS_VT_pred(i)=NaN;
+                res.CATMoS_NT_pred(i)=NaN;
+                res.CATMoS_GHS_pred(i)=NaN;
+                res.CATMoS_EPA_pred(i)=NaN;
+                res.CATMoS_LD50_pred(i)=NaN;
                 res.AD_CATMoS(i,1)=0;
                 res.AD_index_CATMoS(i)=0;
                 res.Conf_index_CATMoS(i,1)=0;
@@ -8423,12 +8984,12 @@ else
 %                 model.CATMOS.model_LD50.DTXSID=strrep(strrep(join(CATMOS.model_LD50.DTXSID,'|',2),'|||',''),'||','');
                 if res.AD_index_LD50(i,:)~=0
                     %res.LD50_CATMoS_ID_neighbor(i,:)=train.CATMOS.model_LD50.ChemID(predLD50.neighbors(i,:));
-                    res.CAS_neighbor(i,:)=model.CATMOS.model_LD50.CAS(predLD50_neighbors(i,:));
-                    res.InChiKey_neighbor(i,:)=model.CATMOS.model_LD50.InChiKey(predLD50_neighbors(i,:));
-                    res.DTXSID_neighbor(i,:)=model.CATMOS.model_LD50.DTXSID(predLD50_neighbors(i,:));
+                    res.CAS_neighbor(i,:)=model.CATMOS.model_LD50.CAS(neighborsIDs);
+                    res.InChiKey_neighbor(i,:)=model.CATMOS.model_LD50.InChiKey(neighborsIDs);
+                    res.DTXSID_neighbor(i,:)=model.CATMOS.model_LD50.DTXSID(neighborsIDs);
                     %res.LD50_DSSTOXMPID_neighbor(i,:)=train.CATMOS.model_LD50.DSSTOXMPID(pred.neighbors(i,:));
-                    res.LD50_Exp_neighbor(i,:)=model.CATMOS.model_LD50.set.y_Exp(predLD50_neighbors(i,:));
-                    res.LD50_pred_neighbor(i,:)=round(10.^(model.CATMOS.model_LD50.set.y(predLD50_neighbors(i,:))),2);
+                    res.LD50_Exp_neighbor(i,:)=model.CATMOS.model_LD50.set.y_Exp(neighborsIDs);
+                    res.LD50_pred_neighbor(i,:)=round(10.^(model.CATMOS.model_LD50.set.y(neighborsIDs)),2);
                 else
                     res.CAS_neighbor(i,:)=cell(1,5);
                     res.InChiKey_neighbor(i,:)=cell(1,5);

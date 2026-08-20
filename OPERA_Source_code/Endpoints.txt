@@ -1,16 +1,16 @@
-OPERA v2.8
+OPERA v2.9
 Structural properties:
 	StrP	v2.5	MW, nAtoms, nHeavyAtoms, nC, nO, nN, nAromAtom, nRing, nHeteroRing, Sp3Sp2HybRatio, nRotBd, nHBdAcc, nHBdDon, LipinskiFails, ToPolSurf, MRefract, Polarizability
 
 Physicochemical properties:
-    LogP	v2.6	Octanol-water partition coefficient.	QMRF:Q17-16-0016
+    LogP	v2.9	Octanol-water partition coefficient.	QMRF:Q17-16-0016
     MP	v2.9	Melting Point C.	QMRF:Q17-11-0015
     BP	v2.9	Boiling Point C at 760 mm Hg.	QMRF:Q17-12-0021
     VP	v2.9	Vapor Pressure mmHg.	QMRF:Q17-14-0013
     WS	v2.9	Water solubility Mol/L at 25C.	QMRF:Q17-13-0012
     HL	v2.9	Henrys Law constant atm-m3/mole.	QMRF:Q17-19-0020
     KOA	v2.6	The octanol/air partition coefficient.	QMRF:Q17-18-0018
-    RT	v2.6	HPLC retention time min.
+    RT	v2.6	HPLC retention time min (obsolete).
     pKa	v2.6	Logarithmic (acid) dissociation constant.
     LogD	v2.9	Octanol-water distribution coefficient.
 
@@ -25,7 +25,7 @@ Environmental fate:
 Toxicity endpoints:
     ER	v2.6	Collaborative Estrogen Receptor Activity Prediction Project (CERAPP). 
     AR	v2.6	Collaborative Modeling Project for Androgen Receptor Activity (CoMPARA). 
-    AcuteTox	v2.6	Collaborative Acute Toxicity Modeling Suite (CATMoS). 
+    AcuteTox	v2.9	Collaborative Acute Toxicity Modeling Suite (CATMoS). 
 
 ADME endpoints:
     FuB	v2.8	Human plasma fraction unbound  
