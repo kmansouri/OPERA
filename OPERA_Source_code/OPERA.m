@@ -1417,8 +1417,7 @@ else
             if isnan(res.AD_LogP(i,1))
                 res.AD_LogP(i,1)=0;
             end
-            res.AD_index_LogP(i,1)=round(res.AD_index_LogP(i,1),3); 
-            res.Conf_index_LogP(i,1)=round(res.Conf_index_LogP(i,1),3);
+            
 
             if isempty(find(~isnan(pred.dc(i,:)), 1)) || isnan(res.LogP_pred(i,1))
                 res.LogP_pred(i,1)=NaN;
@@ -1440,6 +1439,9 @@ else
                 res.AD_index_LogP(i)=res.AD_index_LogP(i)/2;
                 res.Conf_index_LogP(i,1)=res.Conf_index_LogP(i,1)/2;
             end
+
+            res.AD_index_LogP(i,1)=round(res.AD_index_LogP(i,1),2); 
+            res.Conf_index_LogP(i,1)=round(res.Conf_index_LogP(i,1),2);
             
             %res.Conf_index_LogP(i,1)=((1/(1+sqrt(((LogP_Exp_neighbor(i,:)-LogP_pred_neighbor(i,:)).^2)*pred.w(i,:)'))));
             
@@ -1807,9 +1809,7 @@ else
             if isnan(res.AD_MP(i,1))
                 res.AD_MP(i,1)=0;
             end
-            res.AD_index_MP(i,1)=round(res.AD_index_MP(i,1),3); 
-            res.Conf_index_MP(i,1)=round(res.Conf_index_MP(i,1),3);
-            
+                        
             
             if isempty(find(~isnan(pred.dc(i,:)), 1)) || isnan(res.MP_pred(i,1))
                 res.MP_pred(i,1)=NaN;
@@ -1831,6 +1831,10 @@ else
                 res.AD_index_MP(i)=res.AD_index_MP(i)/2;
                 res.Conf_index_MP(i,1)=res.Conf_index_MP(i,1)/2;
             end
+
+            res.AD_index_MP(i,1)=round(res.AD_index_MP(i,1),2); 
+            res.Conf_index_MP(i,1)=round(res.Conf_index_MP(i,1),2);
+
             if neighbors==1 
 %                 MP.CAS=strrep(strrep(join(MP.CAS,'|',2),'|||',''),'||','');
 %                 MP.DTXSID=strrep(strrep(join(MP.DTXSID,'|',2),'|||',''),'||','');
@@ -2149,9 +2153,7 @@ else
             if isnan(res.AD_BP(i,1))
                 res.AD_BP(i,1)=0;
             end
-            res.AD_index_BP(i,1)=round(res.AD_index_BP(i,1),3); 
-            res.Conf_index_BP(i,1)=round(res.Conf_index_BP(i,1),3);
-            
+                        
             if isempty(find(~isnan(pred.dc(i,:)), 1)) || isnan(res.BP_pred(i,1))
                 res.BP_pred(i,1)=NaN;
                 res.BP_predRange{i,1}='NA';
@@ -2170,6 +2172,10 @@ else
                 res.AD_index_BP(i)=res.AD_index_BP(i)/2;
                 res.Conf_index_BP(i,1)=res.Conf_index_BP(i,1)/2;
             end
+
+            res.AD_index_BP(i,1)=round(res.AD_index_BP(i,1),2); 
+            res.Conf_index_BP(i,1)=round(res.Conf_index_BP(i,1),2);
+
             if neighbors==1
 %                 BP.CAS=strrep(strrep(join(BP.CAS,'|',2),'|||',''),'||','');
 %                 BP.DTXSID=strrep(strrep(join(BP.DTXSID,'|',2),'|||',''),'||','');
@@ -2493,9 +2499,7 @@ else
             if isnan(res.AD_VP(i,1))
                 res.AD_VP(i,1)=0;
             end
-            res.AD_index_VP(i,1)=round(res.AD_index_VP(i,1),3); 
-            res.Conf_index_VP(i,1)=round(res.Conf_index_VP(i,1),3);
-            
+                        
             if isempty(find(~isnan(pred.dc(i,:)), 1)) || isnan(res.LogVP_pred(i,1))
                 res.LogVP_pred(i,1)=NaN;
                 res.VP_predRange{i,1}='NA';
@@ -2514,6 +2518,10 @@ else
                 res.AD_index_VP(i)=res.AD_index_VP(i)/2;
                 res.Conf_index_VP(i,1)=res.Conf_index_VP(i,1)/2;
             end
+
+            res.AD_index_VP(i,1)=round(res.AD_index_VP(i,1),2); 
+            res.Conf_index_VP(i,1)=round(res.Conf_index_VP(i,1),2);
+
             if neighbors==1 
 %                 VP.CAS=strrep(strrep(join(VP.CAS,'|',2),'|||',''),'||','');
 %                 VP.DTXSID=strrep(strrep(join(VP.DTXSID,'|',2),'|||',''),'||','');
@@ -2844,9 +2852,7 @@ else
             if isnan(res.AD_WS(i,1))
                 res.AD_WS(i,1)=0;
             end
-            res.AD_index_WS(i,1)=round(res.AD_index_WS(i,1),3); 
-            res.Conf_index_WS(i,1)=round(res.Conf_index_WS(i,1),3);
-            
+                        
             if isempty(find(~isnan(pred.dc(i,:)), 1)) || isnan(res.LogWS_pred(i,1))
                 res.LogWS_pred(i,1)=NaN;
                 res.WS_predRange{i,1}='NA';
@@ -2865,6 +2871,10 @@ else
                 res.AD_index_WS(i)=res.AD_index_WS(i)/2;
                 res.Conf_index_WS(i,1)=res.Conf_index_WS(i,1)/2;
             end
+
+            res.AD_index_WS(i,1)=round(res.AD_index_WS(i,1),2); 
+            res.Conf_index_WS(i,1)=round(res.Conf_index_WS(i,1),2);
+
             if neighbors==1
 %                 WS.CAS=strrep(strrep(join(WS.CAS,'|',2),'|||',''),'||','');
 %                 WS.DTXSID=strrep(strrep(join(WS.DTXSID,'|',2),'|||',''),'||','');
@@ -3152,9 +3162,7 @@ else
             if isnan(res.AD_HL(i,1))
                 res.AD_HL(i,1)=0;
             end
-            res.AD_index_HL(i,1)=round(res.AD_index_HL(i,1),3); 
-            res.Conf_index_HL(i,1)=round(res.Conf_index_HL(i,1),3);
-            
+                        
             if isempty(find(~isnan(pred.dc(i,:)), 1)) || isnan(res.LogHL_pred(i,1))
                 res.LogHL_pred(i,1)=NaN;
                 res.HL_predRange{i,1}='NA';
@@ -3167,6 +3175,10 @@ else
                 res.AD_index_HL(i)=res.AD_index_HL(i)/2;
                 res.Conf_index_HL(i,1)=res.Conf_index_HL(i,1)/2;
             end
+
+            res.AD_index_HL(i,1)=round(res.AD_index_HL(i,1),2); 
+            res.Conf_index_HL(i,1)=round(res.Conf_index_HL(i,1),2);
+
             if neighbors==1 
 %                 HL.CAS=strrep(strrep(join(HL.CAS,'|',2),'|||',''),'||','');
 %                 HL.DTXSID=strrep(strrep(join(HL.DTXSID,'|',2),'|||',''),'||','');
@@ -3444,9 +3456,7 @@ else
             if isnan(res.AD_RT(i,1))
                 res.AD_RT(i,1)=0;
             end
-            res.AD_index_RT(i,1)=round(res.AD_index_RT(i,1),3); 
-            res.Conf_index_RT(i,1)=round(res.Conf_index_RT(i,1),3);
-            
+                        
             if isempty(find(~isnan(pred.dc(i,:)), 1)) || isnan(res.RT_pred(i,1))
                 res.RT_pred(i,1)=NaN;
                 res.RT_predRange{i,1}='NA';
@@ -3464,6 +3474,10 @@ else
                 res.RT_predRange{i,1}='NA';
                 res.AD_RT(i)=0;
             end
+
+            res.AD_index_RT(i,1)=round(res.AD_index_RT(i,1),2); 
+            res.Conf_index_RT(i,1)=round(res.Conf_index_RT(i,1),2);
+
             if neighbors==1
 %                 RT.CAS=strrep(strrep(join(RT.CAS,'|',2),'|||',''),'||','');
 %                 RT.DTXSID=strrep(strrep(join(RT.DTXSID,'|',2),'|||',''),'||','');
@@ -3736,9 +3750,7 @@ else
             if isnan(res.AD_KOA(i,1))
                 res.AD_KOA(i,1)=0;
             end
-            res.AD_index_KOA(i,1)=round(res.AD_index_KOA(i,1),3); 
-            res.Conf_index_KOA(i,1)=round(res.Conf_index_KOA(i,1),3);
-            
+                        
             if isempty(find(~isnan(pred.dc(i,:)), 1)) || isnan(res.LogKOA_pred(i,1))
                 res.LogKOA_pred(i,1)=NaN;
                 res.KOA_predRange{i,1}='NA';
@@ -3751,6 +3763,10 @@ else
                 res.AD_index_KOA(i)=res.AD_index_KOA(i)/2;
                 res.Conf_index_KOA(i,1)=res.Conf_index_KOA(i,1)/2;
             end
+
+            res.AD_index_KOA(i,1)=round(res.AD_index_KOA(i,1),2); 
+            res.Conf_index_KOA(i,1)=round(res.Conf_index_KOA(i,1),2);
+
             if neighbors==1
 %                 KOA.CAS=strrep(strrep(join(KOA.CAS,'|',2),'|||',''),'||','');
 %                 KOA.DTXSID=strrep(strrep(join(KOA.DTXSID,'|',2),'|||',''),'||','');
@@ -4090,9 +4106,7 @@ else
             if isnan(res.AD_pKa(i,1))
                 res.AD_pKa(i,1)=0;
             end
-            res.AD_index_pKa(i,1)=round(res.AD_index_pKa(i,1),3); 
-            res.Conf_index_pKa(i,1)=round(res.Conf_index_pKa(i,1),3);
-            
+                        
             if isempty(find(~isnan(pred.dc(i,:)), 1)) || (isnan(res.pKa_a_pred(i,1)) && isnan(res.pKa_b_pred(i,1)))
                 res.pKa_a_pred(i,1)=NaN;
                 res.pKa_a_predRange{i,1}='NA';
@@ -4109,6 +4123,10 @@ else
                 res.AD_index_pKa(i)=res.AD_index_pKa(i)/2;
                 res.Conf_index_pKa(i,1)=res.Conf_index_pKa(i,1)/2;
             end
+
+            res.AD_index_pKa(i,1)=round(res.AD_index_pKa(i,1),2); 
+            res.Conf_index_pKa(i,1)=round(res.Conf_index_pKa(i,1),2);
+
             if neighbors==1
 %                 PKA.CAS=strrep(strrep(join(PKA.CAS,'|',2),'|||',''),'||','');
 %                 PKA.DTXSID=strrep(strrep(join(PKA.DTXSID,'|',2),'|||',''),'||','');
@@ -4599,9 +4617,7 @@ else
             if isnan(res.AD_AOH(i,1))
                 res.AD_AOH(i,1)=0;
             end
-            res.AD_index_AOH(i,1)=round(res.AD_index_AOH(i,1),3); 
-            res.Conf_index_AOH(i,1)=round(res.Conf_index_AOH(i,1),3);
-            
+                        
             if isempty(find(~isnan(pred.dc(i,:)), 1)) || isnan(res.LogOH_pred(i,1))
                 res.LogOH_pred(i,1)=NaN;
                 res.LogOH_predRange{i,1}='NA';
@@ -4614,6 +4630,10 @@ else
                 res.AD_index_AOH(i)=res.AD_index_AOH(i)/2;
                 res.Conf_index_AOH(i,1)=res.Conf_index_AOH(i,1)/2;
             end
+
+            res.AD_index_AOH(i,1)=round(res.AD_index_AOH(i,1),2); 
+            res.Conf_index_AOH(i,1)=round(res.Conf_index_AOH(i,1),2);
+
             if neighbors==1
 %                 AOH.CAS=strrep(strrep(join(AOH.CAS,'|',2),'|||',''),'||','');
 %                 AOH.DTXSID=strrep(strrep(join(AOH.DTXSID,'|',2),'|||',''),'||','');
@@ -4896,9 +4916,7 @@ else
             if isnan(res.AD_BCF(i,1))
                 res.AD_BCF(i,1)=0;
             end
-            res.AD_index_BCF(i,1)=round(res.AD_index_BCF(i,1),3); 
-            res.Conf_index_BCF(i,1)=round(res.Conf_index_BCF(i,1),3);
-            
+                        
             if isempty(find(~isnan(pred.dc(i,:)), 1)) || isnan(res.LogBCF_pred(i,1))
                 res.LogBCF_pred(i,1)=NaN;
                 res.BCF_predRange{i,1}='NA';
@@ -4911,6 +4929,9 @@ else
                 res.AD_index_BCF(i)=res.AD_index_BCF(i)/2;
                 res.Conf_index_BCF(i,1)=res.Conf_index_BCF(i,1)/2;
             end
+
+            res.AD_index_BCF(i,1)=round(res.AD_index_BCF(i,1),2); 
+            res.Conf_index_BCF(i,1)=round(res.Conf_index_BCF(i,1),2);
 
             if neighbors==1
 %                 BCF.CAS=strrep(strrep(join(BCF.CAS,'|',2),'|||',''),'||','');
@@ -5193,9 +5214,7 @@ else
             if isnan(res.AD_BioDeg(i,1))
                 res.AD_BioDeg(i,1)=0;
             end
-            res.AD_index_BioDeg(i,1)=round(res.AD_index_BioDeg(i,1),3); 
-            res.Conf_index_BioDeg(i,1)=round(res.Conf_index_BioDeg(i,1),3);
-            
+                        
             if isempty(find(~isnan(pred.dc(i,:)), 1)) || isnan(res.BioDeg_LogHalfLife_pred(i,1))
                 res.BioDeg_LogHalfLife_pred(i,1)=NaN;
                 res.BioDeg_predRange{i,1}='NA';
@@ -5208,6 +5227,10 @@ else
                 res.AD_index_BioDeg(i)=res.AD_index_BioDeg(i)/2;
                 res.Conf_index_BioDeg(i,1)=res.Conf_index_BioDeg(i,1)/2;
             end
+
+            res.AD_index_BioDeg(i,1)=round(res.AD_index_BioDeg(i,1),2); 
+            res.Conf_index_BioDeg(i,1)=round(res.Conf_index_BioDeg(i,1),2);
+
             if neighbors==1
 %                 BIODEG.CAS=strrep(strrep(join(BIODEG.CAS,'|',2),'|||',''),'||','');
 %                 BIODEG.DTXSID=strrep(strrep(join(BIODEG.DTXSID,'|',2),'|||',''),'||','');
@@ -5764,9 +5787,7 @@ else
             if isnan(res.AD_KM(i,1))
                 res.AD_KM(i,1)=0;
             end
-            res.AD_index_KM(i,1)=round(res.AD_index_KM(i,1),3); 
-            res.Conf_index_KM(i,1)=round(res.Conf_index_KM(i,1),3);
-            
+                        
             if isempty(find(~isnan(pred.dc(i,:)), 1)) || isnan(res.LogKM_pred(i,1))
                 res.LogKM_pred(i,1)=NaN;
                 res.KM_predRange{i,1}='NA';
@@ -5779,6 +5800,10 @@ else
                 res.AD_index_KM(i)=res.AD_index_KM(i)/2;
                 res.Conf_index_KM(i,1)=res.Conf_index_KM(i,1)/2;
             end
+
+            res.AD_index_KM(i,1)=round(res.AD_index_KM(i,1),2); 
+            res.Conf_index_KM(i,1)=round(res.Conf_index_KM(i,1),2);
+
             if neighbors==1
 %                 KM.CAS=strrep(strrep(join(KM.CAS,'|',2),'|||',''),'||','');
 %                 KM.DTXSID=strrep(strrep(join(KM.DTXSID,'|',2),'|||',''),'||','');
@@ -6054,9 +6079,7 @@ else
             if isnan(res.AD_Koc(i,1))
                 res.AD_Koc(i,1)=0;
             end
-            res.AD_index_Koc(i,1)=round(res.AD_index_Koc(i,1),3); 
-            res.Conf_index_Koc(i,1)=round(res.Conf_index_Koc(i,1),3);
-            
+                        
             if isempty(find(~isnan(pred.dc(i,:)), 1)) || isnan(res.LogKoc_pred(i,1))
                 res.LogKoc_pred(i,1)=NaN;
                 res.Koc_predRange{i,1}='NA';
@@ -6068,7 +6091,11 @@ else
                 res.AD_Koc(i)=0;
                 res.AD_index_Koc(i)=res.AD_index_Koc(i)/2;
                 res.Conf_index_Koc(i,1)=res.Conf_index_Koc(i,1)/2;
-            end
+             end
+
+             res.AD_index_Koc(i,1)=round(res.AD_index_Koc(i,1),2); 
+            res.Conf_index_Koc(i,1)=round(res.Conf_index_Koc(i,1),2);
+
             if neighbors==1
 %                 KOC.CAS=strrep(strrep(join(KOC.CAS,'|',2),'|||',''),'||','');
 %                 KOC.DTXSID=strrep(strrep(join(KOC.DTXSID,'|',2),'|||',''),'||','');
@@ -6355,9 +6382,7 @@ else
             if isnan(res.AD_FUB(i,1))
                 res.AD_FUB(i,1)=0;
             end
-            res.AD_index_FUB(i,1)=round(res.AD_index_FUB(i,1),3); 
-            res.Conf_index_FUB(i,1)=round(res.Conf_index_FUB(i,1),3);
-            
+                        
             if isempty(find(~isnan(pred.dc(i,:)), 1)) || isnan(res.FUB_pred(i,1))
                 res.FUB_pred(i,1)=NaN;
                 res.FUB_predRange{i,1}='NA';
@@ -6370,6 +6395,10 @@ else
                 res.AD_index_FUB(i)=res.AD_index_FUB(i)/2;
                 res.Conf_index_FUB(i,1)=res.Conf_index_FUB(i,1)/2;
             end
+
+            res.AD_index_FUB(i,1)=round(res.AD_index_FUB(i,1),2); 
+            res.Conf_index_FUB(i,1)=round(res.Conf_index_FUB(i,1),2);
+
             if neighbors==1
 %                 FUB.CAS=strrep(strrep(join(FUB.CAS,'|',2),'|||',''),'||','');
 %                 FUB.DTXSID=strrep(strrep(join(FUB.DTXSID,'|',2),'|||',''),'||','');
@@ -6684,9 +6713,7 @@ else
             if isnan(res.AD_Clint(i,1))
                 res.AD_Clint(i,1)=0;
             end
-            res.AD_index_Clint(i,1)=round(res.AD_index_Clint(i,1),3); 
-            res.Conf_index_Clint(i,1)=round(res.Conf_index_Clint(i,1),3);
-            
+                       
             if isempty(find(~isnan(pred.dc(i,:)), 1)) || isnan(res.Clint_pred(i,1))
                 res.Clint_pred(i,1)=NaN;
                 res.Clint_predRange{i,1}='NA';
@@ -6699,6 +6726,10 @@ else
                 res.AD_index_Clint(i)=res.AD_index_Clint(i)/2;
                 res.Conf_index_Clint(i,1)=res.Conf_index_Clint(i,1)/2;
             end
+
+             res.AD_index_Clint(i,1)=round(res.AD_index_Clint(i,1),2); 
+            res.Conf_index_Clint(i,1)=round(res.Conf_index_Clint(i,1),2);
+
             if neighbors==1
 %                 CLINT.CAS=strrep(strrep(join(CLINT.CAS,'|',2),'|||',''),'||','');
 %                 CLINT.DTXSID=strrep(strrep(join(CLINT.DTXSID,'|',2),'|||',''),'||','');
@@ -6970,9 +7001,7 @@ else
             if isnan(res.AD_CACO2(i,1))
                 res.AD_CACO2(i,1)=0;
             end
-            res.AD_index_CACO2(i,1)=round(res.AD_index_CACO2(i,1),3); 
-            res.Conf_index_CACO2(i,1)=round(res.Conf_index_CACO2(i,1),3);
-            
+                        
             if isempty(find(~isnan(pred.dc(i,:)), 1)) || isnan(res.CACO2_pred(i,1))
                 res.CACO2_pred(i,1)=NaN;
                 res.CACO2_predRange{i,1}='NA';
@@ -6985,6 +7014,10 @@ else
                 res.AD_index_CACO2(i)=res.AD_index_CACO2(i)/2;
                 res.Conf_index_CACO2(i,1)=res.Conf_index_CACO2(i,1)/2;
             end
+
+            res.AD_index_CACO2(i,1)=round(res.AD_index_CACO2(i,1),2); 
+            res.Conf_index_CACO2(i,1)=round(res.Conf_index_CACO2(i,1),2);
+
             if neighbors==1
 %                 CACO2.CAS=strrep(strrep(join(CACO2.CAS,'|',2),'|||',''),'||','');
 %                 CACO2.DTXSID=strrep(strrep(join(CACO2.DTXSID,'|',2),'|||',''),'||','');
@@ -7396,9 +7429,7 @@ else
             if isnan(res.AD_CERAPP_Ago(i,1))
                 res.AD_CERAPP_Ago(i,1)=0;
             end
-            res.AD_index_CERAPP_Ago(i,1)=round(res.AD_index_CERAPP_Ago(i,1),3); 
-            res.Conf_index_CERAPP_Ago(i,1)=round(res.Conf_index_CERAPP_Ago(i,1),3);
-            
+                       
             if  predAN.dc(i,1)==0 && predAN.w(i,1)==1
                 res.AD_CERAPP_Anta(i,1)=1;
                 res.AD_index_CERAPP_Anta(i,1)=1;
@@ -7415,9 +7446,7 @@ else
              if isnan(res.AD_CERAPP_Anta(i,1))
                 res.AD_CERAPP_Anta(i,1)=0;
             end
-            res.AD_index_CERAPP_Anta(i,1)=round(res.AD_index_CERAPP_Anta(i,1),3); 
-            res.Conf_index_CERAPP_Anta(i,1)=round(res.Conf_index_CERAPP_Anta(i,1),3);
-            
+                        
             if  predBD.dc(i,1)==0 && predBD.w(i,1)==1
                 res.AD_CERAPP_Bind(i,1)=1;
                 res.AD_index_CERAPP_Bind(i,1)=1;
@@ -7434,9 +7463,7 @@ else
              if isnan(res.AD_CERAPP_Bind(i,1))
                 res.AD_CERAPP_Bind(i,1)=0;
             end
-            res.AD_index_CERAPP_Bind(i,1)=round(res.AD_index_CERAPP_Bind(i,1),3); 
-            res.Conf_index_CERAPP_Bind(i,1)=round(res.Conf_index_CERAPP_Bind(i,1),3);
-            
+                
             
             if isempty(find(~isnan(predAG.dc(i,:)), 1)) || isnan(res.CERAPP_Ago_pred(i,1))
                 res.CERAPP_Ago_pred(i,1)=NaN;
@@ -7470,6 +7497,13 @@ else
                 res.AD_index_CERAPP_Bind(i)=res.AD_index_CERAPP_Bind(i)/2;
                 res.Conf_index_CERAPP_Bind(i,1)=res.Conf_index_CERAPP_Bind(i,1)/2;
             end
+
+             res.AD_index_CERAPP_Ago(i,1)=round(res.AD_index_CERAPP_Ago(i,1),2); 
+            res.Conf_index_CERAPP_Ago(i,1)=round(res.Conf_index_CERAPP_Ago(i,1),2);
+            res.AD_index_CERAPP_Anta(i,1)=round(res.AD_index_CERAPP_Anta(i,1),2); 
+            res.Conf_index_CERAPP_Anta(i,1)=round(res.Conf_index_CERAPP_Anta(i,1),2);
+            res.AD_index_CERAPP_Bind(i,1)=round(res.AD_index_CERAPP_Bind(i,1),2); 
+            res.Conf_index_CERAPP_Bind(i,1)=round(res.Conf_index_CERAPP_Bind(i,1),2);
 
             if neighbors==1
 %                 CERAPP.model_AG.CAS=strrep(strrep(join(CERAPP.model_AG.CAS,'|',2),'|||',''),'||','');
@@ -7921,9 +7955,7 @@ else
             if isnan(res.AD_CoMPARA_Ago(i,1))
                 res.AD_CoMPARA_Ago(i,1)=0;
             end
-            res.AD_index_CoMPARA_Ago(i,1)=round(res.AD_index_CoMPARA_Ago(i,1),3); 
-            res.Conf_index_CoMPARA_Ago(i,1)=round(res.Conf_index_CoMPARA_Ago(i,1),3);
-            
+                       
             if  predAN.dc(i,1)==0 && predAN.w(i,1)==1
                 res.AD_CoMPARA_Anta(i,1)=1;
                 res.AD_index_CoMPARA_Anta(i,1)=1;
@@ -7940,9 +7972,7 @@ else
             if isnan(res.AD_CoMPARA_Anta(i,1))
                 res.AD_CoMPARA_Anta(i,1)=0;
             end
-            res.AD_index_CoMPARA_Anta(i,1)=round(res.AD_index_CoMPARA_Anta(i,1),3); 
-            res.Conf_index_CoMPARA_Anta(i,1)=round(res.Conf_index_CoMPARA_Anta(i,1),3);
-            
+                        
             if  predBD.dc(i,1)==0 && predBD.w(i,1)==1
                 res.AD_CoMPARA_Bind(i,1)=1;
                 res.AD_index_CoMPARA_Bind(i,1)=1;
@@ -7959,9 +7989,7 @@ else
             if isnan(res.AD_CoMPARA_Bind(i,1))
                 res.AD_CoMPARA_Bind(i,1)=0;
             end
-            res.AD_index_CoMPARA_Bind(i,1)=round(res.AD_index_CoMPARA_Bind(i,1),3); 
-            res.Conf_index_CoMPARA_Bind(i,1)=round(res.Conf_index_CoMPARA_Bind(i,1),3);
-
+            
             if isempty(find(~isnan(predAG.dc(i,:)), 1)) || isnan(res.CoMPARA_Ago_pred(i,1))
                 res.CoMPARA_Ago_pred(i,1)=NaN;
                 res.AD_CoMPARA_Ago(i)=0;
@@ -7992,6 +8020,14 @@ else
                 res.AD_index_CoMPARA_Bind(i)=res.AD_index_CoMPARA_Bind(i)/2;
                 res.Conf_index_CoMPARA_Bind(i,1)=res.Conf_index_CoMPARA_Bind(i,1)/2;
             end
+
+             res.AD_index_CoMPARA_Ago(i,1)=round(res.AD_index_CoMPARA_Ago(i,1),2); 
+            res.Conf_index_CoMPARA_Ago(i,1)=round(res.Conf_index_CoMPARA_Ago(i,1),2);
+            res.AD_index_CoMPARA_Anta(i,1)=round(res.AD_index_CoMPARA_Anta(i,1),2); 
+            res.Conf_index_CoMPARA_Anta(i,1)=round(res.Conf_index_CoMPARA_Anta(i,1),2);
+            res.AD_index_CoMPARA_Bind(i,1)=round(res.AD_index_CoMPARA_Bind(i,1),3); 
+            res.Conf_index_CoMPARA_Bind(i,1)=round(res.Conf_index_CoMPARA_Bind(i,1),2);
+
             if neighbors==1
 %                 COMPARA.model_AG.CAS=strrep(strrep(join(COMPARA.model_AG.CAS,'|',2),'|||',''),'||','');
 %                 COMPARA.model_AG.DTXSID=strrep(strrep(join(COMPARA.model_AG.DTXSID,'|',2),'|||',''),'||','');
@@ -8537,6 +8573,21 @@ else
 
             %-----------------------
 
+             % --- Safe neighbor output guard ---
+                    nN = 5;
+                    neighborsIDs = neighborsIDs(:)';
+
+                    badNeighbors = isempty(neighborsIDs) || ...
+                        numel(neighborsIDs) < nN || ...
+                        any(~isfinite(neighborsIDs)) || ...
+                        any(neighborsIDs < 1) || ...
+                        any(neighborsIDs ~= floor(neighborsIDs)) || ...
+                        any(neighborsIDs > numel(CATMOS.model_LD50.CAS));
+
+                    %------------
+
+
+
         
 
             
@@ -8611,8 +8662,7 @@ else
             if isnan(res.AD_CATMoS(i,1))
                 res.AD_CATMoS(i,1)=0;
             end
-            res.AD_index_CATMoS(i,1)=round(res.AD_index_CATMoS(i,1),3); 
-            res.Conf_index_CATMoS(i,1)=round(res.Conf_index_CATMoS(i,1),3);
+            
             %=============2.7
 
             if salt==1 && isempty(FileSalt)
@@ -8638,6 +8688,9 @@ else
                 res.Conf_index_CATMoS(i,1)=0;
                 res.CATMoS_LD50_predRange{i,1}='NA';
             end
+
+            res.AD_index_CATMoS(i,1)=round(res.AD_index_CATMoS(i,1),2); 
+            res.Conf_index_CATMoS(i,1)=round(res.Conf_index_CATMoS(i,1),2);
 
 
             %neighbors
@@ -8709,7 +8762,7 @@ else
 %                 end
 %                 CATMOS.model_LD50.CAS=strrep(strrep(join(CATMOS.model_LD50.CAS,'|',2),'|||',''),'||','');
 %                 CATMOS.model_LD50.DTXSID=strrep(strrep(join(CATMOS.model_LD50.DTXSID,'|',2),'|||',''),'||','');
-                if res.AD_index_LD50(i,:)~=0
+                if res.AD_index_LD50(i,:)~=0 && ~badNeighbors
                     %res.LD50_CATMoS_ID_neighbor(i,:)=train.CATMOS.model_LD50.ChemID(predLD50.neighbors(i,:));
                     res.CAS_neighbor(i,:)=CATMOS.model_LD50.CAS(neighborsIDs);
                     res.InChiKey_neighbor(i,:)=CATMOS.model_LD50.InChiKey(neighborsIDs);
