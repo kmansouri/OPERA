@@ -1,13 +1,13 @@
 function res=OPERA(varargin)
 
 Version='2.9';
-SubVersion='2.9.5';
+SubVersion='2.9.6';
 %%
 %
 %        _______________________________________________________________________
 %       |                                                                       |
 %       |   OPERA models for physchem, environmental fate and tox properties.   |
-%       |                 Version 2.9 (June 2026)                               |
+%       |                 Version 2.9 (October 2026)                            |
 %       |_______________________________________________________________________|
 %
 %
@@ -491,7 +491,7 @@ else
             installdir=fullfile('/','usr','local','bin','OPERA','application');
         end
     %end
-    if ~exist(fullfile(installdir,'padel-full-1.00.jar'),'file')
+    if ~exist(fullfile(installdir,'padel-full-2.00.jar'),'file')
         
         if isdeployed
             currentDir=ctfroot;
@@ -501,7 +501,7 @@ else
                 installdir=strip(fread(fid,'*char')');
                 fclose(fid);
                 
-                if ~exist(fullfile(installdir,'padel-full-1.00.jar'),'file')
+                if ~exist(fullfile(installdir,'padel-full-2.00.jar'),'file')
                     error('Default install folder was changed during installation. Update OPERA_installdir.txt file in %s', fullfile(currentDir,'..'));
                 end
             else
@@ -518,7 +518,7 @@ else
                 installdir=strip(fread(fid,'*char')');
                 fclose(fid);
                 %currentDir = pwd;
-                if ~exist(fullfile(installdir,'padel-full-1.00.jar'),'file')
+                if ~exist(fullfile(installdir,'padel-full-2.00.jar'),'file')
                     error(['Default install folder was changed during installation. Update OPERA_installdir.txt file in ', currentDir]);
                 end
             else
@@ -781,6 +781,27 @@ else
             
         end
         %========== Molecular Descriptors ==========
+
+        % Processors visible to the JVM.
+        javaRuntime = java.lang.Runtime.getRuntime();
+        nCPU = double(javaRuntime.availableProcessors());
+
+        % Number of input molecules was already calculated by OPERA.
+        nMolecules = max(1, floor(str2double(numStruct)));
+
+        % Conservative OPERA default:
+        % - leave one processor available
+        % - do not start more workers than molecules
+        % - cap the general workstation default at 8
+        padelThreads = max(1, min([nMolecules, 8, nCPU - 2]));
+
+        % A small queue is sufficient to keep workers supplied.
+        padelWaitingJobs = max(4, 4 * padelThreads);
+
+        padelParallelOptions = sprintf( ...
+            ' -threads %d -waitingjobs %d ', ...
+            padelThreads, padelWaitingJobs);
+
         
         %Calculating PaDEL descriptors...
         
@@ -798,8 +819,8 @@ else
                 end
                 fprintf(1,'PaDEL calculating 2D descriptors...\n');
                 if verbose ==1
-                    [statusDesc,cmdoutDesc] =system (['java -Djava.awt.headless=true -jar ' strcat('"',fullfile(installdir,'padel-full-1.00.jar'),'"')...
-                        ' -2d -removesalt -standardizenitro -detectaromaticity -retainorder -maxruntime 60000 -dir ' strcat('"',char(StructureFile),'"')...
+                    [statusDesc,cmdoutDesc] =system (['java -Djava.awt.headless=true -jar ' strcat('"',fullfile(installdir,'padel-full-2.00.jar'),'"')...
+                        ' -2d -removesalt -standardizenitro -detectaromaticity -retainorder ' padelParallelOptions ' -maxruntime 60000 -dir ' strcat('"',char(StructureFile),'"')...
                         ' -file ' strcat('"',InputDesc,'"') ' > ' strcat('"',PaDELlogfile,'"')]);
                     if statusDesc~=0 && ~isempty(cmdoutDesc)
                         disp(cmdoutDesc);
@@ -807,8 +828,8 @@ else
                     end
                         
                 else
-                    statusDesc =system (['java -Djava.awt.headless=true -jar ' strcat('"',fullfile(installdir,'padel-full-1.00.jar'),'"')...
-                        ' -2d -removesalt -standardizenitro -detectaromaticity -retainorder -maxruntime 60000 -dir ' strcat('"',char(StructureFile),'"')...
+                    statusDesc =system (['java -Djava.awt.headless=true -jar ' strcat('"',fullfile(installdir,'padel-full-2.00.jar'),'"')...
+                        ' -2d -removesalt -standardizenitro -detectaromaticity -retainorder ' padelParallelOptions ' -maxruntime 60000 -dir ' strcat('"',char(StructureFile),'"')...
                         ' -file ' strcat('"',InputDesc,'"')]);
                     if statusDesc~=0
                         error('PaDEL descriptors failed. Check input structures!');
@@ -828,8 +849,8 @@ else
                 end
                 
             else
-                [~,~] =system (['java -Djava.awt.headless=true -jar ' strcat('"',fullfile(installdir,'padel-full-1.00.jar'),'"')...
-                    ' -2d -removesalt -standardizenitro -detectaromaticity -retainorder -maxruntime 60000 -dir ' strcat('"',char(StructureFile),'"')...
+                [~,~] =system (['java -Djava.awt.headless=true -jar ' strcat('"',fullfile(installdir,'padel-full-2.00.jar'),'"')...
+                    ' -2d -removesalt -standardizenitro -detectaromaticity -retainorder ' padelParallelOptions ' -maxruntime 60000 -dir ' strcat('"',char(StructureFile),'"')...
                     ' -file ' strcat('"',InputDesc,'"') ' > ' strcat('"',PaDELlogfile,'"')]);
                 if ispc
                     [~, numlines] = system(['FINDSTR /R /N "^.*" ',InputDesc,' | FIND /C ":"']); %win
@@ -1058,15 +1079,15 @@ else
                 if verbose >0
                     fprintf(1,'PaDEL generating fingerprints...\n');
                     if verbose ==1
-                        [statusDesc,cmdoutDesc] =system (['java -Djava.awt.headless=true -jar ' strcat('"',fullfile(installdir,'padel-full-1.00.jar'),'"')...
-                            ' -fingerprints -descriptortypes ' strcat('"',fullfile(installdir,'desc_fp.xml'),'"') ' -removesalt -standardizenitro -detectaromaticity -retainorder -maxruntime 60000 -dir '...
+                        [statusDesc,cmdoutDesc] =system (['java -Djava.awt.headless=true -jar ' strcat('"',fullfile(installdir,'padel-full-2.00.jar'),'"')...
+                            ' -fingerprints -descriptortypes ' strcat('"',fullfile(installdir,'desc_fp.xml'),'"') ' -removesalt -standardizenitro -detectaromaticity -retainorder ' padelParallelOptions ' -maxruntime 60000 -dir '...
                             strcat('"',char(StructureFile),'"') ' -file ' strcat('"',InputDescFP,'"') ' > ' strcat('"',PaDELlogfileFP,'"')]);
                         if statusDesc~=0 && ~isempty(cmdoutDesc)
                             disp(cmdoutDesc);
                         end
                     else
-                        statusDesc =system (['java -Djava.awt.headless=true -jar ' strcat('"',fullfile(installdir,'padel-full-1.00.jar'),'"')...
-                            ' -fingerprints -descriptortypes ' strcat('"',fullfile(installdir,'desc_fp.xml'),'"') ' -removesalt -standardizenitro -detectaromaticity -retainorder -maxruntime 60000 -dir '...
+                        statusDesc =system (['java -Djava.awt.headless=true -jar ' strcat('"',fullfile(installdir,'padel-full-2.00.jar'),'"')...
+                            ' -fingerprints -descriptortypes ' strcat('"',fullfile(installdir,'desc_fp.xml'),'"') ' -removesalt -standardizenitro -detectaromaticity -retainorder ' padelParallelOptions ' -maxruntime 60000 -dir '...
                             strcat('"',char(StructureFile),'"') ' -file ' strcat('"',InputDescFP,'"')]);
                         if statusDesc~=0
                             error('PaDEL fingerprints failed. Check input structures!');
@@ -1086,8 +1107,8 @@ else
                     end
 
                 else
-                    [~,~] =system (['java -Djava.awt.headless=true -jar ' strcat('"',fullfile(installdir,'padel-full-1.00.jar'),'"')...
-                        ' -fingerprints -descriptortypes ' strcat('"',fullfile(installdir,'desc_fp.xml'),'"') ' -removesalt -standardizenitro -detectaromaticity -retainorder -maxruntime 60000 -dir '...
+                    [~,~] =system (['java -Djava.awt.headless=true -jar ' strcat('"',fullfile(installdir,'padel-full-2.00.jar'),'"')...
+                        ' -fingerprints -descriptortypes ' strcat('"',fullfile(installdir,'desc_fp.xml'),'"') ' -removesalt -standardizenitro -detectaromaticity -retainorder ' padelParallelOptions ' -maxruntime 60000 -dir '...
                         strcat('"',char(StructureFile),'"') ' -file ' strcat('"',InputDescFP,'"') ' > ' strcat('"',PaDELlogfileFP,'"')]);
                     if ispc
                         [~, numlines] = system('FINDSTR /R /N "^.*" PadelFP.csv | FIND /C ":"'); %win

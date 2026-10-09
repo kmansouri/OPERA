@@ -1,13 +1,13 @@
 function res=OPERA_par(varargin)
 
 Version='2.9';
-SubVersion='2.9.5';
+SubVersion='2.9.6';
 %%
 %
 %        _______________________________________________________________________
 %       |                                                                       |
 %       |   OPERA models for physchem, environmental fate and tox properties.   |
-%       |                 Version 2.9 (June 2026)                               |
+%       |                 Version 2.9 (October 2026)                            |
 %       |_______________________________________________________________________|
 %
 %
@@ -55,6 +55,10 @@ SubVersion='2.9.5';
 %  -V, --Version            Version of the application
 %  -vm, --VerModels         Versions of the models
 %  -P, --Parallel           Number of cpus for the parallel session
+%                           cpus semantics:
+%                           0  = automatic conservative selection
+%                           -1  = maximum processors available
+%                           >0  = explicit user-requested worker count
 %
 %
 %
@@ -482,7 +486,7 @@ else
             installdir=fullfile('/','usr','local','bin','OPERA','application');
         end
 %     end
-    if ~exist(fullfile(installdir,'padel-full-1.00.jar'),'file')
+    if ~exist(fullfile(installdir,'padel-full-2.00.jar'),'file')
         
         if isdeployed
             currentDir=ctfroot;
@@ -492,7 +496,7 @@ else
                 installdir=strip(fread(fid,'*char')');
                 fclose(fid);
                 
-                if ~exist(fullfile(installdir,'padel-full-1.00.jar'),'file')
+                if ~exist(fullfile(installdir,'padel-full-2.00.jar'),'file')
                     error('Default install folder was changed during installation. Update OPERA_installdir.txt file in %s', currentDir);
                 end
             else
@@ -509,7 +513,7 @@ else
                 installdir=strip(fread(fid,'*char')');
                 fclose(fid);
                 %currentDir = pwd;
-                if ~exist(fullfile(installdir,'padel-full-1.00.jar'),'file')
+                if ~exist(fullfile(installdir,'padel-full-2.00.jar'),'file')
                     error(['Default install folder was changed during installation. Update OPERA_installdir.txt file in ', currentDir]);
                 end
             else
@@ -759,20 +763,168 @@ else
             
         end
             
-            
-            
+        % =========================================================================
+        % Resolve parallel resources once for PaDEL and MATLAB
+        %
+        % cpus semantics:
+        %   0  = automatic conservative selection
+        %  -1  = maximum available for each backend
+        %  >0  = explicit user-requested parallelism
+        %
+        % Important:
+        %   Do not modify "cpus". It represents the original user request.
+        %   Use "padelThreads" for PaDEL and "matlabWorkers" for MATLAB.
+        % =========================================================================
+
+        % Preserve the original command-line request.
+        if ischar(cpus) || isstring(cpus)
+            requestedCpus = str2double(cpus);
+        else
+            requestedCpus = double(cpus);
+        end
+
+        % Validate the requested value.
+        validRequestedCpus = ...
+            isscalar(requestedCpus) && ...
+            isnumeric(requestedCpus) && ...
+            isfinite(requestedCpus) && ...
+            (requestedCpus == -1 || ...
+            requestedCpus == 0  || ...
+            (requestedCpus > 0 && requestedCpus == floor(requestedCpus)));
+
+        if ~validRequestedCpus
+            error('OPERA:InvalidWorkerCount', ...
+                ['Invalid -p/--parallel value. Use 0 for automatic, ' ...
+                '-1 for maximum, or a positive integer.']);
+        end
+
+        % -------------------------------------------------------------------------
+        % Determine the number of input molecules.
+        % -------------------------------------------------------------------------
+        if isnumeric(numStruct)
+            nMolecules = double(numStruct);
+        else
+            nMolecules = str2double(strtrim(char(numStruct)));
+        end
+
+        if ~isscalar(nMolecules) || ~isfinite(nMolecules) || nMolecules < 1
+            error('OPERA:NoStructures', 'No valid structures were found in the input file.');
+        end
+
+        nMolecules = max(1, floor(nMolecules));
+
+        % -------------------------------------------------------------------------
+        % PaDEL capacity.
+        %
+        % Java availableProcessors() reports processors available to the Java
+        % process. This is independent of the MATLAB parallel cluster profile.
+        % -------------------------------------------------------------------------
+        nJavaProcessors = double(java.lang.Runtime.getRuntime().availableProcessors());
+
+        nJavaProcessors = max(1, floor(nJavaProcessors));
+
+        % -------------------------------------------------------------------------
+        % MATLAB process-worker capacity.
+        %
+        % Use the local process-based environment explicitly. "local" is retained
+        % as a fallback for MATLAB releases before the profile was renamed to
+        % "Processes".
+        % -------------------------------------------------------------------------
+        try
+            matlabCluster = parcluster('Processes');
+        catch
+            matlabCluster = parcluster('local');
+        end
+
+        maxMatlabWorkers = max(1, floor(double(matlabCluster.NumWorkers)));
+
+        % General distribution cap for automatic conservative mode.
+        automaticWorkerCap = 8;
+
+        % -------------------------------------------------------------------------
+        % Resolve PaDEL and MATLAB independently.
+        % -------------------------------------------------------------------------
+        if requestedCpus == -1
+
+            % Maximum mode:
+            % use the maximum each backend permits, but never create more workers
+            % than there are molecules.
+            padelThreads = min(nJavaProcessors, nMolecules);
+
+            matlabWorkers = min(maxMatlabWorkers, nMolecules);
+
+        elseif requestedCpus == 0
+
+            % Automatic conservative mode:
+            % leave one processor/worker available for the OS and MATLAB client,
+            % cap the general default at 8, and do not exceed molecule count.
+            padelThreads = min([nMolecules, automaticWorkerCap, max(1, nJavaProcessors - 1)]);
+
+            matlabWorkers = min([nMolecules, automaticWorkerCap, max(1, maxMatlabWorkers - 1)]);
+
+        else
+
+            % Explicit positive request:
+            % apply the same requested value to both stages, but constrain each
+            % backend independently.
+            padelThreads = min([ requestedCpus, nJavaProcessors, nMolecules]);
+
+            matlabWorkers = min([requestedCpus, maxMatlabWorkers, nMolecules]);
+
+            % Warn only when the explicit request exceeds backend capacity.
+            if requestedCpus > nJavaProcessors
+                warning('OPERA:PadelThreadLimit', ...
+                    ['Requested %d PaDEL threads, but Java reports only %d ' ...
+                    'available processors. PaDEL will use %d threads.'], ...
+                    requestedCpus, nJavaProcessors, padelThreads);
+            end
+
+            if requestedCpus > maxMatlabWorkers
+                warning('OPERA:MatlabWorkerLimit', ...
+                    ['Requested %d MATLAB workers, but the local Processes ' ...
+                    'profile allows at most %d. MATLAB will use %d workers. ' ...
+                    'PaDEL is not affected by this MATLAB profile limit.'], ...
+                    requestedCpus, maxMatlabWorkers, matlabWorkers);
+            end
+        end
+
+        padelThreads  = max(1, floor(padelThreads));
+        matlabWorkers = max(1, floor(matlabWorkers));
+
+        % -------------------------------------------------------------------------
+        % Configure the bounded PaDEL input queue.
+        % -------------------------------------------------------------------------
+        padelWaitingJobs = max(4, 4 * padelThreads);
+
+        padelParallelOptions = sprintf( ' -threads %d -waitingjobs %d ', padelThreads, padelWaitingJobs);
+
+        % -------------------------------------------------------------------------
+        % Report the resolved resource plan.
+        % -------------------------------------------------------------------------
+        if verbose > 0
+            if requestedCpus == -1
+                parallelMode = 'maximum';
+            elseif requestedCpus == 0
+                parallelMode = 'automatic conservative';
+            else
+                parallelMode = sprintf('explicit request: %d', requestedCpus);
+            end
+
+            fprintf(1, '\nParallel resource mode: %s.\n', parallelMode);
+            fprintf(1, 'Input molecules: %d.\n', nMolecules);
+            fprintf(1, 'PaDEL threads: %d; Java-visible processors: %d.\n', padelThreads, nJavaProcessors);
+            fprintf(1, 'MATLAB workers: %d; Processes profile maximum: %d.\n', matlabWorkers, maxMatlabWorkers);
+            fprintf(1, 'PaDEL waiting jobs: %d.\n', padelWaitingJobs);
+        end
+
         %========== Molecular Descriptors ==========
-        
+
         %Calculating PaDEL descriptors...
         
         if verbose >0
             fprintf(1,'\n========== Molecular Descriptors ==========\n');
         end
-        if cpus==0
-           PadelThreads=-1;
-        else
-            PadelThreads=cpus;
-        end
+
         if structure==1 && InputDescPadel==0
             InputDesc=strcat(StructureFile(1:length(StructureFile)-4),'_PadelDesc.csv');
             PaDELlogfile=strcat(StructureFile(1:length(StructureFile)-4),'_PaDELlogfile.log');
@@ -781,10 +933,10 @@ else
                 if str2double(numStruct)==0
                     error('No structures found! Check the input file.');
                 end
-                fprintf(1,'PaDEL calculating 2D descriptors...\n');
+                fprintf(1,'PaDEL calculating 2D descriptors using %d threads...\n',padelThreads);
                 if verbose ==1
-                    [statusDesc,cmdoutDesc] =system (['java -Djava.awt.headless=true -jar ' strcat('"',fullfile(installdir,'padel-full-1.00.jar'),'"')...
-                        ' -threads ' strcat('"',num2str(PadelThreads),'"') ' -2d -removesalt -standardizenitro -detectaromaticity -retainorder -maxruntime 60000 -dir '...
+                    [statusDesc,cmdoutDesc] =system (['java -Djava.awt.headless=true -jar ' strcat('"',fullfile(installdir,'padel-full-2.00.jar'),'"')...
+                        padelParallelOptions ' -2d -removesalt -standardizenitro -detectaromaticity -retainorder -maxruntime 60000 -dir '...
                         strcat('"',char(StructureFile),'"') ' -file ' strcat('"',InputDesc,'"') ' > ' strcat('"',PaDELlogfile,'"')]);
                     if statusDesc~=0 && ~isempty(cmdoutDesc)
                         disp(cmdoutDesc);
@@ -792,8 +944,8 @@ else
                     end
                         
                 else
-                    statusDesc =system (['java -Djava.awt.headless=true -jar ' strcat('"',fullfile(installdir,'padel-full-1.00.jar'),'"')...
-                        ' -threads ' strcat('"',num2str(PadelThreads),'"') ' -2d -removesalt -standardizenitro -detectaromaticity -retainorder -maxruntime 60000 -dir '...
+                    statusDesc =system (['java -Djava.awt.headless=true -jar ' strcat('"',fullfile(installdir,'padel-full-2.00.jar'),'"')...
+                        padelParallelOptions ' -2d -removesalt -standardizenitro -detectaromaticity -retainorder -maxruntime 60000 -dir '...
                         strcat('"',char(StructureFile),'"') ' -file ' strcat('"',InputDesc,'"')]);
                     if statusDesc~=0
                         error('PaDEL descriptors failed. Check input structures!');
@@ -813,8 +965,8 @@ else
                 end
                 
             else
-                [~,~] =system (['java -Djava.awt.headless=true -jar ' strcat('"',fullfile(installdir,'padel-full-1.00.jar'),'"')...
-                    ' -threads ' strcat('"',num2str(PadelThreads),'"') ' -2d -removesalt -standardizenitro -detectaromaticity -retainorder -maxruntime 60000 -dir '...
+                [~,~] =system (['java -Djava.awt.headless=true -jar ' strcat('"',fullfile(installdir,'padel-full-2.00.jar'),'"')...
+                    padelParallelOptions ' -2d -removesalt -standardizenitro -detectaromaticity -retainorder -maxruntime 60000 -dir '...
                     strcat('"',char(StructureFile),'"') ' -file ' strcat('"',InputDesc,'"') ' > ' strcat('"',PaDELlogfile,'"')]);
                 if ispc
                     [~, numlines] = system(['FINDSTR /R /N "^.*" ',InputDesc,' | FIND /C ":"']); %win
@@ -934,17 +1086,58 @@ else
         clear('Xin');
         Xin=Temp;
         clear('Temp');
- 
+
+
+        % =========================================================================
+        % Start or resize the MATLAB process pool.
+        %
+        % "matlabWorkers" was resolved before descriptor calculation.
+        % Do not recalculate it here and do not modify "cpus".
+        % =========================================================================
+
         poolobj = gcp('nocreate');
-        if isempty(poolobj)||poolobj.NumWorkers<cpus
-            delete(gcp('nocreate'))
-            if cpus
-                poolobj=parpool(cpus);
-            else
-                poolobj=parpool;
-            end
+
+        % OPERA uses a process-based pool. Replace an existing thread-based pool,
+        % another unsupported pool type, or a process pool with the wrong size.
+        poolNeedsRestart = isempty(poolobj);
+
+        if ~isempty(poolobj)
+            poolNeedsRestart = ~isa(poolobj, 'parallel.ProcessPool') || poolobj.NumWorkers ~= matlabWorkers;
         end
-        NumWorkers=poolobj.NumWorkers;
+
+        if poolNeedsRestart
+            if ~isempty(poolobj)
+                if verbose > 0
+                    fprintf(1, 'Closing existing MATLAB pool with %d workers.\n', poolobj.NumWorkers);
+                end
+
+                delete(poolobj);
+                poolobj = [];
+            end
+
+            if verbose > 0
+                fprintf(1, 'Starting MATLAB process pool with %d workers...\n', matlabWorkers);
+            end
+
+            poolobj = parpool(matlabCluster, matlabWorkers);
+        end
+
+        NumWorkers = poolobj.NumWorkers;
+
+        if verbose > 0
+            fprintf(1,'MATLAB parallel pool running with %d workers.\n', NumWorkers);
+        end
+
+        % poolobj = gcp('nocreate');
+        % if isempty(poolobj)||poolobj.NumWorkers<cpus
+        %     delete(gcp('nocreate'))
+        %     if cpus
+        %         poolobj=parpool(cpus);
+        %     else
+        %         poolobj=parpool;
+        %     end
+        % end
+        % NumWorkers=poolobj.NumWorkers;
         
         if cdk==1
             if structure==1 && inputCDK==0
@@ -957,7 +1150,7 @@ else
                     error('Structure(s) number: %s exceed recommended size limit. CDK descriptors might fail or take long time.',Amb_str);
                 end
                 if verbose> 0
-                    fprintf(1,'CDK 2.0 calculating 2D descriptors...\n');
+                    fprintf(1,'CDK 2.0 calculating 2D descriptors using %d threads...\n',NumWorkers);
                 end
                 
                 if ~exist('CDKtemp','file')
@@ -1170,18 +1363,18 @@ else
                 InputDescFP=strcat(StructureFile(1:length(StructureFile)-4),'_PadelFP.csv');
                 PaDELlogfileFP=strcat(StructureFile(1:length(StructureFile)-4),'_PaDELlogfileFP.log');
                 if verbose >0
-                    fprintf(1,'PaDEL generating fingerprints...\n');
+                    fprintf(1,'PaDEL generating fingerprints using %d threads...\n',padelThreads);
                     if verbose ==1
-                        [statusDesc,cmdoutDesc] =system (['java -Djava.awt.headless=true -jar ' strcat('"',fullfile(installdir,'padel-full-1.00.jar'),'"')...
-                            ' -threads ' strcat('"',num2str(PadelThreads),'"') ' -fingerprints -descriptortypes ' strcat('"',fullfile(installdir,'desc_fp.xml'),'"')...
+                        [statusDesc,cmdoutDesc] =system (['java -Djava.awt.headless=true -jar ' strcat('"',fullfile(installdir,'padel-full-2.00.jar'),'"')...
+                            padelParallelOptions ' -fingerprints -descriptortypes ' strcat('"',fullfile(installdir,'desc_fp.xml'),'"')...
                             ' -removesalt -standardizenitro -detectaromaticity -retainorder -maxruntime 60000 -dir ' strcat('"',char(StructureFile),'"') ' -file '...
                             strcat('"',InputDescFP,'"') ' > ' strcat('"',PaDELlogfileFP,'"')]);
                         if statusDesc~=0 && ~isempty(cmdoutDesc)
                             disp(cmdoutDesc);
                         end
                     else
-                        statusDesc =system (['java -Djava.awt.headless=true -jar ' strcat('"',fullfile(installdir,'padel-full-1.00.jar'),'"')...
-                            ' -threads ' strcat('"',num2str(PadelThreads),'"') ' -fingerprints -descriptortypes ' strcat('"',fullfile(installdir,'desc_fp.xml'),'"')...
+                        statusDesc =system (['java -Djava.awt.headless=true -jar ' strcat('"',fullfile(installdir,'padel-full-2.00.jar'),'"')...
+                            padelParallelOptions ' -fingerprints -descriptortypes ' strcat('"',fullfile(installdir,'desc_fp.xml'),'"')...
                             ' -removesalt -standardizenitro -detectaromaticity -retainorder -maxruntime 60000 -dir ' strcat('"',char(StructureFile),'"') ' -file ' strcat('"',InputDescFP,'"')]);
                         if statusDesc~=0
                             error('PaDEL fingerprints failed. Check input structures!');
@@ -1201,8 +1394,8 @@ else
                     end
 
                 else
-                    [~,~] =system (['java -Djava.awt.headless=true -jar ' strcat('"',fullfile(installdir,'padel-full-1.00.jar'),'"')...
-                        ' -threads ' strcat('"',num2str(PadelThreads),'"') ' -fingerprints -descriptortypes ' strcat('"',fullfile(installdir,'desc_fp.xml'),'"')...
+                    [~,~] =system (['java -Djava.awt.headless=true -jar ' strcat('"',fullfile(installdir,'padel-full-2.00.jar'),'"')...
+                        padelParallelOptions ' -fingerprints -descriptortypes ' strcat('"',fullfile(installdir,'desc_fp.xml'),'"')...
                         ' -removesalt -standardizenitro -detectaromaticity -retainorder -maxruntime 60000 -dir ' strcat('"',char(StructureFile),'"') ' -file '...
                         strcat('"',InputDescFP,'"') ' > ' strcat('"',PaDELlogfileFP,'"')]);
                     if ispc
@@ -1377,15 +1570,24 @@ else
             disp(['Weighted kNN model with ', num2str(length(Desc)),' descriptors']);
         end
 
-        poolobj = gcp('nocreate');
-        if isempty(poolobj)||poolobj.NumWorkers<cpus
-            delete(gcp('nocreate'))
-            if cpus
-                parpool(cpus);
-            else
-                parpool;
-            end
-        end
+        % poolobj = gcp('nocreate');
+        % if isempty(poolobj)||poolobj.NumWorkers<cpus
+        %     delete(gcp('nocreate'))
+        %     if cpus
+        %         parpool(cpus);
+        %     else
+        %         parpool;
+        %     end
+        % end
+        % Ensure that the required MATLAB process pool is available.
+        poolobj = ensureOperaPool( ...
+            matlabCluster, ...
+            matlabWorkers, ...
+            verbose);
+
+        % Use the actual running pool size in subsequent work partitioning.
+        NumWorkers = poolobj.NumWorkers;
+        
         if salt ==0
             SaltIndex=zeros(size(Xtest,1),1);
 
@@ -1768,15 +1970,14 @@ else
             fprintf(output,'\n\n\t\t\t\t\t Predicting MP values... \n\n			============================================================== \n\n');
         end
         
-        poolobj = gcp('nocreate');
-        if isempty(poolobj)||poolobj.NumWorkers<cpus
-            delete(gcp('nocreate'))
-            if cpus
-                parpool(cpus);
-            else
-                parpool;
-            end
-        end
+        % Ensure that the required MATLAB process pool is available.
+        poolobj = ensureOperaPool( ...
+            matlabCluster, ...
+            matlabWorkers, ...
+            verbose);
+
+        % Use the actual running pool size in subsequent work partitioning.
+        NumWorkers = poolobj.NumWorkers;
         
         %             Xtest=zeros(size(Xin,1),length(Desc));
         %
@@ -2171,15 +2372,14 @@ else
         pred_neighbors=nan(size(Xtest,1),5);
         pred_w=nan(size(Xtest,1),5);
 
-        poolobj = gcp('nocreate');
-        if isempty(poolobj)||poolobj.NumWorkers<cpus
-            delete(gcp('nocreate'))
-            if cpus
-                parpool(cpus);
-            else
-                parpool;
-            end
-        end
+        % Ensure that the required MATLAB process pool is available.
+        poolobj = ensureOperaPool( ...
+            matlabCluster, ...
+            matlabWorkers, ...
+            verbose);
+
+        % Use the actual running pool size in subsequent work partitioning.
+        NumWorkers = poolobj.NumWorkers;
 
         if salt ==0
             SaltIndex=zeros(size(Xtest,1),1);
@@ -2530,15 +2730,15 @@ else
 
         pred_neighbors=nan(size(Xtest,1),5);
         pred_w=nan(size(Xtest,1),5);
-        poolobj = gcp('nocreate');
-        if isempty(poolobj)||poolobj.NumWorkers<cpus
-            delete(gcp('nocreate'))
-            if cpus
-                parpool(cpus);
-            else
-                parpool;
-            end
-        end
+
+        % Ensure that the required MATLAB process pool is available.
+        poolobj = ensureOperaPool( ...
+            matlabCluster, ...
+            matlabWorkers, ...
+            verbose);
+
+        % Use the actual running pool size in subsequent work partitioning.
+        NumWorkers = poolobj.NumWorkers;
 
         if salt ==0
             SaltIndex=zeros(size(Xtest,1),1);
@@ -2897,15 +3097,16 @@ else
 
         pred_neighbors=nan(size(Xtest,1),5);
         pred_w=nan(size(Xtest,1),5);
-        poolobj = gcp('nocreate');
-        if isempty(poolobj)||poolobj.NumWorkers<cpus
-            delete(gcp('nocreate'))
-            if cpus
-                parpool(cpus);
-            else
-                parpool;
-            end
-        end
+
+        % Ensure that the required MATLAB process pool is available.
+        poolobj = ensureOperaPool( ...
+            matlabCluster, ...
+            matlabWorkers, ...
+            verbose);
+
+        % Use the actual running pool size in subsequent work partitioning.
+        NumWorkers = poolobj.NumWorkers;
+
         if salt ==0
             SaltIndex=zeros(size(Xtest,1),1);
 
@@ -3255,15 +3456,16 @@ else
 
         pred_neighbors=nan(size(Xtest,1),5);
         pred_w=nan(size(Xtest,1),5);
-        poolobj = gcp('nocreate');
-        if isempty(poolobj)||poolobj.NumWorkers<cpus
-            delete(gcp('nocreate'))
-            if cpus
-                parpool(cpus);
-            else
-                parpool;
-            end
-        end
+
+        % Ensure that the required MATLAB process pool is available.
+        poolobj = ensureOperaPool( ...
+            matlabCluster, ...
+            matlabWorkers, ...
+            verbose);
+
+        % Use the actual running pool size in subsequent work partitioning.
+        NumWorkers = poolobj.NumWorkers;
+
         parfor i=1:length(Xtest(:,1))
             pred = nnrpred(Xtest(i,:),model.HL.model.set.train,model.HL.model.set.y,model.HL.model.set.K,model.HL.model.set.dist_type,model.HL.model.set.param.pret_type);
             pred.D=diag(pred.D);
@@ -3559,15 +3761,16 @@ else
 
         pred_neighbors=nan(size(Xtest,1),5);
         pred_w=nan(size(Xtest,1),5);
-        poolobj = gcp('nocreate');
-        if isempty(poolobj)||poolobj.NumWorkers<cpus
-            delete(gcp('nocreate'))
-            if cpus
-                parpool(cpus);
-            else
-                parpool;
-            end
-        end
+
+        % Ensure that the required MATLAB process pool is available.
+        poolobj = ensureOperaPool( ...
+            matlabCluster, ...
+            matlabWorkers, ...
+            verbose);
+
+        % Use the actual running pool size in subsequent work partitioning.
+        NumWorkers = poolobj.NumWorkers;
+
         parfor i=1:length(Xtest(:,1))
             pred = nnrpred(Xtest(i,:),model.RT.model.set.train,model.RT.model.set.y,model.RT.model.set.K,model.RT.model.set.dist_type,model.RT.model.set.scal);
             pred.D=diag(pred.D);
@@ -3856,15 +4059,16 @@ else
 
         pred_neighbors=nan(size(Xtest,1),5);
         pred_w=nan(size(Xtest,1),5);
-        poolobj = gcp('nocreate');
-        if isempty(poolobj)||poolobj.NumWorkers<cpus
-            delete(gcp('nocreate'))
-            if cpus
-                parpool(cpus);
-            else
-                parpool;
-            end
-        end
+
+        % Ensure that the required MATLAB process pool is available.
+        poolobj = ensureOperaPool( ...
+            matlabCluster, ...
+            matlabWorkers, ...
+            verbose);
+
+        % Use the actual running pool size in subsequent work partitioning.
+        NumWorkers = poolobj.NumWorkers;
+
         parfor i=1:length(Xtest(:,1))
             pred = nnrpred(Xtest(i,:),model.KOA.model.set.train,model.KOA.model.set.y,model.KOA.model.set.K,model.KOA.model.set.dist_type,model.KOA.model.set.param.pret_type);
             pred.D=diag(pred.D);
@@ -4186,15 +4390,16 @@ else
         pred_neighbors=nan(size(Xtest,1),3);
         pred_dc=nan(size(Xtest,1),3);
         pred_w=nan(size(Xtest,1),3);
-        poolobj = gcp('nocreate');
-        if isempty(poolobj)||poolobj.NumWorkers<cpus
-            delete(gcp('nocreate'))
-            if cpus
-                parpool(cpus);
-            else
-                parpool;
-            end
-        end
+
+        % Ensure that the required MATLAB process pool is available.
+        poolobj = ensureOperaPool( ...
+            matlabCluster, ...
+            matlabWorkers, ...
+            verbose);
+
+        % Use the actual running pool size in subsequent work partitioning.
+        NumWorkers = poolobj.NumWorkers;
+
         parfor i=1:length(Xtest(:,1))
             pred = knnpred(Xtest(i,:),model.PKA.model.set.train,model.PKA.model.set.class,model.PKA.model.set.K,model.PKA.model.set.dist_type,model.PKA.model.set.param.pret_type);
             pred.D=diag(pred.D);
@@ -4721,15 +4926,16 @@ else
         pred_neighbors=nan(size(Xtest,1),5);
         pred_dc=nan(size(Xtest,1),5);
         pred_w=nan(size(Xtest,1),5);
-        poolobj = gcp('nocreate');
-        if isempty(poolobj)||poolobj.NumWorkers<cpus
-            delete(gcp('nocreate'))
-            if cpus
-                parpool(cpus);
-            else
-                parpool;
-            end
-        end
+
+        % Ensure that the required MATLAB process pool is available.
+        poolobj = ensureOperaPool( ...
+            matlabCluster, ...
+            matlabWorkers, ...
+            verbose);
+
+        % Use the actual running pool size in subsequent work partitioning.
+        NumWorkers = poolobj.NumWorkers;
+
         parfor i=1:length(Xtest(:,1))
             pred = nnrpred(Xtest(i,:),model.AOH.model.set.train,model.AOH.model.set.y,model.AOH.model.set.K,model.AOH.model.set.dist_type,model.AOH.model.set.param.pret_type);
             pred.D=diag(pred.D);
@@ -5024,15 +5230,16 @@ else
 
         pred_neighbors=nan(size(Xtest,1),5);
         pred_w=nan(size(Xtest,1),5);
-        poolobj = gcp('nocreate');
-        if isempty(poolobj)||poolobj.NumWorkers<cpus
-            delete(gcp('nocreate'))
-            if cpus
-                parpool(cpus);
-            else
-                parpool;
-            end
-        end
+
+        % Ensure that the required MATLAB process pool is available.
+        poolobj = ensureOperaPool( ...
+            matlabCluster, ...
+            matlabWorkers, ...
+            verbose);
+
+        % Use the actual running pool size in subsequent work partitioning.
+        NumWorkers = poolobj.NumWorkers;
+
         parfor i=1:length(Xtest(:,1))
             pred = nnrpred(Xtest(i,:),model.BCF.model.set.train,model.BCF.model.set.y,model.BCF.model.set.K,model.BCF.model.set.dist_type,model.BCF.model.set.param.pret_type);
             pred.D=diag(pred.D);
@@ -5326,15 +5533,16 @@ else
 
         pred_neighbors=nan(size(Xtest,1),5);
         pred_w=nan(size(Xtest,1),5);
-        poolobj = gcp('nocreate');
-        if isempty(poolobj)||poolobj.NumWorkers<cpus
-            delete(gcp('nocreate'))
-            if cpus
-                parpool(cpus);
-            else
-                parpool;
-            end
-        end
+
+        % Ensure that the required MATLAB process pool is available.
+        poolobj = ensureOperaPool( ...
+            matlabCluster, ...
+            matlabWorkers, ...
+            verbose);
+
+        % Use the actual running pool size in subsequent work partitioning.
+        NumWorkers = poolobj.NumWorkers;
+
         parfor i=1:length(Xtest(:,1))
             pred = nnrpred(Xtest(i,:),model.BIODEG.model.set.train,model.BIODEG.model.set.y,model.BIODEG.model.set.K,model.BIODEG.model.set.dist_type,model.BIODEG.model.set.param.pret_type);
             pred.D=diag(pred.D);
@@ -5627,15 +5835,16 @@ else
 
         pred_neighbors=nan(size(Xtest,1),5);
         pred_w=nan(size(Xtest,1),5);
-        poolobj = gcp('nocreate');
-        if isempty(poolobj)||poolobj.NumWorkers<cpus
-            delete(gcp('nocreate'))
-            if cpus
-                parpool(cpus);
-            else
-                parpool;
-            end
-        end
+
+        % Ensure that the required MATLAB process pool is available.
+        poolobj = ensureOperaPool( ...
+            matlabCluster, ...
+            matlabWorkers, ...
+            verbose);
+
+        % Use the actual running pool size in subsequent work partitioning.
+        NumWorkers = poolobj.NumWorkers;
+
         parfor i=1:length(Xtest(:,1))
             pred = knnpred(Xtest(i,:),model.RBIODEG.model.set.train,model.RBIODEG.model.set.class,model.RBIODEG.model.set.K,model.RBIODEG.model.set.dist_type,model.RBIODEG.model.set.param.pret_type);
             pred.D=diag(pred.D);
@@ -5909,15 +6118,16 @@ else
 
         pred_neighbors=nan(size(Xtest,1),5);
         pred_w=nan(size(Xtest,1),5);
-        poolobj = gcp('nocreate');
-        if isempty(poolobj)||poolobj.NumWorkers<cpus
-            delete(gcp('nocreate'))
-            if cpus
-                parpool(cpus);
-            else
-                parpool;
-            end
-        end
+
+        % Ensure that the required MATLAB process pool is available.
+        poolobj = ensureOperaPool( ...
+            matlabCluster, ...
+            matlabWorkers, ...
+            verbose);
+
+        % Use the actual running pool size in subsequent work partitioning.
+        NumWorkers = poolobj.NumWorkers;
+
         parfor i=1:length(Xtest(:,1))
             pred = nnrpred(Xtest(i,:),model.KM.model.set.train,model.KM.model.set.y,model.KM.model.set.K,model.KM.model.set.dist_type,model.KM.model.set.param.pret_type);
             pred.D=diag(pred.D);
@@ -6207,15 +6417,16 @@ else
 
         pred_neighbors=nan(size(Xtest,1),5);
         pred_w=nan(size(Xtest,1),5);
-        poolobj = gcp('nocreate');
-        if isempty(poolobj)||poolobj.NumWorkers<cpus
-            delete(gcp('nocreate'))
-            if cpus
-                parpool(cpus);
-            else
-                parpool;
-            end
-        end
+
+        % Ensure that the required MATLAB process pool is available.
+        poolobj = ensureOperaPool( ...
+            matlabCluster, ...
+            matlabWorkers, ...
+            verbose);
+
+        % Use the actual running pool size in subsequent work partitioning.
+        NumWorkers = poolobj.NumWorkers;
+
         parfor i=1:length(Xtest(:,1))
             pred = nnrpred(Xtest(i,:),model.KOC.model.set.train,model.KOC.model.set.y,model.KOC.model.set.K,model.KOC.model.set.dist_type,model.KOC.model.set.param.pret_type);
             pred.D=diag(pred.D);
@@ -6520,15 +6731,16 @@ else
 
         pred_neighbors=nan(size(Xtest,1),5);
         pred_w=nan(size(Xtest,1),5);
-        poolobj = gcp('nocreate');
-        if isempty(poolobj)||poolobj.NumWorkers<cpus
-            delete(gcp('nocreate'))
-            if cpus
-                parpool(cpus);
-            else
-                parpool;
-            end
-        end
+
+        % Ensure that the required MATLAB process pool is available.
+        poolobj = ensureOperaPool( ...
+            matlabCluster, ...
+            matlabWorkers, ...
+            verbose);
+
+        % Use the actual running pool size in subsequent work partitioning.
+        NumWorkers = poolobj.NumWorkers;
+
         parfor i=1:length(Xtest(:,1))
             pred = nnrpred(Xtest(i,:),model.FUB.model.set.train,model.FUB.model.set.y,model.FUB.model.set.K,model.FUB.model.set.dist_type,model.FUB.model.set.param.pret_type);
             pred.D=diag(pred.D);
@@ -6821,15 +7033,16 @@ else
         %Xtest=Xtest(:,model.CLINT.Desc_i);
         pred_neighbors=nan(size(Xtest,1),5);
         pred_w=nan(size(Xtest,1),5);
-        poolobj = gcp('nocreate');
-        if isempty(poolobj)||poolobj.NumWorkers<cpus
-            delete(gcp('nocreate'))
-            if cpus
-                parpool(cpus);
-            else
-                parpool;
-            end
-        end
+
+        % Ensure that the required MATLAB process pool is available.
+        poolobj = ensureOperaPool( ...
+            matlabCluster, ...
+            matlabWorkers, ...
+            verbose);
+
+        % Use the actual running pool size in subsequent work partitioning.
+        NumWorkers = poolobj.NumWorkers;
+
         parfor i=1:length(Xtest(:,1))
             predc = knnpred(Xtestc(i,:),model.CLINT.modelc.set.train,model.CLINT.modelc.set.class,model.CLINT.modelc.set.K,model.CLINT.modelc.set.dist_type,model.CLINT.modelc.set.param.pret_type);
             predc.D=diag(predc.D);
@@ -7163,15 +7376,16 @@ else
         
         pred_neighbors=nan(size(Xtest,1),5);
         pred_w=nan(size(Xtest,1),5);
-        poolobj = gcp('nocreate');
-        if isempty(poolobj)||poolobj.NumWorkers<cpus
-            delete(gcp('nocreate'))
-            if cpus
-                parpool(cpus);
-            else
-                parpool;
-            end
-        end
+
+        % Ensure that the required MATLAB process pool is available.
+        poolobj = ensureOperaPool( ...
+            matlabCluster, ...
+            matlabWorkers, ...
+            verbose);
+
+        % Use the actual running pool size in subsequent work partitioning.
+        NumWorkers = poolobj.NumWorkers;
+
         parfor i=1:length(Xtest(:,1))
             pred = nnrpred(Xtest(i,:),model.CACO2.model.set.train,model.CACO2.model.set.y,model.CACO2.model.set.K,model.CACO2.model.set.dist_type,model.CACO2.model.set.param.pret_type);
             pred.D=diag(pred.D);
@@ -7476,15 +7690,16 @@ else
         XtestAN=Xtest(:,model.CERAPP.model_AN.DescAN_i);
         XtestBD=Xtest(:,model.CERAPP.model_BD.DescBD_i);
         %tic
-        poolobj = gcp('nocreate');
-        if isempty(poolobj)||poolobj.NumWorkers<cpus
-            delete(gcp('nocreate'))
-            if cpus
-                parpool(cpus);
-            else
-                parpool;
-            end
-        end
+
+        % Ensure that the required MATLAB process pool is available.
+        poolobj = ensureOperaPool( ...
+            matlabCluster, ...
+            matlabWorkers, ...
+            verbose);
+
+        % Use the actual running pool size in subsequent work partitioning.
+        NumWorkers = poolobj.NumWorkers;
+
         parfor i=1:length(Xtest(:,1))
             predAG = knnpred2(XtestAG(i,:),model.CERAPP.model_AG.set.train,model.CERAPP.model_AG.set.class,model.CERAPP.model_AG.set.class_Exp_N,model.CERAPP.model_AG.set.K,model.CERAPP.model_AG.set.dist_type,model.CERAPP.model_AG.set.param.pret_type);
             %predAG.D=diag(predAG.D);
@@ -8005,15 +8220,16 @@ else
         XtestAG=Xtest(:,model.COMPARA.model_AG.DescAG_i);
         XtestAN=Xtest(:,model.COMPARA.model_AN.DescAN_i);
         XtestBD=Xtest(:,model.COMPARA.model_BD.DescBD_i);
-        poolobj = gcp('nocreate');
-        if isempty(poolobj)||poolobj.NumWorkers<cpus
-            delete(gcp('nocreate'))
-            if cpus
-                parpool(cpus);
-            else
-                parpool;
-            end
-        end
+
+        % Ensure that the required MATLAB process pool is available.
+        poolobj = ensureOperaPool( ...
+            matlabCluster, ...
+            matlabWorkers, ...
+            verbose);
+
+        % Use the actual running pool size in subsequent work partitioning.
+        NumWorkers = poolobj.NumWorkers;
+
         parfor i=1:length(Xtest(:,1))       
             predAG = knnpred2(XtestAG(i,:),model.COMPARA.model_AG.set.train,model.COMPARA.model_AG.set.class,model.COMPARA.model_AG.set.class_Exp_N,model.COMPARA.model_AG.set.K,model.COMPARA.model_AG.set.dist_type,model.COMPARA.model_AG.set.param.pret_type);
             %predAG.D=diag(predAG.D);
@@ -8548,15 +8764,16 @@ else
 %         train.CATMOS.model_LD50.set.train=train.CATMOS.model_VT.set.train;
 
         %new data temp end
-        poolobj = gcp('nocreate');
-        if isempty(poolobj)||poolobj.NumWorkers<cpus
-            delete(gcp('nocreate'))
-            if cpus
-                parpool(cpus);
-            else
-                parpool;
-            end
-        end
+
+        % Ensure that the required MATLAB process pool is available.
+        poolobj = ensureOperaPool( ...
+            matlabCluster, ...
+            matlabWorkers, ...
+            verbose);
+
+        % Use the actual running pool size in subsequent work partitioning.
+        NumWorkers = poolobj.NumWorkers;
+
         if salt ==0
             SaltIndex=zeros(size(Xtest,1),1);
 
@@ -9281,5 +9498,132 @@ res=rmfield(res,{'AD_VT','AD_index_VT','Conf_index_VT','AD_NT','AD_index_NT','Co
     end
     
 end
+end
 
 
+function poolobj = ensureOperaPool( ...
+    matlabCluster, ...
+    matlabWorkers, ...
+    verbose)
+%ENSUREOPERAPOOL Return a usable MATLAB process pool.
+%
+% The function:
+%   1. reuses the current pool when it is connected and has the
+%      requested number of workers;
+%   2. creates a new pool when no pool exists;
+%   3. replaces a disconnected pool;
+%   4. replaces a thread-based pool with a process-based pool;
+%   5. replaces a pool whose size differs from matlabWorkers.
+%
+% matlabCluster:
+%   Cluster object previously created with:
+%
+%       parcluster('Processes')
+%
+%   or the compatibility fallback:
+%
+%       parcluster('local')
+%
+% matlabWorkers:
+%   Positive resolved MATLAB worker count. This is not the original
+%   cpus command-line value.
+%
+% verbose:
+%   OPERA verbosity level.
+
+    % Get the current pool without automatically creating one.
+    poolobj = gcp('nocreate');
+
+    needNewPool = isempty(poolobj);
+
+    % Validate the existing pool if one is present.
+    if ~needNewPool
+        try
+            % Older MATLAB releases might not expose Connected in
+            % exactly the same way, so check for the property first.
+            poolConnected = true;
+
+            if isprop(poolobj, 'Connected')
+                poolConnected = logical(poolobj.Connected);
+            end
+
+            % OPERA should use process workers rather than a thread pool.
+            poolIsThreadBased = ...
+                isa(poolobj, 'parallel.ThreadPool');
+
+            % Require the exact resolved worker count.
+            poolHasWrongSize = ...
+                poolobj.NumWorkers ~= matlabWorkers;
+
+            needNewPool = ...
+                ~poolConnected || ...
+                poolIsThreadBased || ...
+                poolHasWrongSize;
+
+        catch
+            % A stale or partially disconnected pool object should be
+            % discarded and recreated.
+            needNewPool = true;
+        end
+    end
+
+    if needNewPool
+
+        % Shut down the previous pool if an object still exists.
+        if ~isempty(poolobj)
+            try
+                if verbose > 0
+                    fprintf(1, ...
+                        ['Closing existing MATLAB pool with ' ...
+                         '%d workers.\n'], ...
+                        poolobj.NumWorkers);
+                end
+
+                delete(poolobj);
+
+            catch
+                % The pool may already have shut down because of its
+                % idle timeout or a lost connection.
+            end
+
+            poolobj = [];
+        end
+
+        if verbose > 0
+            fprintf(1, ...
+                ['Starting MATLAB process pool with ' ...
+                 '%d workers...\n'], ...
+                matlabWorkers);
+        end
+
+        try
+            % matlabWorkers was already constrained by
+            % matlabCluster.NumWorkers earlier in OPERA_par.
+            poolobj = parpool( ...
+                matlabCluster, ...
+                matlabWorkers);
+
+        catch ME
+            error( ...
+                'OPERA:ParallelPoolStartFailed', ...
+                ['Unable to start a MATLAB process pool with ' ...
+                 '%d workers.\n%s'], ...
+                matlabWorkers, ...
+                ME.message);
+        end
+
+        if verbose > 0
+            fprintf(1, ...
+                ['MATLAB parallel pool started with ' ...
+                 '%d workers.\n'], ...
+                poolobj.NumWorkers);
+        end
+
+    elseif verbose > 1
+
+        fprintf(1, ...
+            ['Reusing existing MATLAB process pool with ' ...
+             '%d workers.\n'], ...
+            poolobj.NumWorkers);
+    end
+end

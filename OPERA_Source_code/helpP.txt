@@ -3,7 +3,7 @@
        _______________________________________________________________________
       |                                                                       |
       |   OPERA models for physchem, environmental fate and tox properties.   |
-      |                 Version 2.9 (June 2026)                               |
+      |                 Version 2.9 (October 2026)                            |
       |_______________________________________________________________________|    
  
  
@@ -54,6 +54,10 @@
    -V, --Version        Version of the application.
    -vm, --VerModels	Versions of the models.
    -P, --Parallel	Number of cpus for the parallel session. If non specified the app will use all cpus available.   
+                    cpus semantics:
+                            0  = automatic conservative selection
+                           -1  = maximum processors available
+                           >0  = explicit user-requested worker count
  
  
  Developed by:
